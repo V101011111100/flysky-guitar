@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import FloatingWidgets from '../components/FloatingWidgets.astro';
 
 interface Props {
   title?: string;
@@ -26,5 +27,7 @@ const { title = 'FlySky Guitar - Đàn Guitar Thủ Công Cao Cấp', descriptio
   </head>
   <body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display overflow-x-hidden">
     <slot />
+    <FloatingWidgets />
   </body>
 </html>
+

@@ -1,0 +1,253 @@
+---
+---
+
+<!-- ============================
+  FLOATING WIDGETS
+  - Social links stack (bottom-right)
+  - Chat widget button + form
+============================= -->
+
+<!-- Social Links Stack + Chat Button — fixed bottom right -->
+<div class="fixed bottom-6 right-5 z-50 flex flex-col items-end gap-3" id="floating-root">
+
+  <!-- Chat form panel (hidden by default) -->
+  <div
+    id="chat-panel"
+    class="hidden mb-1 w-80 bg-card-dark border border-border-dark rounded-2xl shadow-2xl overflow-hidden
+           transition-all duration-300"
+    style="box-shadow: 0 8px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(244,140,37,0.15);"
+  >
+    <!-- Panel header -->
+    <div class="bg-gradient-to-r from-primary to-[#e07b10] px-5 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
+          <span class="material-symbols-outlined text-white text-[20px]">support_agent</span>
+        </div>
+        <div>
+          <p class="text-white font-bold text-sm leading-tight">Tư vấn FlySky</p>
+          <p class="text-white/70 text-xs">Phản hồi trong 5–15 phút</p>
+        </div>
+      </div>
+      <button id="close-chat" class="text-white/70 hover:text-white transition-colors">
+        <span class="material-symbols-outlined text-[20px]">close</span>
+      </button>
+    </div>
+
+    <!-- Online indicator -->
+    <div class="px-5 py-3 flex items-center gap-2 border-b border-border-dark bg-background-dark/50">
+      <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse flex-shrink-0"></span>
+      <p class="text-text-muted text-xs">Đội ngũ đang trực tuyến — Gửi tin ngay!</p>
+    </div>
+
+    <!-- Form -->
+    <form id="chat-form" class="px-5 py-5 flex flex-col gap-4" novalidate>
+      <div class="relative">
+        <input
+          id="chat-name"
+          type="text"
+          required
+          placeholder=" "
+          class="peer w-full bg-background-dark border border-border-dark rounded-xl px-4 pt-5 pb-2 text-white text-sm outline-none
+                 focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+        />
+        <label class="absolute left-4 top-1 text-[10px] font-bold text-primary uppercase tracking-wider pointer-events-none
+                       opacity-0 peer-focus:opacity-100 peer-[:not(:placeholder-shown)]:opacity-100 transition-opacity">
+          Họ & Tên *
+        </label>
+        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted text-sm pointer-events-none
+                      peer-focus:hidden peer-[:not(:placeholder-shown)]:hidden">Họ và tên *</span>
+      </div>
+
+      <div class="relative">
+        <input
+          id="chat-phone"
+          type="tel"
+          required
+          placeholder=" "
+          class="peer w-full bg-background-dark border border-border-dark rounded-xl px-4 pt-5 pb-2 text-white text-sm outline-none
+                 focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+        />
+        <label class="absolute left-4 top-1 text-[10px] font-bold text-primary uppercase tracking-wider pointer-events-none
+                       opacity-0 peer-focus:opacity-100 peer-[:not(:placeholder-shown)]:opacity-100 transition-opacity">
+          Số điện thoại *
+        </label>
+        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted text-sm pointer-events-none
+                      peer-focus:hidden peer-[:not(:placeholder-shown)]:hidden">Số điện thoại *</span>
+      </div>
+
+      <div class="relative">
+        <textarea
+          id="chat-content"
+          required
+          rows="3"
+          placeholder=" "
+          class="peer w-full bg-background-dark border border-border-dark rounded-xl px-4 pt-5 pb-2 text-white text-sm outline-none
+                 focus:ring-2 focus:ring-primary focus:border-primary transition-all resize-none"
+        ></textarea>
+        <label class="absolute left-4 top-1 text-[10px] font-bold text-primary uppercase tracking-wider pointer-events-none
+                       opacity-0 peer-focus:opacity-100 peer-[:not(:placeholder-shown)]:opacity-100 transition-opacity">
+          Nội dung *
+        </label>
+        <span class="absolute left-4 top-4 text-text-muted text-sm pointer-events-none
+                      peer-focus:hidden peer-[:not(:placeholder-shown)]:hidden">Nội dung tin nhắn *</span>
+      </div>
+
+      <!-- Submit -->
+      <button
+        type="submit"
+        class="w-full bg-primary hover:bg-primary/90 text-background-dark font-extrabold py-3 px-5 rounded-xl
+               transition-all hover:shadow-[0_0_16px_rgba(244,140,37,0.5)] active:scale-95 flex items-center justify-center gap-2 text-sm"
+      >
+        <span class="material-symbols-outlined text-[18px]">send</span>
+        Hoàn tất & Gửi tin nhắn
+      </button>
+    </form>
+
+    <!-- Success state (hidden) -->
+    <div id="chat-success" class="hidden px-5 py-8 text-center">
+      <div class="w-14 h-14 rounded-full bg-primary/20 border border-primary flex items-center justify-center mx-auto mb-4">
+        <span class="material-symbols-outlined text-primary text-2xl" style="font-variation-settings: 'FILL' 1">check_circle</span>
+      </div>
+      <p class="text-white font-bold mb-1">Đã gửi thành công!</p>
+      <p class="text-text-muted text-sm">Chúng tôi sẽ liên hệ lại trong thời gian sớm nhất.</p>
+    </div>
+  </div>
+
+  <!-- Chat toggle button "Gửi tin nhắn" -->
+  <button
+    id="chat-toggle"
+    class="flex items-center gap-2.5 bg-primary hover:bg-primary/90 text-background-dark font-bold text-sm
+           px-5 py-3 rounded-full shadow-lg transition-all duration-300 group
+           hover:shadow-[0_0_24px_rgba(244,140,37,0.6)] hover:scale-105 active:scale-95"
+    style="box-shadow: 0 0 16px rgba(244,140,37,0.35);"
+    aria-label="Gửi tin nhắn tư vấn"
+  >
+    <span class="material-symbols-outlined text-[20px] group-hover:rotate-12 transition-transform" id="chat-icon">chat_bubble</span>
+    <span id="chat-label">Gửi tin nhắn</span>
+  </button>
+
+  <!-- Social links stack -->
+  <div class="flex flex-col items-center gap-2" id="social-stack">
+    {[
+      { label: 'Facebook', short: 'f', icon: 'groups', href: '#', color: 'hover:bg-[#1877F2]' },
+      { label: 'Instagram', short: 'ig', icon: 'photo_camera', href: '#', color: 'hover:bg-gradient-to-br hover:from-[#833ab4] hover:to-[#fd1d1d]' },
+      { label: 'YouTube', short: 'yt', icon: 'smart_display', href: '#', color: 'hover:bg-[#FF0000]' },
+      { label: 'TikTok', short: 'tt', icon: 'music_video', href: '#', color: 'hover:bg-black' },
+    ].map((s, i) => (
+      <a
+        href={s.href}
+        title={s.label}
+        class={`social-btn w-10 h-10 rounded-full bg-card-dark border border-border-dark text-text-muted
+               flex items-center justify-center transition-all duration-300 opacity-0
+               hover:text-white hover:border-transparent hover:scale-110 hover:shadow-lg ${s.color}`}
+        style={`animation-delay: ${i * 80}ms;`}
+      >
+        <span class="material-symbols-outlined text-[18px]">{s.icon}</span>
+      </a>
+    ))}
+    <!-- Vertical line connecting -->
+    <div class="w-px h-5 bg-gradient-to-b from-border-dark to-transparent opacity-60"></div>
+  </div>
+</div>
+
+<style>
+  @keyframes floatUp {
+    from { opacity: 0; transform: translateY(20px) scale(0.8); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .social-btn {
+    animation: floatUp 0.5s ease-out forwards;
+  }
+
+  /* Pulse ring for chat button */
+  #chat-toggle::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 9999px;
+    border: 2px solid rgba(244,140,37,0.4);
+    animation: pulseRing 2.5s ease-in-out infinite;
+  }
+  #chat-toggle {
+    position: relative;
+  }
+  @keyframes pulseRing {
+    0%, 100% { transform: scale(1); opacity: 0.5; }
+    50%       { transform: scale(1.15); opacity: 0; }
+  }
+
+  /* Chat panel slide-in */
+  #chat-panel.visible {
+    animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(16px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+</style>
+
+<script>
+  // Chat toggle
+  const toggleBtn = document.getElementById('chat-toggle')!;
+  const panel = document.getElementById('chat-panel')!;
+  const closeBtn = document.getElementById('close-chat')!;
+  const chatIcon = document.getElementById('chat-icon')!;
+  const chatLabel = document.getElementById('chat-label')!;
+  const form = document.getElementById('chat-form') as HTMLFormElement;
+  const successEl = document.getElementById('chat-success')!;
+
+  let isOpen = false;
+
+  function openChat() {
+    panel.classList.remove('hidden');
+    requestAnimationFrame(() => panel.classList.add('visible'));
+    chatIcon.textContent = 'close';
+    chatLabel.textContent = 'Đóng';
+    isOpen = true;
+  }
+  function closeChat() {
+    panel.classList.remove('visible');
+    setTimeout(() => panel.classList.add('hidden'), 180);
+    chatIcon.textContent = 'chat_bubble';
+    chatLabel.textContent = 'Gửi tin nhắn';
+    isOpen = false;
+  }
+
+  toggleBtn.addEventListener('click', () => isOpen ? closeChat() : openChat());
+  closeBtn.addEventListener('click', closeChat);
+
+  // Form submit
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = (document.getElementById('chat-name') as HTMLInputElement).value.trim();
+    const phone = (document.getElementById('chat-phone') as HTMLInputElement).value.trim();
+    const content = (document.getElementById('chat-content') as HTMLTextAreaElement).value.trim();
+
+    if (!name || !phone || !content) {
+      [document.getElementById('chat-name'), document.getElementById('chat-phone'), document.getElementById('chat-content')].forEach(el => {
+        if (el && !(el as HTMLInputElement).value.trim()) {
+          el.classList.add('ring-2', 'ring-red-500', 'border-red-500');
+          setTimeout(() => el.classList.remove('ring-2', 'ring-red-500', 'border-red-500'), 2000);
+        }
+      });
+      return;
+    }
+
+    // Show success (future: POST to API)
+    form.classList.add('hidden');
+    successEl.classList.remove('hidden');
+    setTimeout(() => {
+      successEl.classList.add('hidden');
+      form.classList.remove('hidden');
+      form.reset();
+      closeChat();
+    }, 3000);
+  });
+
+  // Click outside to close
+  document.addEventListener('click', (e) => {
+    if (isOpen && !document.getElementById('floating-root')!.contains(e.target as Node)) {
+      closeChat();
+    }
+  });
+</script>
