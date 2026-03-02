@@ -9,6 +9,7 @@ const categories = [
   { id: 'electric', label: 'Guitar Điện' },
   { id: 'acoustic', label: 'Guitar Acoustic' },
   { id: 'bass', label: 'Guitar Bass' },
+  { id: 'piano', label: 'Piano' },
 ];
 ---
 
@@ -34,7 +35,7 @@ const categories = [
         {categories.map((cat) => (
           <button
             data-cat={cat.id}
-            class={`filter-btn px-5 py-2 rounded-full text-sm font-semibold border transition-all duration-200 ${cat.id === 'all' ? 'bg-primary text-background-dark border-primary' : 'bg-transparent text-white/70 border-border-dark hover:border-primary hover:text-primary'}`}
+            class="filter-btn px-5 py-2 rounded-full text-sm font-semibold border transition-all duration-200 bg-transparent text-white/70 border-border-dark hover:border-primary hover:text-primary"
           >
             {cat.label}
           </button>
@@ -130,8 +131,21 @@ const categories = [
   const grid = document.getElementById('product-grid');
   const sortSelect = document.getElementById('sort-select') as HTMLSelectElement;
 
-  let currentCat = 'all';
+  // Đọc URL param ?category= để pre-filter
+  const urlParam = new URLSearchParams(window.location.search).get('category') || 'all';
+  let currentCat = urlParam;
   let currentSort = 'default';
+
+  function setActiveBtn(catId: string) {
+    filterBtns.forEach(b => {
+      const active = b.dataset.cat === catId;
+      b.classList.toggle('bg-primary', active);
+      b.classList.toggle('text-background-dark', active);
+      b.classList.toggle('border-primary', active);
+      b.classList.toggle('text-white/70', !active);
+      b.classList.toggle('bg-transparent', !active);
+    });
+  }
 
   function applyFilters() {
     const visible: HTMLElement[] = [];
@@ -158,17 +172,14 @@ const categories = [
     if (emptyState) emptyState.classList.toggle('hidden', visible.length > 0);
   }
 
+  // Apply URL param on load
+  setActiveBtn(currentCat);
+  applyFilters();
+
   filterBtns.forEach((btn) => {
     btn.addEventListener('click', () => {
       currentCat = btn.dataset.cat || 'all';
-      filterBtns.forEach(b => {
-        const active = b.dataset.cat === currentCat;
-        b.classList.toggle('bg-primary', active);
-        b.classList.toggle('text-background-dark', active);
-        b.classList.toggle('border-primary', active);
-        b.classList.toggle('text-white/70', !active);
-        b.classList.toggle('bg-transparent', !active);
-      });
+      setActiveBtn(currentCat);
       applyFilters();
     });
   });

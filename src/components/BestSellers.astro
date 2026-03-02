@@ -1,43 +1,27 @@
 ---
-const products = [
-  {
-    name: 'FlySky Stratos',
-    category: 'Dòng Guitar Điện',
-    price: '32.990.000₫',
-    image: '/images/product-stratos.jpg',
-    badge: 'MỚI',
-  },
-  {
-    name: 'FlySky Dreadnought',
-    category: 'Dòng Guitar Acoustic',
-    price: '22.500.000₫',
-    image: '/images/product-dreadnought.jpg',
-    badge: null,
-  },
-  {
-    name: 'FlySky Thunder',
-    category: 'Dòng Guitar Bass',
-    price: '27.900.000₫',
-    image: '/images/product-thunder.jpg',
-    badge: null,
-  },
-  {
-    name: 'Vintage Jazz',
-    category: 'Phiên bản giới hạn',
-    price: '54.000.000₫',
-    image: '/images/product-vintage-jazz.jpg',
-    badge: null,
-  },
-];
+import { products as allProducts } from '../data/products';
+
+// Lấy 4 sản phẩm bán chạy nhất (theo reviews)
+const bestSellers = [...allProducts]
+  .sort((a, b) => b.reviews - a.reviews)
+  .slice(0, 4);
 ---
 
 <section class="py-16 bg-[#1a120b]">
   <div class="mx-auto max-w-7xl px-4 lg:px-10">
-    <h2 class="text-white text-3xl font-bold mb-10 text-center">Sản phẩm bán chạy</h2>
+    <div class="flex items-center justify-between mb-10">
+      <h2 class="text-white text-3xl font-bold">Sản phẩm bán chạy</h2>
+      <a href="/shop" class="hidden md:flex items-center gap-1 text-primary font-medium hover:text-white transition-colors text-sm">
+        Xem tất cả <span class="material-symbols-outlined text-sm">arrow_forward</span>
+      </a>
+    </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-      {products.map((product) => (
-        <div class="group flex flex-col bg-card-dark rounded-xl overflow-hidden hover:shadow-[0_0_20px_rgba(244,140,37,0.15)] transition-all border border-border-dark">
-          <div class="aspect-square w-full bg-[#2a2015] relative p-4 flex items-center justify-center">
+      {bestSellers.map((product) => (
+        <a
+          href={`/products/${product.id}`}
+          class="group flex flex-col bg-card-dark rounded-xl overflow-hidden hover:shadow-[0_0_20px_rgba(244,140,37,0.15)] transition-all border border-border-dark cursor-pointer"
+        >
+          <div class="aspect-square w-full bg-[#2a2015] relative p-4 flex items-center justify-center overflow-hidden">
             <div
               class="w-full h-full bg-contain bg-center bg-no-repeat group-hover:scale-110 transition-transform duration-300"
               style={`background-image: url("${product.image}");`}
@@ -47,18 +31,25 @@ const products = [
                 {product.badge}
               </div>
             )}
-          </div>
-          <div class="p-4 flex flex-col gap-2 flex-grow">
-            <h3 class="text-white text-lg font-bold group-hover:text-primary transition-colors">{product.name}</h3>
-            <p class="text-text-muted text-sm">{product.category}</p>
-            <div class="mt-auto flex items-center justify-between pt-2">
-              <span class="text-white font-bold text-lg">{product.price}</span>
-              <button class="bg-border-dark hover:bg-primary text-white hover:text-background-dark rounded-full p-2 transition-colors cursor-pointer">
-                <span class="material-symbols-outlined text-[20px]">add_shopping_cart</span>
-              </button>
+            <!-- Hover overlay -->
+            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <span class="text-white text-xs font-bold bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-1">
+                <span class="material-symbols-outlined text-[14px]">visibility</span>
+                Xem chi tiết
+              </span>
             </div>
           </div>
-        </div>
+          <div class="p-4 flex flex-col gap-2 flex-grow">
+            <p class="text-primary text-[10px] font-bold uppercase tracking-wider">{product.categoryLabel}</p>
+            <h3 class="text-white text-base font-bold group-hover:text-primary transition-colors leading-tight">{product.name}</h3>
+            <div class="mt-auto flex items-center justify-between pt-2 border-t border-border-dark/50">
+              <span class="text-white font-bold text-base">{product.priceFormatted}</span>
+              <span class="bg-border-dark group-hover:bg-primary text-white group-hover:text-background-dark rounded-full p-2 transition-colors">
+                <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+              </span>
+            </div>
+          </div>
+        </a>
       ))}
     </div>
   </div>

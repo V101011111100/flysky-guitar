@@ -1,7 +1,7 @@
 export interface Product {
     id: string;
     name: string;
-    category: 'electric' | 'acoustic' | 'bass';
+    category: 'electric' | 'acoustic' | 'bass' | 'piano';
     categoryLabel: string;
     subtitle: string;
     price: number;
@@ -282,6 +282,105 @@ export const products: Product[] = [
             { label: 'Xuất xứ', value: 'Việt Nam (Master Luthier)' },
         ],
         relatedIds: ['flysky-dreadnought-pro', 'flysky-woodland-acoustic'],
+    },
+    {
+        id: 'flysky-grand-concert',
+        name: 'FlySky Grand Concert',
+        category: 'piano',
+        categoryLabel: 'Piano',
+        subtitle: 'Ebony Polish',
+        price: 125000000,
+        priceFormatted: '125.000.000₫',
+        image: '/images/product-stratos.jpg',
+        images: ['/images/product-stratos.jpg'],
+        badge: 'CAO CẤP',
+        rating: 5,
+        reviews: 8,
+        description: 'Grand piano thủ công, âm thanh đỉnh cao concert hall.',
+        longDescription:
+            'FlySky Grand Concert là kiệt tác piano thủ công dành cho sân khấu concert chuyên nghiệp. Với 88 phím được cân chỉnh tỉ mỉ và bộ búa dạ cao cấp, mỗi nốt nhạc vang lên với độ chính xác và cảm xúc tuyệt đối.',
+        features: [
+            '88 phím cân bằng trọng lực (Graded Hammer Action)',
+            'Khung đàn gang đúc nguyên khối',
+            'Dây đàn German Roslau cao cấp',
+            'Bàn đạp sostenuto 3 bàn đạp',
+        ],
+        specs: [
+            { label: 'Loại', value: 'Grand Piano' },
+            { label: 'Số phím', value: '88 phím' },
+            { label: 'Chiều dài', value: '180cm' },
+            { label: 'Khung', value: 'Gang đúc nguyên khối' },
+            { label: 'Dây đàn', value: 'German Roslau' },
+            { label: 'Bàn đạp', value: '3 bàn đạp' },
+            { label: 'Xuất xứ', value: 'Việt Nam (Handcrafted)' },
+        ],
+        relatedIds: ['flysky-digital-stage', 'flysky-studio-upright'],
+    },
+    {
+        id: 'flysky-digital-stage',
+        name: 'FlySky Digital Stage',
+        category: 'piano',
+        categoryLabel: 'Piano',
+        subtitle: 'Stage Black',
+        price: 45000000,
+        priceFormatted: '45.000.000₫',
+        image: '/images/product-vintage-jazz.jpg',
+        images: ['/images/product-vintage-jazz.jpg'],
+        badge: 'MỚI',
+        rating: 5,
+        reviews: 15,
+        description: 'Piano điện sân khấu với 88 phím hammer action, âm thanh concert.',
+        longDescription:
+            'FlySky Digital Stage kết hợp công nghệ mô phỏng âm thanh piano acoustic tiên tiến với sự tiện dụng của đàn điện. Hoàn hảo cho biểu diễn sân khấu và thu âm chuyên nghiệp.',
+        features: [
+            '88 phím Graded Hammer Action',
+            'Mô phỏng âm thanh 128 giọng polyphony',
+            'Kết nối USB MIDI và Audio',
+            'Tích hợp 50 âm thanh nhạc cụ',
+        ],
+        specs: [
+            { label: 'Loại', value: 'Digital Stage Piano' },
+            { label: 'Số phím', value: '88 phím' },
+            { label: 'Polyphony', value: '128 giọng' },
+            { label: 'Âm thanh', value: '50 loại' },
+            { label: 'Kết nối', value: 'USB, MIDI, Line Out' },
+            { label: 'Trọng lượng', value: '15.5 kg' },
+            { label: 'Xuất xứ', value: 'Việt Nam' },
+        ],
+        relatedIds: ['flysky-grand-concert', 'flysky-studio-upright'],
+    },
+    {
+        id: 'flysky-studio-upright',
+        name: 'FlySky Studio Upright',
+        category: 'piano',
+        categoryLabel: 'Piano',
+        subtitle: 'Walnut Classic',
+        price: 78000000,
+        priceFormatted: '78.000.000₫',
+        image: '/images/product-dreadnought.jpg',
+        images: ['/images/product-dreadnought.jpg'],
+        badge: null,
+        rating: 4,
+        reviews: 6,
+        description: 'Upright piano cổ điển, hoàn hảo cho phòng tập và studio.',
+        longDescription:
+            'FlySky Studio Upright là lựa chọn hoàn hảo cho phòng tập nhạc và studio thu âm. Vỏ gỗ óc chó tự nhiên kết hợp cơ chế búa truyền thống mang lại cảm giác chơi đàn chân thực nhất.',
+        features: [
+            'Vỏ gỗ óc chó (Walnut) tự nhiên',
+            '88 phím cơ chế búa truyền thống',
+            'Ngăn chứa dây đàn âm học tối ưu',
+            'Bảo hành 10 năm toàn diện',
+        ],
+        specs: [
+            { label: 'Loại', value: 'Upright Piano' },
+            { label: 'Số phím', value: '88 phím' },
+            { label: 'Chiều cao', value: '125cm' },
+            { label: 'Khung', value: 'Gang đúc' },
+            { label: 'Vỏ đàn', value: 'Gỗ óc chó tự nhiên' },
+            { label: 'Bảo hành', value: '10 năm' },
+            { label: 'Xuất xứ', value: 'Việt Nam (Handcrafted)' },
+        ],
+        relatedIds: ['flysky-grand-concert', 'flysky-digital-stage'],
     },
 ];
 

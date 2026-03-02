@@ -13,7 +13,49 @@
     </div>
     <nav class="hidden lg:flex items-center gap-8 flex-1 justify-center">
       <a class="text-white/90 hover:text-primary transition-colors text-sm font-semibold uppercase tracking-wider" href="/">Trang chủ</a>
-      <a class="text-white/90 hover:text-primary transition-colors text-sm font-semibold uppercase tracking-wider" href="/shop">Cửa hàng</a>
+
+      <!-- Cửa hàng dropdown -->
+      <div class="relative group py-2" id="shop-dropdown-wrap">
+        <a
+          href="/shop"
+          class="flex items-center gap-1 text-white/90 hover:text-primary transition-colors text-sm font-semibold uppercase tracking-wider"
+        >
+          Cửa hàng
+          <span class="material-symbols-outlined text-sm transition-transform duration-200 group-hover:rotate-180">expand_more</span>
+        </a>
+        <!-- Dropdown menu -->
+        <div
+          id="shop-dropdown"
+          class="absolute top-full left-1/2 -translate-x-1/2 w-56 bg-card-dark border border-border-dark rounded-xl shadow-2xl overflow-hidden mt-1
+                 opacity-0 invisible translate-y-2 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0
+                 transition-all duration-200 ease-out"
+        >
+          {[
+            { href: '/shop?category=electric', icon: 'electric_bolt', label: 'Guitar Điện', sub: 'Solid & Semi-Hollow' },
+            { href: '/shop?category=acoustic', icon: 'forest', label: 'Guitar Acoustic', sub: 'Dreadnought & Jumbo' },
+            { href: '/shop?category=bass', icon: 'graphic_eq', label: 'Guitar Bass', sub: '4 & 5 dây' },
+            { href: '/shop?category=piano', icon: 'piano', label: 'Piano', sub: 'Grand, Upright & Digital' },
+          ].map((item) => (
+            <a
+              href={item.href}
+              class="flex items-center gap-3 px-4 py-3 hover:bg-border-dark/60 hover:text-primary transition-colors border-b border-border-dark/40 last:border-0"
+            >
+              <span class="material-symbols-outlined text-primary text-[20px] flex-shrink-0">{item.icon}</span>
+              <div>
+                <p class="text-white text-sm font-semibold">{item.label}</p>
+                <p class="text-text-muted text-[11px]">{item.sub}</p>
+              </div>
+            </a>
+          ))}
+          <a
+            href="/shop"
+            class="flex items-center justify-center gap-1 px-4 py-2.5 text-primary text-xs font-bold hover:bg-primary/10 transition-colors"
+          >
+            Xem tất cả <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+          </a>
+        </div>
+      </div>
+
       <a class="text-white/90 hover:text-primary transition-colors text-sm font-semibold uppercase tracking-wider" href="#">Câu chuyện thương hiệu</a>
       <a class="text-white/90 hover:text-primary transition-colors text-sm font-semibold uppercase tracking-wider" href="#">Blog</a>
     </nav>
