@@ -1,0 +1,342 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Layout title="Giỏ hàng | FlySky Guitar" description="Giỏ hàng và gửi yêu cầu tư vấn FlySky Guitar.">
+  <Navbar />
+
+  <!-- Breadcrumb -->
+  <div class="bg-background-dark border-b border-border-dark/50">
+    <div class="mx-auto max-w-7xl px-4 lg:px-10 py-3 flex items-center gap-2 text-sm text-text-muted">
+      <a href="/" class="hover:text-primary transition-colors">Trang chủ</a>
+      <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+      <span class="text-white/60">Giỏ hàng</span>
+    </div>
+  </div>
+
+  <section class="py-12 bg-background-dark min-h-screen">
+    <div class="mx-auto max-w-7xl px-4 lg:px-10">
+      <h1 class="text-white text-3xl font-extrabold mb-2">Giỏ hàng</h1>
+      <p class="text-text-muted text-sm mb-10">Xem lại sản phẩm và gửi yêu cầu tư vấn — chúng tôi sẽ liên hệ lại sớm nhất.</p>
+
+      <!-- Empty state -->
+      <div id="cart-empty" class="hidden text-center py-24">
+        <span class="material-symbols-outlined text-6xl text-border-dark mb-4 block">shopping_cart</span>
+        <h2 class="text-white text-xl font-bold mb-2">Giỏ hàng trống</h2>
+        <p class="text-text-muted mb-6">Hãy khám phá bộ sưu tập guitar của chúng tôi nhé!</p>
+        <a href="/shop" class="inline-flex items-center gap-2 bg-primary text-background-dark font-bold px-6 py-3 rounded-xl hover:bg-primary/90 transition-colors">
+          <span class="material-symbols-outlined">storefront</span>
+          Tiếp tục mua sắm
+        </a>
+      </div>
+
+      <!-- Cart content -->
+      <div id="cart-content" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        <!-- Left: Items + Contact form -->
+        <div class="lg:col-span-2 flex flex-col gap-6">
+
+          <!-- Cart Items -->
+          <div class="bg-card-dark border border-border-dark rounded-2xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-border-dark flex items-center justify-between">
+              <h2 class="text-white font-bold text-lg">Sản phẩm đã chọn</h2>
+              <span id="cart-count-label" class="text-text-muted text-sm"></span>
+            </div>
+            <div id="cart-items-list" class="divide-y divide-border-dark/60">
+              <!-- Filled by JS -->
+            </div>
+          </div>
+
+          <!-- Contact Form -->
+          <div class="bg-card-dark border border-border-dark rounded-2xl p-6">
+            <h2 class="text-white font-bold text-lg mb-1">Thông tin liên hệ</h2>
+            <p class="text-text-muted text-sm mb-6">Admin sẽ liên hệ lại với bạn sớm nhất có thể để xác nhận và tư vấn đơn hàng.</p>
+
+            <form id="checkout-form" class="flex flex-col gap-5" novalidate>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
+                  <label class="block text-sm font-semibold text-white/80 mb-1.5" for="full-name">Họ và tên *</label>
+                  <input
+                    id="full-name"
+                    name="fullName"
+                    type="text"
+                    required
+                    placeholder="Nguyễn Văn A"
+                    class="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-3 text-white placeholder-text-muted text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold text-white/80 mb-1.5" for="phone">Số điện thoại *</label>
+                  <input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    required
+                    placeholder="0901 234 567"
+                    class="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-3 text-white placeholder-text-muted text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold text-white/80 mb-1.5" for="email">Email</label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="email@example.com"
+                  class="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-3 text-white placeholder-text-muted text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold text-white/80 mb-1.5" for="address">Địa chỉ giao hàng *</label>
+                <input
+                  id="address"
+                  name="address"
+                  type="text"
+                  required
+                  placeholder="123 Đường Lê Lợi, Quận 1, TP. Hồ Chí Minh"
+                  class="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-3 text-white placeholder-text-muted text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold text-white/80 mb-1.5" for="note">Ghi chú (tùy chọn)</label>
+                <textarea
+                  id="note"
+                  name="note"
+                  rows="3"
+                  placeholder="Yêu cầu đặc biệt, thời gian liên hệ phù hợp..."
+                  class="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-3 text-white placeholder-text-muted text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all resize-none"
+                ></textarea>
+              </div>
+
+              <!-- Payment method (display only, no backend yet) -->
+              <div>
+                <label class="block text-sm font-semibold text-white/80 mb-3">Phương thức thanh toán</label>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {[
+                    { id: 'bank', icon: 'account_balance', label: 'Chuyển khoản ngân hàng' },
+                    { id: 'cash', icon: 'payments', label: 'Tiền mặt khi nhận hàng' },
+                    { id: 'installment', icon: 'credit_score', label: 'Trả góp 0%' },
+                  ].map((m, i) => (
+                    <label class={`payment-method flex items-center gap-3 bg-background-dark border-2 rounded-xl px-4 py-3 cursor-pointer transition-all ${i === 0 ? 'border-primary bg-primary/5' : 'border-border-dark hover:border-border-dark/80'}`}>
+                      <input type="radio" name="payment" value={m.id} checked={i === 0} class="sr-only" />
+                      <span class={`material-symbols-outlined text-[20px] ${i === 0 ? 'text-primary' : 'text-text-muted'}`}>{m.icon}</span>
+                      <span class={`text-xs font-semibold leading-tight ${i === 0 ? 'text-white' : 'text-text-muted'}`}>{m.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+            </form>
+          </div>
+
+          <!-- Support box -->
+          <div class="bg-card-dark border border-border-dark rounded-2xl p-5 flex items-start gap-4">
+            <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined text-primary">support_agent</span>
+            </div>
+            <div>
+              <p class="text-white font-semibold text-sm mb-1">Cần hỗ trợ gấp?</p>
+              <p class="text-text-muted text-xs leading-relaxed">Chat với chuyên gia tư vấn ngay hoặc gọi <span class="text-primary font-semibold">1800 6969</span> — Thứ 2 đến Thứ 7, 8:00 - 20:00.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Order summary -->
+        <div class="flex flex-col gap-4">
+          <div class="bg-card-dark border border-border-dark rounded-2xl p-6 lg:sticky lg:top-24">
+            <h2 class="text-white font-bold text-lg mb-5">Tóm tắt yêu cầu</h2>
+
+            <div class="flex flex-col gap-3 text-sm mb-5">
+              <div class="flex justify-between">
+                <span class="text-text-muted">Giá tham khảo</span>
+                <span class="text-white font-semibold" id="summary-subtotal">—</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-text-muted">Vận chuyển</span>
+                <span class="text-green-400 font-semibold">Miễn phí</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-text-muted">Tư vấn & hỗ trợ</span>
+                <span class="text-green-400 font-semibold">Miễn phí</span>
+              </div>
+            </div>
+
+            <div class="border-t border-border-dark pt-4 mb-6">
+              <div class="flex justify-between items-baseline">
+                <span class="text-white font-bold">Tổng cộng</span>
+                <span class="text-primary text-xl font-extrabold" id="summary-total">—</span>
+              </div>
+              <p class="text-text-muted text-xs mt-1">Giá chính thức sẽ được xác nhận qua tư vấn</p>
+            </div>
+
+            <button
+              id="btn-submit"
+              type="button"
+              class="w-full bg-primary hover:bg-primary/90 text-background-dark font-extrabold py-4 px-6 rounded-xl transition-all duration-200 hover:shadow-[0_0_20px_rgba(244,140,37,0.4)] active:scale-95 flex items-center justify-center gap-2 text-base"
+            >
+              <span class="material-symbols-outlined">send</span>
+              Gửi yêu cầu tư vấn
+            </button>
+
+            <p class="text-text-muted text-xs text-center mt-4 leading-relaxed">
+              Bấm gửi = bạn đồng ý để chúng tôi liên hệ tư vấn. Không có nghĩa vụ mua hàng.
+            </p>
+
+            <!-- Trust badges -->
+            <div class="mt-5 pt-5 border-t border-border-dark/50 grid grid-cols-3 gap-3 text-center">
+              {[
+                { icon: 'verified', label: 'Hàng chính hãng' },
+                { icon: 'local_shipping', label: 'Ship toàn quốc' },
+                { icon: 'replay', label: 'Đổi trả 30 ngày' },
+              ].map((b) => (
+                <div class="flex flex-col items-center gap-1">
+                  <span class="material-symbols-outlined text-primary text-[20px]">{b.icon}</span>
+                  <span class="text-text-muted text-[10px] leading-tight">{b.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <Footer />
+</Layout>
+
+<script>
+  import { getCart, removeFromCart, updateQuantity, formatPrice, getCartTotal, clearCart } from '../lib/cart';
+
+  function renderCart() {
+    const cart = getCart();
+    const total = getCartTotal();
+
+    const emptyEl = document.getElementById('cart-empty')!;
+    const contentEl = document.getElementById('cart-content')!;
+    const listEl = document.getElementById('cart-items-list')!;
+    const countLabel = document.getElementById('cart-count-label')!;
+    const subtotalEl = document.getElementById('summary-subtotal')!;
+    const totalEl = document.getElementById('summary-total')!;
+
+    if (cart.length === 0) {
+      emptyEl.classList.remove('hidden');
+      contentEl.classList.add('hidden');
+      return;
+    }
+
+    emptyEl.classList.add('hidden');
+    contentEl.classList.remove('hidden');
+
+    const totalItems = cart.reduce((s, c) => s + c.quantity, 0);
+    countLabel.textContent = `${totalItems} sản phẩm`;
+    subtotalEl.textContent = formatPrice(total);
+    totalEl.textContent = formatPrice(total);
+
+    listEl.innerHTML = cart.map((item) => `
+      <div class="flex items-center gap-4 px-6 py-5" data-id="${item.id}">
+        <div class="w-16 h-16 rounded-xl bg-[#2a2015] flex-shrink-0 overflow-hidden p-1">
+          <img src="${item.image}" alt="${item.name}" class="w-full h-full object-contain" />
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-primary text-[10px] font-bold uppercase tracking-wider">${item.categoryLabel}</p>
+          <h3 class="text-white font-bold text-sm truncate">${item.name}</h3>
+          <p class="text-text-muted text-xs">${formatPrice(item.price)}</p>
+        </div>
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <button class="btn-qty-minus w-8 h-8 rounded-lg bg-border-dark hover:bg-primary hover:text-background-dark text-white flex items-center justify-center transition-colors text-sm font-bold">−</button>
+          <span class="text-white font-bold text-sm w-6 text-center">${item.quantity}</span>
+          <button class="btn-qty-plus w-8 h-8 rounded-lg bg-border-dark hover:bg-primary hover:text-background-dark text-white flex items-center justify-center transition-colors text-sm font-bold">+</button>
+        </div>
+        <div class="flex-shrink-0 text-right">
+          <p class="text-white font-extrabold text-sm">${formatPrice(item.price * item.quantity)}</p>
+          <button class="btn-remove text-text-muted hover:text-red-400 transition-colors text-xs mt-1 flex items-center gap-0.5 ml-auto">
+            <span class="material-symbols-outlined text-[14px]">delete</span> Xóa
+          </button>
+        </div>
+      </div>
+    `).join('');
+
+    // Events
+    listEl.querySelectorAll<HTMLElement>('[data-id]').forEach((row) => {
+      const id = row.dataset.id!;
+      const item = cart.find(c => c.id === id)!;
+
+      row.querySelector('.btn-qty-minus')?.addEventListener('click', () => {
+        updateQuantity(id, item.quantity - 1);
+        renderCart();
+      });
+      row.querySelector('.btn-qty-plus')?.addEventListener('click', () => {
+        updateQuantity(id, item.quantity + 1);
+        renderCart();
+      });
+      row.querySelector('.btn-remove')?.addEventListener('click', () => {
+        removeFromCart(id);
+        renderCart();
+      });
+    });
+  }
+
+  // Payment method selection
+  document.querySelectorAll<HTMLInputElement>('input[name="payment"]').forEach((radio) => {
+    radio.addEventListener('change', () => {
+      document.querySelectorAll('.payment-method').forEach((label, i) => {
+        const r = label.querySelector('input') as HTMLInputElement;
+        const icon = label.querySelector('.material-symbols-outlined') as HTMLElement;
+        const text = label.querySelector('span:last-child') as HTMLElement;
+        const active = r.checked;
+        label.classList.toggle('border-primary', active);
+        label.classList.toggle('bg-primary/5', active);
+        label.classList.toggle('border-border-dark', !active);
+        icon?.classList.toggle('text-primary', active);
+        icon?.classList.toggle('text-text-muted', !active);
+        text?.classList.toggle('text-white', active);
+        text?.classList.toggle('text-text-muted', !active);
+      });
+    });
+  });
+
+  // Submit
+  document.getElementById('btn-submit')?.addEventListener('click', () => {
+    const form = document.getElementById('checkout-form') as HTMLFormElement;
+    const name = (document.getElementById('full-name') as HTMLInputElement).value.trim();
+    const phone = (document.getElementById('phone') as HTMLInputElement).value.trim();
+    const address = (document.getElementById('address') as HTMLInputElement).value.trim();
+
+    if (!name || !phone || !address) {
+      // Simple highlight empty required fields
+      [document.getElementById('full-name'), document.getElementById('phone'), document.getElementById('address')].forEach(el => {
+        if (el && !(el as HTMLInputElement).value.trim()) {
+          el.classList.add('ring-2', 'ring-red-500', 'border-red-500');
+          setTimeout(() => el.classList.remove('ring-2', 'ring-red-500', 'border-red-500'), 2000);
+        }
+      });
+      return;
+    }
+
+    // Generate fake order number, store info for success page
+    const orderNum = 'FSG-' + Math.floor(10000 + Math.random() * 90000);
+    const cart = getCart();
+    
+    // Save order info for success page
+    sessionStorage.setItem('flysky_order', JSON.stringify({
+      orderNum,
+      name,
+      phone,
+      email: (document.getElementById('email') as HTMLInputElement).value.trim(),
+      address,
+      cart,
+      total: getCartTotal(),
+    }));
+
+    clearCart();
+    window.location.href = '/order-success';
+  });
+
+  renderCart();
+</script>

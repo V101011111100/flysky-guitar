@@ -1,0 +1,66 @@
+---
+---
+
+<header class="sticky top-0 z-50 w-full border-b border-solid border-border-dark bg-background-dark/95 backdrop-blur-sm px-4 lg:px-10 py-3">
+  <div class="mx-auto flex max-w-7xl items-center justify-between gap-4">
+    <div class="flex-shrink-0">
+      <a class="flex items-center gap-2 text-white group" href="/">
+        <div class="size-8 text-primary">
+          <span class="material-symbols-outlined" style="font-size: 32px;">music_note</span>
+        </div>
+        <h2 class="text-white text-xl font-extrabold tracking-tight">FlySky</h2>
+      </a>
+    </div>
+    <nav class="hidden lg:flex items-center gap-8 flex-1 justify-center">
+      <a class="text-white/90 hover:text-primary transition-colors text-sm font-semibold uppercase tracking-wider" href="/">Trang chủ</a>
+      <a class="text-white/90 hover:text-primary transition-colors text-sm font-semibold uppercase tracking-wider" href="/shop">Cửa hàng</a>
+      <a class="text-white/90 hover:text-primary transition-colors text-sm font-semibold uppercase tracking-wider" href="#">Câu chuyện thương hiệu</a>
+      <a class="text-white/90 hover:text-primary transition-colors text-sm font-semibold uppercase tracking-wider" href="#">Blog</a>
+    </nav>
+    <div class="flex items-center gap-2 lg:gap-4 flex-shrink-0">
+      <div class="hidden md:flex relative group">
+        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-text-muted">
+          <span class="material-symbols-outlined text-[20px]">search</span>
+        </div>
+        <input class="block w-48 lg:w-64 rounded-full border-none bg-border-dark/50 py-1.5 pl-10 pr-4 text-xs text-white placeholder-text-muted focus:ring-2 focus:ring-primary focus:bg-border-dark transition-all" placeholder="Tìm kiếm..." type="text" />
+      </div>
+      <div class="flex items-center gap-1">
+        <button class="md:hidden flex items-center justify-center rounded-lg size-10 text-white hover:bg-border-dark transition-colors">
+          <span class="material-symbols-outlined">search</span>
+        </button>
+        <!-- Cart button -->
+        <a href="/cart" class="flex items-center justify-center rounded-lg size-10 text-white hover:bg-border-dark transition-colors relative" id="nav-cart-btn" title="Giỏ hàng">
+          <span class="material-symbols-outlined">shopping_cart</span>
+          <span id="nav-cart-badge" class="absolute top-1.5 right-1.5 min-w-4 h-4 bg-primary text-background-dark text-[10px] font-bold flex items-center justify-center rounded-full px-0.5 hidden">0</span>
+        </a>
+        <a class="flex items-center justify-center rounded-lg size-10 text-white hover:bg-border-dark transition-colors group relative" href="#" title="Quản trị">
+          <span class="material-symbols-outlined">admin_panel_settings</span>
+          <span class="sr-only">Quản trị</span>
+          <span class="absolute -bottom-10 right-0 hidden group-hover:block bg-card-dark border border-border-dark text-[10px] text-white px-2 py-1 rounded whitespace-nowrap">Quản trị</span>
+        </a>
+        <button class="lg:hidden flex items-center justify-center rounded-lg size-10 text-white hover:bg-border-dark transition-colors">
+          <span class="material-symbols-outlined">menu</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<script>
+  import { getCartCount } from '../lib/cart';
+
+  function updateBadge() {
+    const badge = document.getElementById('nav-cart-badge');
+    if (!badge) return;
+    const count = getCartCount();
+    if (count > 0) {
+      badge.textContent = count > 99 ? '99+' : String(count);
+      badge.classList.remove('hidden');
+    } else {
+      badge.classList.add('hidden');
+    }
+  }
+
+  updateBadge();
+  window.addEventListener('cart-updated', updateBadge);
+</script>

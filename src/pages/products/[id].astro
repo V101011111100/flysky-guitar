@@ -1,0 +1,413 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Navbar from '../../components/Navbar.astro';
+import Footer from '../../components/Footer.astro';
+import { products, getRelatedProducts, type Product } from '../../data/products';
+
+export function getStaticPaths() {
+  return products.map((product) => ({
+    params: { id: product.id },
+    props: { product },
+  }));
+}
+
+interface Props {
+  product: Product;
+}
+
+const { product } = Astro.props;
+const related = getRelatedProducts(product.relatedIds);
+---
+
+<Layout
+  title={`${product.name} | FlySky Guitar`}
+  description={product.longDescription}
+>
+  <Navbar />
+
+  <!-- Breadcrumb -->
+  <div class="bg-background-dark border-b border-border-dark/50">
+    <div class="mx-auto max-w-7xl px-4 lg:px-10 py-3 flex items-center gap-2 text-sm text-text-muted">
+      <a href="/" class="hover:text-primary transition-colors">Trang chủ</a>
+      <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+      <a href="/shop" class="hover:text-primary transition-colors">Cửa hàng</a>
+      <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+      <span class="text-white/60 truncate">{product.name}</span>
+    </div>
+  </div>
+
+  <!-- Product Hero -->
+  <section class="py-12 bg-background-dark">
+    <div class="mx-auto max-w-7xl px-4 lg:px-10">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+
+        <!-- Image Gallery -->
+        <div class="flex flex-col gap-4">
+          <!-- Main image -->
+          <div
+            id="main-image"
+            class="w-full aspect-square rounded-2xl bg-[#1e1510] border border-border-dark overflow-hidden flex items-center justify-center p-8 relative"
+          >
+            {product.badge && (
+              <div class="absolute top-4 left-4 bg-primary text-background-dark text-xs font-extrabold px-3 py-1.5 rounded uppercase tracking-wider z-10">
+                {product.badge}
+              </div>
+            )}
+            <img
+              id="main-img-el"
+              src={product.images[0]}
+              alt={product.name}
+              class="w-full h-full object-contain transition-opacity duration-300"
+            />
+          </div>
+          <!-- Thumbnails -->
+          {product.images.length > 1 && (
+            <div class="flex gap-3">
+              {product.images.map((img, i) => (
+                <button
+                  class={`thumb-btn flex-1 aspect-square rounded-xl bg-[#1e1510] border-2 overflow-hidden p-2 transition-all ${i === 0 ? 'border-primary' : 'border-border-dark hover:border-primary/60'}`}
+                  data-src={img}
+                  data-index={i}
+                >
+                  <img src={img} alt={`${product.name} view ${i + 1}`} class="w-full h-full object-contain" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <!-- Product Info -->
+        <div class="flex flex-col gap-6 lg:sticky lg:top-24">
+          <!-- Category + badge -->
+          <div class="flex items-center gap-3">
+            <span class="text-primary font-bold text-xs uppercase tracking-widest">{product.categoryLabel}</span>
+            <span class="w-1 h-1 rounded-full bg-border-dark"></span>
+            <span class="text-text-muted text-xs">Thủ công cao cấp</span>
+          </div>
+
+          <!-- Name + subtitle -->
+          <div>
+            <h1 class="text-white text-3xl lg:text-4xl font-extrabold leading-tight">{product.name}</h1>
+            <p class="text-text-muted text-lg mt-1">{product.subtitle}</p>
+          </div>
+
+          <!-- Rating -->
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-0.5">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <span
+                  class={`material-symbols-outlined text-[18px] ${i < product.rating ? 'text-primary' : 'text-border-dark'}`}
+                  style="font-variation-settings: 'FILL' 1"
+                >star</span>
+              ))}
+            </div>
+            <span class="text-white font-semibold text-sm">{product.rating}.0</span>
+            <span class="text-text-muted text-sm">({product.reviews} đánh giá)</span>
+          </div>
+
+          <!-- Price -->
+          <div class="flex items-baseline gap-3">
+            <span class="text-white text-4xl font-extrabold">{product.priceFormatted}</span>
+          </div>
+
+          <!-- Benefits -->
+          <div class="flex flex-wrap gap-4 py-4 border-y border-border-dark/50">
+            <div class="flex items-center gap-2 text-text-muted text-sm">
+              <span class="material-symbols-outlined text-primary text-[18px]">local_shipping</span>
+              Miễn phí vận chuyển toàn quốc
+            </div>
+            <div class="flex items-center gap-2 text-text-muted text-sm">
+              <span class="material-symbols-outlined text-primary text-[18px]">replay</span>
+              Hoàn tiền trong 30 ngày
+            </div>
+            <div class="flex items-center gap-2 text-text-muted text-sm">
+              <span class="material-symbols-outlined text-primary text-[18px]">verified</span>
+              Bảo hành 2 năm
+            </div>
+          </div>
+
+          <!-- Description -->
+          <p class="text-text-muted leading-relaxed">{product.longDescription}</p>
+
+          <div class="flex flex-col sm:flex-row gap-3">
+            <button
+              id="btn-add-cart"
+              data-product-id={product.id}
+              data-product-name={product.name}
+              data-product-category={product.categoryLabel}
+              data-product-price={product.price}
+              data-product-price-formatted={product.priceFormatted}
+              data-product-image={product.images[0]}
+              class="flex-1 flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-background-dark font-bold py-4 px-6 rounded-xl transition-all duration-200 hover:shadow-[0_0_20px_rgba(244,140,37,0.4)] active:scale-95"
+            >
+              <span class="material-symbols-outlined">add_shopping_cart</span>
+              Thêm vào giỏ hàng
+            </button>
+            <button
+              class="flex items-center justify-center gap-2 bg-border-dark/50 hover:bg-border-dark text-white font-semibold py-4 px-6 rounded-xl border border-border-dark transition-all duration-200"
+            >
+              <span class="material-symbols-outlined">favorite_border</span>
+              Yêu thích
+            </button>
+          </div>
+
+          <!-- Consult note -->
+          <div class="bg-card-dark border border-border-dark rounded-xl p-4 flex gap-3">
+            <span class="material-symbols-outlined text-primary flex-shrink-0 mt-0.5">info</span>
+            <div>
+              <p class="text-white text-sm font-semibold mb-1">Tư vấn trực tiếp</p>
+              <p class="text-text-muted text-xs leading-relaxed">Bỏ vào giỏ và gửi yêu cầu, chúng tôi sẽ liên hệ tư vấn chi tiết cho bạn. Không yêu cầu đăng nhập.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Details Tabs -->
+  <section class="py-16 bg-[#100d08]">
+    <div class="mx-auto max-w-7xl px-4 lg:px-10">
+      <!-- Tab nav -->
+      <div class="flex gap-1 border-b border-border-dark mb-10">
+        {[
+          { id: 'features', label: 'Tính năng nổi bật' },
+          { id: 'specs', label: 'Thông số kỹ thuật' },
+          { id: 'reviews', label: `Đánh giá (${product.reviews})` },
+        ].map((tab, i) => (
+          <button
+            class={`tab-btn px-6 py-3 text-sm font-semibold border-b-2 transition-all -mb-px ${i === 0 ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-white'}`}
+            data-tab={tab.id}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <!-- Tab: Features -->
+      <div id="tab-features" class="tab-content">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
+          <div>
+            <span class="text-primary font-bold tracking-widest uppercase text-sm">Chế tác vì sự xuất sắc</span>
+            <h2 class="text-white text-2xl font-bold mt-2 mb-6">Từng chi tiết được mài giũa tỉ mỉ</h2>
+            <ul class="flex flex-col gap-4">
+              {product.features.map((f) => (
+                <li class="flex items-start gap-3">
+                  <span class="material-symbols-outlined text-primary flex-shrink-0 mt-0.5" style="font-variation-settings: 'FILL' 1">check_circle</span>
+                  <span class="text-text-muted leading-relaxed">{f}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div class="relative bg-card-dark rounded-2xl overflow-hidden border border-border-dark aspect-video flex items-center justify-center">
+            <div class="absolute inset-0 bg-cover bg-center opacity-30" style={`background-image: url('${product.images[0]}')`}></div>
+            <div class="relative z-10 text-center p-8">
+              <div class="w-16 h-16 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center mx-auto mb-4 cursor-pointer hover:bg-primary/30 transition-colors">
+                <span class="material-symbols-outlined text-primary text-3xl">play_arrow</span>
+              </div>
+              <p class="text-white font-semibold mb-1">Lắng nghe {product.name} biểu diễn</p>
+              <p class="text-text-muted text-sm">Xem đánh giá & Thử âm thanh</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Specs -->
+      <div id="tab-specs" class="tab-content hidden">
+        <div class="max-w-2xl">
+          <h2 class="text-white text-2xl font-bold mb-6">Thông số kỹ thuật</h2>
+          <div class="divide-y divide-border-dark">
+            {product.specs.map((spec) => (
+              <div class="flex items-center py-4 gap-4">
+                <span class="text-text-muted text-sm w-40 flex-shrink-0">{spec.label}</span>
+                <span class="text-white font-medium text-sm">{spec.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Reviews -->
+      <div id="tab-reviews" class="tab-content hidden">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+          <!-- Rating summary -->
+          <div class="bg-card-dark rounded-2xl border border-border-dark p-8 text-center">
+            <div class="text-primary text-6xl font-extrabold">{(product.rating * 0.96).toFixed(1)}</div>
+            <div class="flex justify-center gap-1 my-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1">star</span>
+              ))}
+            </div>
+            <p class="text-text-muted text-sm">Dựa trên {product.reviews} đánh giá</p>
+            <div class="mt-6 flex flex-col gap-2 text-left">
+              {[
+                { stars: 5, pct: 78 },
+                { stars: 4, pct: 15 },
+                { stars: 3, pct: 4 },
+                { stars: 2, pct: 2 },
+                { stars: 1, pct: 1 },
+              ].map((row) => (
+                <div class="flex items-center gap-2 text-xs text-text-muted">
+                  <span class="w-3">{row.stars}</span>
+                  <span class="material-symbols-outlined text-primary text-[12px]" style="font-variation-settings: 'FILL' 1">star</span>
+                  <div class="flex-1 bg-border-dark rounded-full h-1.5 overflow-hidden">
+                    <div class="bg-primary h-1.5 rounded-full" style={`width: ${row.pct}%`}></div>
+                  </div>
+                  <span class="w-8 text-right">{row.pct}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <!-- Sample reviews -->
+          <div class="md:col-span-2 flex flex-col gap-5">
+            {[
+              { name: 'Nguyễn Minh Tuấn', stars: 5, date: '15/01/2026', text: 'Tuyệt vời! Âm thanh ấm và rõ ràng hơn mong đợi. Chất lượng chế tác thủ công thực sự đỉnh cao. Tôi đã chơi nhiều loại đàn nhưng FlySky thực sự khác biệt.' },
+              { name: 'Trần Thị Thu Hà', stars: 5, date: '28/12/2025', text: 'Giao hàng nhanh, đóng gói kỹ. Cây đàn đẹp từ hình ảnh đến thực tế. Âm thanh cực kỳ trong sáng, cần đàn trơn tru dễ chơi. Xứng đáng với giá tiền!' },
+              { name: 'Lê Hoàng Nam', stars: 4, date: '10/12/2025', text: 'Nói chung là rất tốt. Âm thanh hay, thân đàn làm đẹp. Chỉ tiếc một điều là dây đàn mặc định không phải hàng cao cấp nhất nhưng đổi dây là ổn ngay.' },
+            ].map((review) => (
+              <div class="bg-card-dark rounded-xl border border-border-dark p-6">
+                <div class="flex items-start justify-between mb-3">
+                  <div>
+                    <p class="text-white font-semibold">{review.name}</p>
+                    <p class="text-text-muted text-xs">{review.date}</p>
+                  </div>
+                  <div class="flex gap-0.5">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <span class={`material-symbols-outlined text-[14px] ${i < review.stars ? 'text-primary' : 'text-border-dark'}`} style="font-variation-settings: 'FILL' 1">star</span>
+                    ))}
+                  </div>
+                </div>
+                <p class="text-text-muted text-sm leading-relaxed">{review.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Related Products -->
+  {related.length > 0 && (
+    <section class="py-16 bg-background-dark">
+      <div class="mx-auto max-w-7xl px-4 lg:px-10">
+        <div class="flex items-end justify-between mb-8">
+          <div>
+            <span class="text-primary font-bold tracking-widest uppercase text-sm">Gợi ý</span>
+            <h2 class="text-white text-2xl font-bold mt-1">Có thể bạn sẽ thích</h2>
+          </div>
+          <a class="hidden md:flex items-center gap-1 text-primary font-medium hover:text-white transition-colors text-sm" href="/shop">
+            Xem tất cả <span class="material-symbols-outlined text-sm">arrow_forward</span>
+          </a>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {related.map((rp) => (
+            <a
+              href={`/products/${rp.id}`}
+              class="group flex flex-col bg-card-dark rounded-xl overflow-hidden hover:shadow-[0_0_24px_rgba(244,140,37,0.18)] transition-all duration-300 border border-border-dark"
+            >
+              <div class="aspect-square w-full bg-[#2a2015] relative p-4 flex items-center justify-center overflow-hidden">
+                <div
+                  class="w-full h-full bg-contain bg-center bg-no-repeat group-hover:scale-110 transition-transform duration-500"
+                  style={`background-image: url("${rp.image}");`}
+                ></div>
+                {rp.badge && (
+                  <div class="absolute top-3 left-3 bg-primary text-background-dark text-[10px] font-bold px-2 py-1 rounded uppercase">
+                    {rp.badge}
+                  </div>
+                )}
+              </div>
+              <div class="p-5">
+                <span class="text-primary text-xs font-bold uppercase tracking-wider">{rp.categoryLabel}</span>
+                <h3 class="text-white text-base font-bold mt-1 group-hover:text-primary transition-colors">{rp.name}</h3>
+                <p class="text-text-muted text-xs mt-1">{rp.description}</p>
+                <div class="flex items-center justify-between mt-4 pt-3 border-t border-border-dark/50">
+                  <span class="text-white font-extrabold">{rp.priceFormatted}</span>
+                  <span class="text-primary text-sm font-medium flex items-center gap-1">
+                    Xem chi tiết <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                  </span>
+                </div>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <Footer />
+</Layout>
+
+<script>
+  import { addToCart } from '../../lib/cart';
+
+  // Image gallery
+  const thumbBtns = document.querySelectorAll<HTMLButtonElement>('.thumb-btn');
+  const mainImg = document.getElementById('main-img-el') as HTMLImageElement;
+
+  thumbBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const src = btn.dataset.src;
+      if (src && mainImg) {
+        mainImg.style.opacity = '0';
+        setTimeout(() => {
+          mainImg.src = src;
+          mainImg.style.opacity = '1';
+        }, 200);
+      }
+      thumbBtns.forEach((b) => {
+        b.classList.toggle('border-primary', b === btn);
+        b.classList.toggle('border-border-dark', b !== btn);
+      });
+    });
+  });
+
+  // Tabs
+  const tabBtns = document.querySelectorAll<HTMLButtonElement>('.tab-btn');
+  const tabContents = document.querySelectorAll<HTMLElement>('.tab-content');
+
+  tabBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      tabBtns.forEach((b) => {
+        b.classList.toggle('border-primary', b === btn);
+        b.classList.toggle('text-primary', b === btn);
+        b.classList.toggle('border-transparent', b !== btn);
+        b.classList.toggle('text-text-muted', b !== btn);
+      });
+      tabContents.forEach((c) => {
+        c.classList.toggle('hidden', c.id !== `tab-${target}`);
+      });
+    });
+  });
+
+  // Add to cart — thực sự lưu vào localStorage
+  const cartBtn = document.getElementById('btn-add-cart') as HTMLButtonElement;
+  cartBtn?.addEventListener('click', () => {
+    // Lấy product data từ data-attributes
+    const productId = cartBtn.dataset.productId!;
+    const productName = cartBtn.dataset.productName!;
+    const productCategory = cartBtn.dataset.productCategory!;
+    const productPrice = Number(cartBtn.dataset.productPrice);
+    const productPriceFormatted = cartBtn.dataset.productPriceFormatted!;
+    const productImage = cartBtn.dataset.productImage!;
+
+    addToCart({
+      id: productId,
+      name: productName,
+      categoryLabel: productCategory,
+      price: productPrice,
+      priceFormatted: productPriceFormatted,
+      image: productImage,
+    });
+
+    // UI feedback
+    const orig = cartBtn.innerHTML;
+    cartBtn.innerHTML = '<span class="material-symbols-outlined">check</span> Đã thêm! <a href="/cart" class="underline ml-1 font-extrabold">Xem giỏ →</a>';
+    cartBtn.classList.add('bg-green-600');
+    cartBtn.classList.remove('bg-primary');
+    setTimeout(() => {
+      cartBtn.innerHTML = orig;
+      cartBtn.classList.remove('bg-green-600');
+      cartBtn.classList.add('bg-primary');
+    }, 3000);
+  });
+</script>

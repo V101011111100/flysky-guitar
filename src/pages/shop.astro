@@ -1,0 +1,180 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+import { products } from '../data/products';
+
+const categories = [
+  { id: 'all', label: 'Tất cả' },
+  { id: 'electric', label: 'Guitar Điện' },
+  { id: 'acoustic', label: 'Guitar Acoustic' },
+  { id: 'bass', label: 'Guitar Bass' },
+];
+---
+
+<Layout title="Cửa hàng Guitar | FlySky" description="Khám phá bộ sưu tập guitar điện, acoustic và bass cao cấp tại FlySky. Chất lượng thủ công, âm thanh đỉnh cao.">
+  <Navbar />
+
+  <!-- Page Hero -->
+  <section class="relative py-20 bg-background-dark overflow-hidden">
+    <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(244,140,37,0.12)_0%,_transparent_60%)]"></div>
+    <div class="mx-auto max-w-7xl px-4 lg:px-10 relative z-10 text-center">
+      <span class="text-primary font-bold tracking-widest uppercase text-sm">FlySky Store</span>
+      <h1 class="text-white text-4xl lg:text-5xl font-extrabold mt-3 mb-4">Bộ Sưu Tập Guitar</h1>
+      <p class="text-text-muted text-lg max-w-xl mx-auto">Khám phá từng cây đàn được chế tác tỉ mỉ — từ guitar điện cháy bỏng đến acoustic thuần khiết và bass trầm ấm.</p>
+    </div>
+  </section>
+
+  <!-- Filter + Grid -->
+  <section class="py-14 bg-background-dark min-h-screen">
+    <div class="mx-auto max-w-7xl px-4 lg:px-10">
+
+      <!-- Category Filter Tabs -->
+      <div class="flex flex-wrap items-center gap-3 mb-10" id="filter-tabs">
+        {categories.map((cat) => (
+          <button
+            data-cat={cat.id}
+            class={`filter-btn px-5 py-2 rounded-full text-sm font-semibold border transition-all duration-200 ${cat.id === 'all' ? 'bg-primary text-background-dark border-primary' : 'bg-transparent text-white/70 border-border-dark hover:border-primary hover:text-primary'}`}
+          >
+            {cat.label}
+          </button>
+        ))}
+
+        <!-- Sort -->
+        <div class="ml-auto flex items-center gap-2">
+          <span class="text-text-muted text-sm hidden sm:inline">Sắp xếp:</span>
+          <select id="sort-select" class="bg-card-dark border border-border-dark text-white text-sm rounded-lg px-3 py-2 focus:ring-1 focus:ring-primary outline-none cursor-pointer">
+            <option value="default">Mặc định</option>
+            <option value="price-asc">Giá tăng dần</option>
+            <option value="price-desc">Giá giảm dần</option>
+            <option value="rating">Đánh giá cao nhất</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Results count -->
+      <p class="text-text-muted text-sm mb-6">Hiển thị <span id="count-num">{products.length}</span> sản phẩm</p>
+
+      <!-- Product Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" id="product-grid">
+        {products.map((product) => (
+          <a
+            href={`/products/${product.id}`}
+            class="product-card group flex flex-col bg-card-dark rounded-xl overflow-hidden hover:shadow-[0_0_24px_rgba(244,140,37,0.18)] transition-all duration-300 border border-border-dark cursor-pointer"
+            data-cat={product.category}
+            data-price={product.price}
+            data-rating={product.rating}
+          >
+            <!-- Image -->
+            <div class="aspect-square w-full bg-[#2a2015] relative p-4 flex items-center justify-center overflow-hidden">
+              <div
+                class="w-full h-full bg-contain bg-center bg-no-repeat group-hover:scale-110 transition-transform duration-500"
+                style={`background-image: url("${product.image}");`}
+              ></div>
+              {product.badge && (
+                <div class="absolute top-3 left-3 bg-primary text-background-dark text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">
+                  {product.badge}
+                </div>
+              )}
+              <!-- Hover overlay -->
+              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                <span class="bg-primary text-background-dark font-bold text-sm px-5 py-2.5 rounded-full flex items-center gap-2">
+                  <span class="material-symbols-outlined text-[18px]">visibility</span>
+                  Xem chi tiết
+                </span>
+              </div>
+            </div>
+
+            <!-- Info -->
+            <div class="p-4 flex flex-col gap-2 flex-grow">
+              <span class="text-primary text-xs font-bold uppercase tracking-wider">{product.categoryLabel}</span>
+              <h3 class="text-white text-base font-bold group-hover:text-primary transition-colors leading-tight">{product.name}</h3>
+              <p class="text-text-muted text-xs leading-relaxed">{product.description}</p>
+
+              <!-- Stars -->
+              <div class="flex items-center gap-1 mt-1">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <span class={`material-symbols-outlined text-[14px] ${i < product.rating ? 'text-primary' : 'text-border-dark'}`} style="font-variation-settings: 'FILL' 1">star</span>
+                ))}
+                <span class="text-text-muted text-xs ml-1">({product.reviews})</span>
+              </div>
+
+              <!-- Price + Arrow -->
+              <div class="mt-auto flex items-center justify-between pt-3 border-t border-border-dark/50">
+                <span class="text-white font-extrabold text-base">{product.priceFormatted}</span>
+                <span class="bg-border-dark group-hover:bg-primary text-white group-hover:text-background-dark rounded-full p-2 transition-colors">
+                  <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+                </span>
+              </div>
+            </div>
+          </a>
+        ))}
+      </div>
+
+      <!-- Empty state -->
+      <div id="empty-state" class="hidden text-center py-24">
+        <span class="material-symbols-outlined text-5xl text-border-dark mb-4 block">search_off</span>
+        <p class="text-text-muted text-lg">Không tìm thấy sản phẩm phù hợp.</p>
+      </div>
+    </div>
+  </section>
+
+  <Footer />
+</Layout>
+
+<script>
+  const filterBtns = document.querySelectorAll<HTMLButtonElement>('.filter-btn');
+  const cards = document.querySelectorAll<HTMLElement>('.product-card');
+  const countNum = document.getElementById('count-num');
+  const emptyState = document.getElementById('empty-state');
+  const grid = document.getElementById('product-grid');
+  const sortSelect = document.getElementById('sort-select') as HTMLSelectElement;
+
+  let currentCat = 'all';
+  let currentSort = 'default';
+
+  function applyFilters() {
+    const visible: HTMLElement[] = [];
+
+    cards.forEach((card) => {
+      const cat = card.dataset.cat || '';
+      const show = currentCat === 'all' || cat === currentCat;
+      (card as HTMLElement).style.display = show ? '' : 'none';
+      if (show) visible.push(card);
+    });
+
+    if (currentSort !== 'default' && grid) {
+      const sorted = [...grid.querySelectorAll<HTMLElement>('.product-card')].filter(c => c.style.display !== 'none');
+      sorted.sort((a, b) => {
+        if (currentSort === 'price-asc') return Number(a.dataset.price) - Number(b.dataset.price);
+        if (currentSort === 'price-desc') return Number(b.dataset.price) - Number(a.dataset.price);
+        if (currentSort === 'rating') return Number(b.dataset.rating) - Number(a.dataset.rating);
+        return 0;
+      });
+      sorted.forEach(card => grid.appendChild(card));
+    }
+
+    if (countNum) countNum.textContent = String(visible.length);
+    if (emptyState) emptyState.classList.toggle('hidden', visible.length > 0);
+  }
+
+  filterBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      currentCat = btn.dataset.cat || 'all';
+      filterBtns.forEach(b => {
+        const active = b.dataset.cat === currentCat;
+        b.classList.toggle('bg-primary', active);
+        b.classList.toggle('text-background-dark', active);
+        b.classList.toggle('border-primary', active);
+        b.classList.toggle('text-white/70', !active);
+        b.classList.toggle('bg-transparent', !active);
+      });
+      applyFilters();
+    });
+  });
+
+  sortSelect?.addEventListener('change', () => {
+    currentSort = sortSelect.value;
+    applyFilters();
+  });
+</script>

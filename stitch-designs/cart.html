@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html class="dark" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FlySky Guitar - Giỏ hàng &amp; Gửi yêu cầu tư vấn</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#f48c25",
+                        "primary-hover": "#d67615",
+                        "background-light": "#f8f7f5",
+                        "background-dark": "#221910",
+                        "card-dark": "#2f2519",
+                        "text-muted": "#cbad90",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style type="text/tailwindcss">
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #221910; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #493622; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #f48c25; 
+        }
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display antialiased selection:bg-primary selection:text-white">
+<header class="sticky top-0 z-50 w-full border-b border-[#493622] bg-background-dark/95 backdrop-blur supports-[backdrop-filter]:bg-background-dark/60">
+<div class="container mx-auto px-4 lg:px-8">
+<div class="flex h-16 items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/20 text-primary">
+<span class="material-symbols-outlined">music_note</span>
+</div>
+<span class="text-xl font-bold tracking-tight text-white">FlySky</span>
+</div>
+<nav class="hidden md:flex items-center gap-2 text-sm">
+<a class="font-medium text-white hover:text-primary transition-colors" href="#">Giỏ hàng</a>
+<span class="material-symbols-outlined text-[16px] text-text-muted">chevron_right</span>
+<span class="font-medium text-text-muted">Gửi yêu cầu tư vấn</span>
+</nav>
+<div class="flex items-center gap-2 text-text-muted text-xs font-medium bg-[#2f2519] px-3 py-1.5 rounded-full border border-[#493622]">
+<span class="material-symbols-outlined text-[16px]">verified_user</span>
+                    Yêu cầu bảo mật
+                </div>
+</div>
+</div>
+</header>
+<main class="min-h-[calc(100vh-64px)] py-8 lg:py-12">
+<div class="container mx-auto px-4 lg:px-8 max-w-7xl">
+<h1 class="text-3xl lg:text-4xl font-black tracking-tight mb-8 text-white">Giỏ hàng &amp; Gửi yêu cầu tư vấn <span class="text-lg font-medium text-text-muted align-middle ml-2">(3 sản phẩm)</span></h1>
+<div class="flex flex-col lg:flex-row gap-8 xl:gap-12 relative">
+<div class="flex-1 flex flex-col gap-6">
+<div class="group relative flex flex-col sm:flex-row gap-4 sm:items-center bg-card-dark rounded-xl p-4 border border-[#493622] transition-colors hover:border-primary/50">
+<div class="relative aspect-square sm:aspect-video w-full sm:w-40 shrink-0 overflow-hidden rounded-lg bg-black/50">
+<div class="absolute inset-0 bg-cover bg-center" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCyxE7vTYiCnwWuZg2hPkFJO9Bm8D9pRvdaEdvmmpR7tp0_YmxTfqMZIffzL38CXJYpt_kC9b1fh98cSGfuLzqueaxqtIKhBrPoLABlV6hdBHh7OnREcFGSzXfQ_bY-PsGgkXtLEzBr3XD4i9bXZ6KeAwtIJxlhYWgqvAdEZWwJPVbrIiDkv4csuB62QMdzHdfktfU_Yn3LZ5EHDeDuDQQ023jX7YTifMlvpnhU2_QNJfL8OpnuibQTzuhGRb2BdYY3leWsS34i2MnS');"></div>
+</div>
+<div class="flex flex-1 flex-col gap-2">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="text-lg font-bold leading-tight text-white group-hover:text-primary transition-colors">Stratosphere Pro</h3>
+<p class="text-sm text-text-muted mt-1">Hoàn thiện Sunburst, Thân Mahogany</p>
+</div>
+<p class="text-lg font-bold text-white">1.299,00$</p>
+</div>
+<div class="flex items-center justify-between mt-2">
+<div class="flex items-center rounded-lg bg-[#221910] border border-[#493622]">
+<button class="p-1 hover:text-primary transition-colors text-white">
+<span class="material-symbols-outlined text-[20px]">remove</span>
+</button>
+<input class="w-10 bg-transparent text-center text-sm font-medium text-white border-none focus:ring-0 p-0" readonly="" type="number" value="1"/>
+<button class="p-1 hover:text-primary transition-colors text-white">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+<button class="text-sm font-medium text-text-muted hover:text-red-400 transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+                                    Xóa
+                                </button>
+</div>
+</div>
+</div>
+<div class="group relative flex flex-col sm:flex-row gap-4 sm:items-center bg-card-dark rounded-xl p-4 border border-[#493622] transition-colors hover:border-primary/50">
+<div class="relative aspect-square sm:aspect-video w-full sm:w-40 shrink-0 overflow-hidden rounded-lg bg-black/50">
+<div class="absolute inset-0 bg-cover bg-center" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDA_IqbCa5GO_Ib1WXg_QeI0kwSyB8olxvHfj0VJd7hM405oXDIapY8W2AVTv4_FhbqeXKA5Yaltuv1llJSdC_VKGXiGnXOSheeU6vK4KcBVSv4BFAvsXwxWRudGZbmO1BDOrjWJ7EfZ3lM3eFaRN4bKOjIG9M90hF-lXRxmlf5xDjSMw0laCwXQogKIBMRVa9IewnkMVR1tq5iB5Wvw04aSBU3YrI8v6ziICigb-A8n47QZm6yQpGQI8bqmpoQk55blOMcva1NcGj3');"></div>
+</div>
+<div class="flex flex-1 flex-col gap-2">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="text-lg font-bold leading-tight text-white group-hover:text-primary transition-colors">Túi đựng cao cấp</h3>
+<p class="text-sm text-text-muted mt-1">Da đen cao cấp, Lớp đệm dày</p>
+</div>
+<p class="text-lg font-bold text-white">149,00$</p>
+</div>
+<div class="flex items-center justify-between mt-2">
+<div class="flex items-center rounded-lg bg-[#221910] border border-[#493622]">
+<button class="p-1 hover:text-primary transition-colors text-white">
+<span class="material-symbols-outlined text-[20px]">remove</span>
+</button>
+<input class="w-10 bg-transparent text-center text-sm font-medium text-white border-none focus:ring-0 p-0" readonly="" type="number" value="1"/>
+<button class="p-1 hover:text-primary transition-colors text-white">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+<button class="text-sm font-medium text-text-muted hover:text-red-400 transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+                                    Xóa
+                                </button>
+</div>
+</div>
+</div>
+<div class="group relative flex flex-col sm:flex-row gap-4 sm:items-center bg-card-dark rounded-xl p-4 border border-[#493622] transition-colors hover:border-primary/50">
+<div class="relative aspect-square sm:aspect-video w-full sm:w-40 shrink-0 overflow-hidden rounded-lg bg-black/50">
+<div class="absolute inset-0 bg-cover bg-center" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDUJOGmFrwtoIQQTvNqpoGAVRe57dY5NuFMFVFdJ13EwV66Bxs70vapOT7O8Xf3VJeUFZlpGfQ3bbmCIdpDdiUzA_6VUxp91s30vsRbWZXnl7IH_Mr3ijM3BSEYb-DKC0k7fVeXEN6lYrR2dPQf85YYGeig_pBiMNxv6QcszrNuZdj0-8K-ZSffTnkx_TBSkRx9Ow5-rHSg9wTsTFO9bMiGaxYO8Y4Wzhzid_Gtj7-bT56on9i9ocGGmRqfL23fAT6L3_TgueJ_jGiO');"></div>
+</div>
+<div class="flex flex-1 flex-col gap-2">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="text-lg font-bold leading-tight text-white group-hover:text-primary transition-colors">Bộ dây Nylon</h3>
+<p class="text-sm text-text-muted mt-1">Độ căng cao, Nylon trong suốt</p>
+</div>
+<p class="text-lg font-bold text-white">12,00$</p>
+</div>
+<div class="flex items-center justify-between mt-2">
+<div class="flex items-center rounded-lg bg-[#221910] border border-[#493622]">
+<button class="p-1 hover:text-primary transition-colors text-white">
+<span class="material-symbols-outlined text-[20px]">remove</span>
+</button>
+<input class="w-10 bg-transparent text-center text-sm font-medium text-white border-none focus:ring-0 p-0" readonly="" type="number" value="3"/>
+<button class="p-1 hover:text-primary transition-colors text-white">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+<button class="text-sm font-medium text-text-muted hover:text-red-400 transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+                                    Xóa
+                                </button>
+</div>
+</div>
+</div>
+</div>
+<div class="w-full lg:w-[400px] xl:w-[440px] shrink-0">
+<div class="sticky top-24 flex flex-col gap-6">
+<div class="bg-card-dark border border-[#493622] rounded-xl overflow-hidden shadow-2xl shadow-black/20">
+<div class="p-6 border-b border-[#493622]">
+<h2 class="text-xl font-bold text-white mb-4">Tóm tắt yêu cầu</h2>
+<div class="flex flex-col gap-3">
+<div class="flex justify-between text-text-muted">
+<span>Tạm tính</span>
+<span class="text-white font-medium">1.460,00$</span>
+</div>
+<div class="flex justify-between text-text-muted">
+<span>Giao hàng</span>
+<span class="text-green-400 font-medium">Miễn phí</span>
+</div>
+<div class="h-px bg-[#493622] my-2"></div>
+<div class="flex justify-between items-end">
+<span class="text-lg font-bold text-white">Tổng giá trị dự kiến</span>
+<div class="text-right">
+<span class="text-2xl font-black text-primary">1.460,00$</span>
+<p class="text-xs text-text-muted mt-0.5">Giá tham khảo</p>
+</div>
+</div>
+</div>
+</div>
+<div class="p-6 bg-[#281e15]">
+<h3 class="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">Thông tin liên hệ</h3>
+<form class="flex flex-col gap-4" onsubmit="event.preventDefault();">
+<div class="space-y-1">
+<label class="text-xs font-semibold text-white">Họ tên của bạn</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-text-muted text-[20px]">person</span>
+<input class="w-full bg-[#1e160f] border border-[#493622] rounded-lg py-2.5 pl-10 pr-4 text-white placeholder:text-text-muted/40 focus:ring-1 focus:ring-primary focus:border-primary" placeholder="Nhập họ và tên" required="" type="text"/>
+</div>
+</div>
+<div class="space-y-1">
+<label class="text-xs font-semibold text-white">Số điện thoại / Zalo</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-text-muted text-[20px]">call</span>
+<input class="w-full bg-[#1e160f] border border-[#493622] rounded-lg py-2.5 pl-10 pr-4 text-white placeholder:text-text-muted/40 focus:ring-1 focus:ring-primary focus:border-primary" placeholder="0xxx xxx xxx" required="" type="tel"/>
+</div>
+</div>
+<div class="space-y-1">
+<label class="text-xs font-semibold text-white">Ghi chú thêm (không bắt buộc)</label>
+<textarea class="w-full bg-[#1e160f] border border-[#493622] rounded-lg py-2.5 px-4 text-white placeholder:text-text-muted/40 focus:ring-1 focus:ring-primary focus:border-primary h-20 resize-none" placeholder="Lời nhắn cho Admin..."></textarea>
+</div>
+<button class="w-full bg-primary hover:bg-primary-hover text-white font-bold text-lg py-4 rounded-lg shadow-lg shadow-primary/20 transition-all transform active:scale-[0.98] mt-2 flex items-center justify-center gap-2 group">
+                                        Gửi yêu cầu tư vấn cho Admin
+                                        <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">send</span>
+</button>
+<p class="text-center text-xs text-text-muted/60 mt-1">Admin sẽ liên hệ lại với bạn sớm nhất có thể.</p>
+</form>
+</div>
+</div>
+<div class="bg-card-dark border border-[#493622] rounded-xl p-4 flex items-center gap-4">
+<div class="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined">support_agent</span>
+</div>
+<div>
+<h4 class="text-white font-bold text-sm">Cần hỗ trợ gấp?</h4>
+<p class="text-xs text-text-muted">Chat với chuyên gia tư vấn ngay.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+
+</body></html>

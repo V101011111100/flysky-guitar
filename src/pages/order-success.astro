@@ -1,0 +1,184 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Layout title="Đặt hàng thành công | FlySky Guitar" description="Cảm ơn bạn đã tin tưởng FlySky Guitar.">
+  <Navbar />
+
+  <section class="py-16 bg-background-dark min-h-screen flex items-center">
+    <div class="mx-auto max-w-3xl px-4 lg:px-10 w-full">
+
+      <!-- Success card -->
+      <div class="bg-card-dark border border-border-dark rounded-2xl overflow-hidden">
+
+        <!-- Header -->
+        <div class="relative bg-gradient-to-br from-primary/20 via-primary/5 to-transparent px-8 py-10 text-center border-b border-border-dark">
+          <!-- Animated check -->
+          <div class="w-20 h-20 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center mx-auto mb-5 success-icon">
+            <span class="material-symbols-outlined text-primary text-4xl" style="font-variation-settings: 'FILL' 1">check_circle</span>
+          </div>
+          <h1 class="text-white text-3xl font-extrabold mb-2">Thanh toán thành công!</h1>
+          <p class="text-text-muted leading-relaxed max-w-md mx-auto">
+            Cảm ơn bạn đã tin tưởng FlySky Guitar. Đơn hàng của bạn đã được tiếp nhận và đang được chuẩn bị để giao đến bạn.
+          </p>
+        </div>
+
+        <!-- Order info -->
+        <div class="px-8 py-6 border-b border-border-dark">
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+            <div>
+              <p class="text-text-muted text-xs uppercase font-bold tracking-wider mb-1">Mã đơn hàng</p>
+              <p class="text-primary font-extrabold text-lg" id="order-num">#FSG-XXXXX</p>
+            </div>
+            <div>
+              <p class="text-text-muted text-xs uppercase font-bold tracking-wider mb-1">Dự kiến giao hàng</p>
+              <p class="text-white font-bold" id="delivery-date">—</p>
+            </div>
+            <div class="col-span-2 md:col-span-1">
+              <p class="text-text-muted text-xs uppercase font-bold tracking-wider mb-1">Trạng thái</p>
+              <span class="inline-flex items-center gap-1.5 bg-green-500/10 border border-green-500/30 text-green-400 text-xs font-bold px-3 py-1 rounded-full">
+                <span class="w-1.5 h-1.5 rounded-full bg-green-400"></span>
+                Đã tiếp nhận
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ordered items -->
+        <div class="px-8 py-6 border-b border-border-dark">
+          <h2 class="text-white font-bold mb-4">Sản phẩm đã đặt</h2>
+          <div id="order-items" class="flex flex-col gap-3">
+            <!-- filled by JS -->
+          </div>
+          <div class="flex justify-between items-center mt-4 pt-4 border-t border-border-dark/50">
+            <span class="text-text-muted text-sm font-semibold">Tổng cộng</span>
+            <span class="text-primary font-extrabold text-xl" id="order-total">—</span>
+          </div>
+        </div>
+
+        <!-- Address & contact -->
+        <div class="px-8 py-6 border-b border-border-dark">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <p class="text-text-muted text-xs uppercase font-bold tracking-wider mb-2">Thông tin liên hệ</p>
+              <p class="text-white font-semibold" id="order-name">—</p>
+              <p class="text-text-muted text-sm" id="order-phone">—</p>
+              <p class="text-text-muted text-sm" id="order-email"></p>
+            </div>
+            <div>
+              <p class="text-text-muted text-xs uppercase font-bold tracking-wider mb-2">Địa chỉ giao hàng</p>
+              <p class="text-white font-medium text-sm leading-relaxed" id="order-address">—</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Email notice & CTA -->
+        <div class="px-8 py-6">
+          <div class="flex items-start gap-3 bg-background-dark border border-border-dark rounded-xl p-4 mb-6">
+            <span class="material-symbols-outlined text-primary flex-shrink-0">mail</span>
+            <p class="text-text-muted text-sm leading-relaxed">
+              Một email xác nhận đã được gửi đến địa chỉ của bạn. Chúng tôi sẽ liên hệ trong vòng <span class="text-white font-semibold">24 giờ</span> để xác nhận đơn hàng và tư vấn chi tiết.
+            </p>
+          </div>
+
+          <div class="flex flex-col sm:flex-row gap-3">
+            <a
+              href="/shop"
+              class="flex-1 flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-background-dark font-bold py-3.5 px-6 rounded-xl transition-all hover:shadow-[0_0_20px_rgba(244,140,37,0.4)] active:scale-95"
+            >
+              <span class="material-symbols-outlined">storefront</span>
+              Tiếp tục mua sắm
+            </a>
+            <a
+              href="/"
+              class="flex-1 flex items-center justify-center gap-2 bg-border-dark/50 hover:bg-border-dark text-white font-semibold py-3.5 px-6 rounded-xl border border-border-dark transition-all"
+            >
+              <span class="material-symbols-outlined">home</span>
+              Về trang chủ
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Help -->
+      <div class="mt-6 text-center text-sm text-text-muted">
+        Có câu hỏi? Gọi <a href="tel:18006969" class="text-primary font-bold hover:underline">1800 6969</a> (Thứ 2 - 7, 8:00 - 20:00)
+      </div>
+    </div>
+  </section>
+
+  <Footer />
+</Layout>
+
+<script>
+  import { formatPrice } from '../lib/cart';
+
+  const raw = sessionStorage.getItem('flysky_order');
+  if (!raw) {
+    // No order data → redirect to shop
+    window.location.href = '/shop';
+  } else {
+    const order = JSON.parse(raw);
+    sessionStorage.removeItem('flysky_order'); // clean up
+
+    // Populate order number
+    const numEl = document.getElementById('order-num');
+    if (numEl) numEl.textContent = '#' + order.orderNum;
+
+    // Delivery date: today + 3-5 days
+    const deliveryEl = document.getElementById('delivery-date');
+    if (deliveryEl) {
+      const d1 = new Date(); d1.setDate(d1.getDate() + 3);
+      const d2 = new Date(); d2.setDate(d2.getDate() + 5);
+      const fmt = (d: Date) => d.toLocaleDateString('vi-VN', { day: 'numeric', month: 'long' });
+      deliveryEl.textContent = `${fmt(d1)} – ${fmt(d2)}`;
+    }
+
+    // Items
+    const itemsEl = document.getElementById('order-items');
+    if (itemsEl && order.cart) {
+      itemsEl.innerHTML = order.cart.map((item: any) => `
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-lg bg-[#2a2015] flex-shrink-0 overflow-hidden p-1">
+            <img src="${item.image}" alt="${item.name}" class="w-full h-full object-contain" />
+          </div>
+          <div class="flex-1">
+            <p class="text-white text-sm font-semibold">${item.name}</p>
+            <p class="text-text-muted text-xs">${item.categoryLabel} × ${item.quantity}</p>
+          </div>
+          <span class="text-white font-bold text-sm">${formatPrice(item.price * item.quantity)}</span>
+        </div>
+      `).join('');
+    }
+
+    // Total
+    const totalEl = document.getElementById('order-total');
+    if (totalEl) totalEl.textContent = formatPrice(order.total);
+
+    // Contact info
+    const nameEl = document.getElementById('order-name');
+    const phoneEl = document.getElementById('order-phone');
+    const emailEl = document.getElementById('order-email');
+    const addressEl = document.getElementById('order-address');
+    if (nameEl) nameEl.textContent = order.name;
+    if (phoneEl) phoneEl.textContent = order.phone;
+    if (emailEl && order.email) emailEl.textContent = order.email;
+    if (addressEl) addressEl.textContent = order.address;
+  }
+
+  // Entrance animation
+  const icon = document.querySelector('.success-icon') as HTMLElement;
+  if (icon) {
+    icon.style.transform = 'scale(0)';
+    icon.style.opacity = '0';
+    icon.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease';
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        icon.style.transform = 'scale(1)';
+        icon.style.opacity = '1';
+      }, 200);
+    });
+  }
+</script>
