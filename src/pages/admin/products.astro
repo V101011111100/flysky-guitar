@@ -1,0 +1,119 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { products } from '../../data/products';
+---
+
+<AdminLayout title="Quản lý sản phẩm" activeNav="products">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+    <div>
+      <h1 style="font-size:22px;font-weight:800;color:#fff;margin-bottom:4px;">Quản lý sản phẩm</h1>
+      <p style="font-size:13px;color:#6b5a46;">Xem và quản lý toàn bộ catalog sản phẩm FlySky Guitar.</p>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <div style="display:flex;gap:4px;">
+        <button class="btn-icon view-btn active" id="grid-btn" title="Lưới">
+          <span class="material-symbols-outlined" style="font-size:18px;">grid_view</span>
+        </button>
+        <button class="btn-icon view-btn" id="list-btn" title="Danh sách">
+          <span class="material-symbols-outlined" style="font-size:18px;">list</span>
+        </button>
+      </div>
+      <button class="btn-primary">
+        <span class="material-symbols-outlined" style="font-size:18px;">add</span>
+        Thêm sản phẩm
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:center;">
+    <input class="admin-input" placeholder="Tìm sản phẩm..." style="max-width:200px;font-size:13px;" id="prod-search" />
+    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      {['all','electric','acoustic','bass','piano'].map(cat => (
+        <button class={`badge-filter ${cat === 'all' ? 'active' : ''}`} data-cat={cat}
+          style={`padding:6px 14px;border-radius:999px;border:1px solid #2a2015;background:transparent;color:#a08060;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.15s;font-family:'Manrope',sans-serif;`}>
+          {cat === 'all' ? 'Tất cả' : cat === 'electric' ? 'Guitar Điện' : cat === 'acoustic' ? 'Acoustic' : cat === 'bass' ? 'Bass' : 'Piano'}
+        </button>
+      ))}
+    </div>
+    <p style="font-size:12px;color:#6b5a46;margin-left:auto;" id="count-label">{products.length} sản phẩm</p>
+  </div>
+
+  <!-- Product grid -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;" id="prod-grid">
+    {products.map(p => (
+      <div class="card prod-card" data-cat={p.category} style="transition:all 0.2s;">
+        <!-- Product image -->
+        <div style={`height:160px;background-image:url('${p.image}');background-size:contain;background-position:center;background-repeat:no-repeat;background-color:#0e0a06;border-radius:10px 10px 0 0;position:relative;`}>
+          {p.badge && (
+            <span style="position:absolute;top:8px;left:8px;background:#f48c25;color:#0e0a06;font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;">{p.badge}</span>
+          )}
+          <div style="position:absolute;top:8px;right:8px;display:flex;gap:4px;">
+            <a href={`/products/${p.id}`} target="_blank" class="btn-icon" style="width:28px;height:28px;background:#1a120b;" title="Xem trang web">
+              <span class="material-symbols-outlined" style="font-size:14px;">open_in_new</span>
+            </a>
+          </div>
+        </div>
+        <div style="padding:14px;">
+          <p style="font-size:10px;font-weight:700;color:#f48c25;text-transform:uppercase;margin-bottom:4px;">{p.categoryLabel}</p>
+          <p style="font-size:13px;font-weight:700;color:#fff;margin-bottom:4px;line-height:1.3;">{p.name}</p>
+          <p style="font-size:11px;color:#6b5a46;margin-bottom:10px;">{p.subtitle}</p>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:14px;font-weight:800;color:#f48c25;">{p.priceFormatted}</span>
+            <div style="display:flex;gap:4px;">
+              <button class="btn-icon" style="width:28px;height:28px;" title="Sửa">
+                <span class="material-symbols-outlined" style="font-size:14px;">edit</span>
+              </button>
+              <button class="btn-icon" style="width:28px;height:28px;color:#ef4444;" title="Xoá">
+                <span class="material-symbols-outlined" style="font-size:14px;">delete</span>
+              </button>
+            </div>
+          </div>
+          <!-- Star rating -->
+          <div style="display:flex;gap:2px;margin-top:8px;">
+            {Array.from({length:5}).map((_,i) => (
+              <span class="material-symbols-outlined" style={`font-size:12px;color:${i < p.rating ? '#f48c25' : '#2a2015'};`} innerHTML="star"></span>
+            ))}
+            <span style="font-size:11px;color:#6b5a46;margin-left:4px;">({p.reviews})</span>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+</AdminLayout>
+
+<style>
+  .badge-filter.active { background: rgba(244,140,37,0.15) !important; color: #f48c25 !important; border-color: #f48c25 !important; }
+  .badge-filter:hover { border-color: #f48c25 !important; color: #f48c25 !important; }
+  .prod-card:hover { box-shadow: 0 0 20px rgba(244,140,37,0.12); transform: translateY(-2px); }
+</style>
+
+<script>
+  const filterBtns = document.querySelectorAll('.badge-filter');
+  const prodCards = document.querySelectorAll<HTMLElement>('.prod-card');
+  const searchInput = document.getElementById('prod-search') as HTMLInputElement;
+  const countLabel = document.getElementById('count-label')!;
+  let currentCat = 'all';
+
+  function filterProducts() {
+    const q = searchInput.value.toLowerCase();
+    let count = 0;
+    prodCards.forEach(card => {
+      const matchCat = currentCat === 'all' || card.dataset.cat === currentCat;
+      const matchQ = !q || card.textContent!.toLowerCase().includes(q);
+      card.style.display = matchCat && matchQ ? '' : 'none';
+      if (matchCat && matchQ) count++;
+    });
+    countLabel.textContent = `${count} sản phẩm`;
+  }
+
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentCat = (btn as HTMLElement).dataset.cat || 'all';
+      filterProducts();
+    });
+  });
+  searchInput.addEventListener('input', filterProducts);
+</script>

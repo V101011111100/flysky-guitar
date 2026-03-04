@@ -1,0 +1,128 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout title="Tin nhắn mẫu" activeNav="messages">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+    <div>
+      <h1 style="font-size:22px;font-weight:800;color:#fff;margin-bottom:4px;">Cấu hình tin nhắn mẫu</h1>
+      <p style="font-size:13px;color:#6b5a46;">Quản lý các mẫu trả lời nhanh cho đội tư vấn khách hàng.</p>
+    </div>
+    <button class="btn-primary" onclick="addTemplate()">
+      <span class="material-symbols-outlined" style="font-size:18px;">add</span>
+      Thêm mẫu mới
+    </button>
+  </div>
+
+  <div style="display:grid;grid-template-columns:240px 1fr;gap:20px;">
+    <!-- Categories sidebar -->
+    <div class="card" style="height:fit-content;">
+      <div class="card-header"><span class="card-title">Danh mục</span></div>
+      <div style="padding:8px;">
+        {[
+          { id: 'greeting', label: 'Chào hỏi', icon: 'waving_hand', count: 3 },
+          { id: 'product', label: 'Tư vấn sản phẩm', icon: 'library_music', count: 5 },
+          { id: 'warranty', label: 'Bảo hành', icon: 'verified_user', count: 2 },
+          { id: 'visit', label: 'Mời ghé showroom', icon: 'store', count: 2 },
+          { id: 'closing', label: 'Chốt đơn', icon: 'handshake', count: 4 },
+        ].map(c => (
+          <button
+            class="cat-btn"
+            data-cat={c.id}
+            style="width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;border:none;background:transparent;color:#a08060;cursor:pointer;font-family:'Manrope',sans-serif;font-size:13px;font-weight:600;transition:all 0.15s;text-align:left;margin-bottom:2px;"
+          >
+            <span class="material-symbols-outlined" style="font-size:18px;color:#f48c25;">{c.icon}</span>
+            <span style="flex:1;">{c.label}</span>
+            <span style="background:#2a2015;color:#a08060;font-size:10px;padding:1px 6px;border-radius:4px;">{c.count}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+
+    <!-- Template list -->
+    <div style="display:flex;flex-direction:column;gap:14px;" id="templates-list">
+      {[
+        { cat: 'greeting', title: 'Chào hỏi & Giới thiệu', content: 'Chào bạn, cảm ơn bạn đã quan tâm đến FlySky Guitar! Mình là tư vấn viên của FlySky, mình có thể hỗ trợ gì cho bạn ạ? 😊', tags: ['chào', 'mặc định'] },
+        { cat: 'greeting', title: 'Chào buổi sáng', content: 'Chào buổi sáng! FlySky Guitar chúc bạn một ngày tràn đầy âm nhạc và niềm vui. Bạn cần tư vấn gì không ạ?', tags: ['sáng'] },
+        { cat: 'product', title: 'Tư vấn giá sản phẩm', content: 'Dạ, sản phẩm [Tên SP] hiện đang có giá ưu đãi là [Giá]. Bên em đang có chương trình tặng kèm bao đàn và phụ kiện ạ.', tags: ['giá', 'ưu đãi'] },
+        { cat: 'product', title: 'So sánh sản phẩm', content: 'Với nhu cầu của bạn, em nghĩ có 2 lựa chọn phù hợp: [SP1] phù hợp cho [điểm mạnh] và [SP2] phù hợp cho [điểm mạnh]. Bạn ưu tiên yếu tố nào hơn ạ?', tags: ['so sánh'] },
+        { cat: 'warranty', title: 'Thông tin bảo hành chính hãng', content: 'Sản phẩm FlySky được bảo hành chính hãng 12 tháng đối với lỗi sản xuất. Miễn phí bảo trì, điều chỉnh trọn đời tại showroom FlySky ạ.', tags: ['bảo hành'] },
+        { cat: 'visit', title: 'Mời ghé showroom', content: 'Mời bạn ghé showroom FlySky tại [Địa chỉ] để trải nghiệm trực tiếp âm thanh và cảm nhận cây đàn nhé. Shop mở cửa từ 8h-21h, 7 ngày/tuần ạ.', tags: ['showroom', 'trải nghiệm'] },
+        { cat: 'closing', title: 'Xác nhận đơn hàng', content: 'Tuyệt vời! Em đã nhận thông tin đặt hàng của bạn. Đơn hàng sẽ được xác nhận trong vòng 30 phút và giao trong 2-3 ngày làm việc ạ.', tags: ['xác nhận', 'đặt hàng'] },
+      ].map((t, i) => (
+        <div class="card template-card" data-cat={t.cat}
+          style="transition:all 0.2s;"
+          onmouseenter="this.style.transform='translateX(4px)';this.style.borderColor='rgba(244,140,37,0.3)'"
+          onmouseleave="this.style.transform='';this.style.borderColor=''">
+          <div class="card-header" style="border-bottom:none;padding-bottom:8px;">
+            <span style="font-size:14px;font-weight:700;color:#fff;">{t.title}</span>
+            <div style="display:flex;gap:6px;">
+              <button class="btn-icon" style="width:28px;height:28px;" title="Sao chép" onclick={`copyTemplate(${i})`}>
+                <span class="material-symbols-outlined" style="font-size:15px;">content_copy</span>
+              </button>
+              <button class="btn-icon" style="width:28px;height:28px;" title="Chỉnh sửa">
+                <span class="material-symbols-outlined" style="font-size:15px;">edit</span>
+              </button>
+              <button class="btn-icon" style="width:28px;height:28px;color:#ef4444;" title="Xoá">
+                <span class="material-symbols-outlined" style="font-size:15px;">delete</span>
+              </button>
+            </div>
+          </div>
+          <div style="padding:0 20px 16px;">
+            <p style="font-size:13px;color:#a08060;line-height:1.6;background:#0e0a06;border-radius:8px;padding:12px;">{t.content}</p>
+            <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
+              {t.tags.map(tag => (
+                <span style="background:#1a120b;border:1px solid #2a2015;color:#6b5a46;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;">#{tag}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  const catBtns = document.querySelectorAll('.cat-btn');
+  const templateCards = document.querySelectorAll<HTMLElement>('.template-card');
+
+  let activeCat = 'all';
+
+  catBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      catBtns.forEach(b => { (b as HTMLElement).style.background = 'transparent'; (b as HTMLElement).style.color = '#a08060'; });
+      (btn as HTMLElement).style.background = 'rgba(244,140,37,0.1)'; (btn as HTMLElement).style.color = '#f48c25';
+      activeCat = (btn as HTMLElement).dataset.cat || 'all';
+      templateCards.forEach(card => {
+        const match = activeCat === 'all' || card.dataset.cat === activeCat;
+        card.style.display = match ? '' : 'none';
+      });
+    });
+  });
+
+  const templateContents = [
+    'Chào bạn, cảm ơn bạn đã quan tâm đến FlySky Guitar! Mình là tư vấn viên của FlySky...',
+    'Chào buổi sáng! FlySky Guitar chúc bạn một ngày tràn đầy âm nhạc và niềm vui...',
+    'Dạ, sản phẩm [Tên SP] hiện đang có giá ưu đãi là [Giá]...',
+    'Với nhu cầu của bạn, em nghĩ có 2 lựa chọn phù hợp...',
+    'Sản phẩm FlySky được bảo hành chính hãng 12 tháng...',
+    'Mời bạn ghé showroom FlySky tại [Địa chỉ]...',
+    'Tuyệt vời! Em đã nhận thông tin đặt hàng của bạn...',
+  ];
+
+  function copyTemplate(i: number) {
+    navigator.clipboard.writeText(templateContents[i]).then(() => {
+      const btn = document.querySelectorAll('[title="Sao chép"]')[i];
+      const icon = btn.querySelector('.material-symbols-outlined')!;
+      icon.textContent = 'check';
+      setTimeout(() => { icon.textContent = 'content_copy'; }, 1500);
+    });
+  }
+
+  function addTemplate() {
+    alert('Tính năng thêm mẫu mới — sẽ tích hợp API trong phiên bản tiếp theo.');
+  }
+
+  (window as any).copyTemplate = copyTemplate;
+  (window as any).addTemplate = addTemplate;
+</script>

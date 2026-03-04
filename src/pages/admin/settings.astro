@@ -1,0 +1,183 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout title="Cài đặt hệ thống" activeNav="settings">
+  <div style="margin-bottom:28px;">
+    <h1 style="font-size:22px;font-weight:800;color:#fff;margin-bottom:4px;">Quản lý thuộc tính hệ thống</h1>
+    <p style="font-size:13px;color:#6b5a46;">Cấu hình thông tin cửa hàng, chính sách và hoạt động hệ thống.</p>
+  </div>
+
+  <!-- Section tabs -->
+  <div style="display:flex;gap:4px;margin-bottom:24px;border-bottom:1px solid #2a2015;padding-bottom:0;">
+    {[
+      { id: 'store', label: 'Thông tin cửa hàng', icon: 'store' },
+      { id: 'policy', label: 'Chính sách', icon: 'policy' },
+      { id: 'admin', label: 'Tài khoản admin', icon: 'manage_accounts' },
+      { id: 'system', label: 'Hệ thống', icon: 'tune' },
+    ].map((t, i) => (
+      <button
+        class="tab-btn"
+        data-tab={t.id}
+        style={`display:flex;align-items:center;gap:6px;padding:10px 16px;border:none;background:transparent;font-family:'Manrope',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s;color:#6b5a46;${i===0?'color:#f48c25;border-bottom-color:#f48c25;':''}`}
+        onclick={`switchTab('${t.id}')`}
+      >
+        <span class="material-symbols-outlined" style="font-size:17px;">{t.icon}</span>
+        {t.label}
+      </button>
+    ))}
+  </div>
+
+  <!-- Tab: Store info -->
+  <div id="tab-store" class="tab-content">
+    <div style="max-width:680px;display:flex;flex-direction:column;gap:20px;">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Thông tin cửa hàng</span></div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:16px;">
+          {[
+            { label: 'Tên cửa hàng', value: 'FlySky Guitar', type: 'text' },
+            { label: 'Email liên hệ', value: 'contact@flyskyguitar.vn', type: 'email' },
+            { label: 'Số điện thoại', value: '028 1234 5678', type: 'tel' },
+            { label: 'Địa chỉ showroom', value: '123 Nguyễn Huệ, Quận 1, TP.HCM', type: 'text' },
+            { label: 'Giờ mở cửa', value: '08:00 - 21:00 (Thứ 2 - Chủ nhật)', type: 'text' },
+          ].map(f => (
+            <div>
+              <label style="display:block;font-size:11px;font-weight:700;color:#6b5a46;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">{f.label}</label>
+              <input class="admin-input" type={f.type} value={f.value} />
+            </div>
+          ))}
+          <button class="btn-primary" style="width:fit-content;">
+            <span class="material-symbols-outlined" style="font-size:17px;">save</span>
+            Lưu thay đổi
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab: Policy -->
+  <div id="tab-policy" class="tab-content" style="display:none;">
+    <div style="max-width:680px;display:flex;flex-direction:column;gap:20px;">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Chính sách vận chuyển & Bảo hành</span></div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:16px;">
+          {[
+            { label: 'Miễn phí vận chuyển từ', value: '5.000.000 ₫' },
+            { label: 'Thời gian bảo hành tiêu chuẩn', value: '12 tháng' },
+            { label: 'Chính sách hoàn trả', value: '30 ngày' },
+          ].map(f => (
+            <div>
+              <label style="display:block;font-size:11px;font-weight:700;color:#6b5a46;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">{f.label}</label>
+              <input class="admin-input" type="text" value={f.value} />
+            </div>
+          ))}
+          <div>
+            <label style="display:block;font-size:11px;font-weight:700;color:#6b5a46;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Điều khoản dịch vụ</label>
+            <textarea class="admin-input" rows="5" style="resize:vertical;">FlySky Guitar cam kết cung cấp sản phẩm chính hãng, chất lượng cao. Mọi sản phẩm đều được kiểm tra kỹ lưỡng trước khi giao đến tay khách hàng.</textarea>
+          </div>
+          <button class="btn-primary" style="width:fit-content;">
+            <span class="material-symbols-outlined" style="font-size:17px;">save</span>
+            Lưu thay đổi
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab: Admin account -->
+  <div id="tab-admin" class="tab-content" style="display:none;">
+    <div style="max-width:480px;">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Thông tin tài khoản quản trị</span></div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:16px;">
+          <div style="display:flex;align-items:center;gap:16px;padding:16px;background:#0e0a06;border-radius:10px;">
+            <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#f48c25,#e07b10);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#0e0a06;">A</div>
+            <div>
+              <p style="font-weight:700;color:#fff;">Admin FlySky</p>
+              <p style="font-size:12px;color:#6b5a46;">admin@flyskyguitar.vn</p>
+            </div>
+          </div>
+          {[
+            { label: 'Tên hiển thị', value: 'Admin FlySky', type: 'text' },
+            { label: 'Email', value: 'admin@flyskyguitar.vn', type: 'email' },
+            { label: 'Tên đăng nhập', value: 'admin', type: 'text' },
+          ].map(f => (
+            <div>
+              <label style="display:block;font-size:11px;font-weight:700;color:#6b5a46;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">{f.label}</label>
+              <input class="admin-input" type={f.type} value={f.value} />
+            </div>
+          ))}
+          <div>
+            <p style="font-size:11px;font-weight:700;color:#f48c25;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;padding-top:8px;border-top:1px solid #2a2015;">Đổi mật khẩu</p>
+            {['Mật khẩu hiện tại', 'Mật khẩu mới', 'Xác nhận mật khẩu mới'].map(l => (
+              <div style="margin-bottom:10px;">
+                <label style="display:block;font-size:11px;font-weight:700;color:#6b5a46;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">{l}</label>
+                <input class="admin-input" type="password" />
+              </div>
+            ))}
+          </div>
+          <button class="btn-primary" style="width:fit-content;">
+            <span class="material-symbols-outlined" style="font-size:17px;">save</span>
+            Cập nhật tài khoản
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab: System -->
+  <div id="tab-system" class="tab-content" style="display:none;">
+    <div style="max-width:640px;display:flex;flex-direction:column;gap:16px;">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Thông báo hệ thống</span></div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
+          {[
+            { label: 'Thông báo tư vấn mới', desc: 'Nhận thông báo khi có yêu cầu tư vấn mới', on: true },
+            { label: 'Cảnh báo sắp hết hàng', desc: 'Thông báo khi tồn kho < 5 sản phẩm', on: true },
+            { label: 'Báo cáo doanh thu hàng tuần', desc: 'Gửi tổng kết mỗi thứ 2 hàng tuần', on: false },
+            { label: 'Bảo trì hệ thống', desc: 'Nhận thông báo khi cần bảo trì', on: true },
+          ].map(s => (
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:#0e0a06;border-radius:10px;">
+              <div>
+                <p style="font-size:13px;font-weight:600;color:#fff;">{s.label}</p>
+                <p style="font-size:11px;color:#6b5a46;">{s.desc}</p>
+              </div>
+              <button
+                class="toggle-btn"
+                data-on={s.on}
+                style={`width:44px;height:24px;border-radius:999px;border:none;cursor:pointer;transition:background 0.2s;position:relative;background:${s.on ? '#f48c25' : '#2a2015'};`}
+                onclick="toggleSwitch(this)"
+              >
+                <span style={`position:absolute;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left 0.2s;left:${s.on ? '23px' : '3px'};`}></span>
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  function switchTab(id: string) {
+    document.querySelectorAll('.tab-content').forEach((el: any) => el.style.display = 'none');
+    document.querySelectorAll('.tab-btn').forEach((btn: any) => {
+      btn.style.color = '#6b5a46'; btn.style.borderBottomColor = 'transparent';
+    });
+    const tab = document.getElementById(`tab-${id}`);
+    if (tab) tab.style.display = '';
+    const activeBtn = document.querySelector(`.tab-btn[data-tab="${id}"]`) as HTMLElement;
+    if (activeBtn) { activeBtn.style.color = '#f48c25'; activeBtn.style.borderBottomColor = '#f48c25'; }
+  }
+
+  function toggleSwitch(btn: HTMLElement) {
+    const isOn = btn.dataset.on === 'true';
+    btn.dataset.on = String(!isOn);
+    btn.style.background = !isOn ? '#f48c25' : '#2a2015';
+    const dot = btn.querySelector('span') as HTMLElement;
+    dot.style.left = !isOn ? '23px' : '3px';
+  }
+
+  (window as any).switchTab = switchTab;
+  (window as any).toggleSwitch = toggleSwitch;
+</script>

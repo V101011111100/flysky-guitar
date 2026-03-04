@@ -1,0 +1,121 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { products } from '../../data/products';
+---
+
+<AdminLayout title="Kho hàng" activeNav="inventory">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+    <div>
+      <h1 style="font-size:22px;font-weight:800;color:#fff;margin-bottom:4px;">Quản lý kho hàng</h1>
+      <p style="font-size:13px;color:#6b5a46;">Theo dõi tồn kho và cập nhật số lượng sản phẩm.</p>
+    </div>
+    <button class="btn-primary">
+      <span class="material-symbols-outlined" style="font-size:18px;">add</span>
+      Nhập hàng mới
+    </button>
+  </div>
+
+  <!-- Alert: low stock -->
+  <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+    <span class="material-symbols-outlined" style="color:#ef4444;font-size:20px;" >warning</span>
+    <span style="font-size:13px;color:#ef4444;font-weight:600;">5 sản phẩm sắp hết hàng — cần nhập thêm.</span>
+  </div>
+
+  <!-- Filters -->
+  <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+    <input class="admin-input" placeholder="Tìm sản phẩm..." style="max-width:220px;font-size:13px;" id="inv-search" />
+    <select class="admin-select" id="cat-filter">
+      <option value="all">Tất cả danh mục</option>
+      <option value="electric">Guitar Điện</option>
+      <option value="acoustic">Guitar Acoustic</option>
+      <option value="bass">Guitar Bass</option>
+      <option value="piano">Piano</option>
+    </select>
+    <select class="admin-select" id="stock-filter">
+      <option value="all">Tất cả mức tồn</option>
+      <option value="low">Sắp hết (&lt;5)</option>
+      <option value="ok">Còn hàng</option>
+    </select>
+  </div>
+
+  <!-- Inventory table -->
+  <div class="card">
+    <div style="overflow-x:auto;">
+      <table class="admin-table" id="inv-table">
+        <thead>
+          <tr>
+            <th>Sản phẩm</th>
+            <th>Danh mục</th>
+            <th>Giá bán</th>
+            <th>Tồn kho</th>
+            <th>Trạng thái</th>
+            <th>Cập nhật</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {products.map((p, i) => {
+            const stock = [15, 3, 8, 2, 22, 7, 4, 11, 18, 1, 9, 6][i % 12];
+            const isLow = stock < 5;
+            return (
+              <tr data-cat={p.category} data-stock={isLow ? 'low' : 'ok'} class="inv-row">
+                <td>
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    <div style={`width:36px;height:36px;border-radius:8px;background-image:url('${p.image}');background-size:contain;background-position:center;background-repeat:no-repeat;background-color:#0e0a06;flex-shrink:0;`}></div>
+                    <span style="font-weight:600;color:#fff;">{p.name}</span>
+                  </div>
+                </td>
+                <td><span style="font-size:11px;color:#f48c25;font-weight:700;">{p.categoryLabel}</span></td>
+                <td style="font-weight:700;color:#fff;">{p.priceFormatted}</td>
+                <td>
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    <input
+                      type="number"
+                      value={stock}
+                      min="0"
+                      class="admin-input"
+                      style={`width:70px;text-align:center;color:${isLow ? '#ef4444' : '#10b981'};font-weight:700;`}
+                    />
+                  </div>
+                </td>
+                <td><span class={`badge ${isLow ? 'badge-low' : 'badge-ok'}`}>{isLow ? '⚠ Sắp hết' : '✅ Còn hàng'}</span></td>
+                <td style="font-size:11px;color:#6b5a46;">vừa cập nhật</td>
+                <td>
+                  <div style="display:flex;gap:6px;">
+                    <button class="btn-icon" title="Lưu">
+                      <span class="material-symbols-outlined" style="font-size:15px;">save</span>
+                    </button>
+                    <button class="btn-icon" title="Xem sản phẩm">
+                      <span class="material-symbols-outlined" style="font-size:15px;">open_in_new</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  const search = document.getElementById('inv-search') as HTMLInputElement;
+  const catF = document.getElementById('cat-filter') as HTMLSelectElement;
+  const stockF = document.getElementById('stock-filter') as HTMLSelectElement;
+
+  function filterInv() {
+    const q = search.value.toLowerCase();
+    const cat = catF.value;
+    const stock = stockF.value;
+    document.querySelectorAll('.inv-row').forEach((row: any) => {
+      const matchQ = !q || row.textContent.toLowerCase().includes(q);
+      const matchCat = cat === 'all' || row.dataset.cat === cat;
+      const matchStock = stock === 'all' || row.dataset.stock === stock;
+      row.style.display = matchQ && matchCat && matchStock ? '' : 'none';
+    });
+  }
+  search.addEventListener('input', filterInv);
+  catF.addEventListener('change', filterInv);
+  stockF.addEventListener('change', filterInv);
+</script>

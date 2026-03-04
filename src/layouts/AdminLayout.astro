@@ -1,0 +1,226 @@
+---
+interface Props {
+  title?: string;
+  activeNav?: string;
+}
+const { title = 'Admin', activeNav = 'dashboard' } = Astro.props;
+
+const navItems = [
+  { id: 'dashboard',     label: 'Tổng quan',           icon: 'dashboard',       href: '/admin' },
+  { id: 'products',      label: 'Quản lý sản phẩm',    icon: 'library_music',   href: '/admin/products' },
+  { id: 'inventory',     label: 'Kho hàng',             icon: 'inventory_2',     href: '/admin/inventory' },
+  { id: 'orders',        label: 'Đơn hàng',             icon: 'shopping_bag',    href: '/admin/orders', badge: 12 },
+  { id: 'consultations', label: 'Tư vấn khách hàng',   icon: 'support_agent',   href: '/admin/consultations', badge: 5 },
+  { id: 'messages',      label: 'Tin nhắn mẫu',         icon: 'chat_bubble',     href: '/admin/messages' },
+  { id: 'settings',      label: 'Cài đặt hệ thống',    icon: 'settings',        href: '/admin/settings' },
+];
+---
+
+<!doctype html>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title} | FlySky Admin</title>
+  <link rel="icon" href="/favicon.ico" />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-family: 'Manrope', sans-serif; }
+    body { background: #0e0a06; color: #fff; display: flex; min-height: 100vh; }
+
+    /* Sidebar */
+    #admin-sidebar {
+      width: 256px; flex-shrink: 0;
+      background: #120d08;
+      border-right: 1px solid #2a2015;
+      display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0; bottom: 0;
+      z-index: 40; overflow-y: auto;
+      transition: transform 0.3s ease;
+    }
+    .sidebar-logo { padding: 20px; border-bottom: 1px solid #2a2015; }
+    .sidebar-logo a { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .sidebar-logo img { height: 32px; width: auto; }
+    .sidebar-logo span { font-size: 15px; font-weight: 800; color: #fff; }
+    .sidebar-label { padding: 20px 16px 8px; font-size: 10px; font-weight: 700; color: #6b5a46; letter-spacing: 0.1em; text-transform: uppercase; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; margin: 2px 8px; border-radius: 10px; text-decoration: none; color: #a08060; font-size: 13px; font-weight: 600; transition: all 0.15s; position: relative; }
+    .nav-item:hover { background: #1e160d; color: #fff; }
+    .nav-item.active { background: linear-gradient(135deg, rgba(244,140,37,0.2), rgba(244,140,37,0.1)); color: #f48c25; }
+    .nav-item.active::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 3px; height: 60%; background: #f48c25; border-radius: 0 2px 2px 0; }
+    .nav-icon { font-size: 20px; flex-shrink: 0; }
+    .nav-badge { margin-left: auto; background: #f48c25; color: #0e0a06; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 999px; min-width: 18px; text-align: center; }
+    .sidebar-footer { margin-top: auto; padding: 16px; border-top: 1px solid #2a2015; }
+    .admin-user { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 10px; }
+    .admin-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #f48c25, #e07b10); display: flex; align-items: center; justify-content: center; font-weight: 800; color: #0e0a06; font-size: 14px; flex-shrink: 0; }
+    .admin-info { flex: 1; min-width: 0; }
+    .admin-name { font-size: 13px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .admin-email { font-size: 11px; color: #6b5a46; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .logout-btn { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 8px; color: #a08060; font-size: 12px; font-weight: 600; background: none; border: none; cursor: pointer; width: 100%; margin-top: 6px; transition: all 0.15s; text-decoration: none; }
+    .logout-btn:hover { background: rgba(239,68,68,0.1); color: #ef4444; }
+
+    /* Main content */
+    #admin-main { margin-left: 256px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+    /* Top bar */
+    .admin-topbar { background: #120d08; border-bottom: 1px solid #2a2015; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 30; }
+    .breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #6b5a46; }
+    .breadcrumb a { color: #6b5a46; text-decoration: none; transition: color 0.15s; }
+    .breadcrumb a:hover { color: #f48c25; }
+    .breadcrumb span.sep { color: #3a2d20; }
+    .breadcrumb span.current { color: #fff; font-weight: 600; }
+
+    /* Page content */
+    .admin-content { flex: 1; padding: 24px; overflow-x: hidden; }
+
+    /* Stats card */
+    .stat-card { background: #1a120b; border: 1px solid #2a2015; border-radius: 14px; padding: 20px; }
+    .stat-label { font-size: 12px; font-weight: 600; color: #6b5a46; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+    .stat-value { font-size: 28px; font-weight: 800; color: #fff; }
+    .stat-sub { font-size: 12px; color: #6b5a46; margin-top: 4px; }
+    .stat-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+
+    /* Table */
+    .admin-table { width: 100%; border-collapse: collapse; }
+    .admin-table th { text-align: left; padding: 10px 14px; font-size: 11px; font-weight: 700; color: #6b5a46; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #2a2015; }
+    .admin-table td { padding: 14px; border-bottom: 1px solid #1a120b; font-size: 13px; color: #ccc; }
+    .admin-table tr:hover td { background: rgba(244,140,37,0.03); }
+    .admin-table tr:last-child td { border-bottom: none; }
+
+    /* Badge status */
+    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+    .badge-pending  { background: rgba(245,158,11,0.15); color: #f59e0b; }
+    .badge-contacted { background: rgba(59,130,246,0.15); color: #3b82f6; }
+    .badge-closed   { background: rgba(16,185,129,0.15); color: #10b981; }
+    .badge-low      { background: rgba(239,68,68,0.15); color: #ef4444; }
+    .badge-ok       { background: rgba(16,185,129,0.15); color: #10b981; }
+
+    /* Card */
+    .card { background: #1a120b; border: 1px solid #2a2015; border-radius: 14px; overflow: hidden; }
+    .card-header { padding: 18px 20px; border-bottom: 1px solid #2a2015; display: flex; align-items: center; justify-content: space-between; }
+    .card-title { font-size: 15px; font-weight: 700; color: #fff; }
+    .card-body { padding: 20px; }
+
+    /* Button */
+    .btn-primary { background: #f48c25; color: #0e0a06; font-weight: 700; font-size: 13px; padding: 8px 18px; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s; text-decoration: none; }
+    .btn-primary:hover { background: #e07b10; box-shadow: 0 0 16px rgba(244,140,37,0.4); }
+    .btn-secondary { background: transparent; color: #a08060; font-weight: 600; font-size: 13px; padding: 8px 16px; border-radius: 8px; border: 1px solid #2a2015; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s; text-decoration: none; }
+    .btn-secondary:hover { border-color: #f48c25; color: #f48c25; }
+    .btn-icon { width: 32px; height: 32px; border-radius: 8px; border: 1px solid #2a2015; background: transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; color: #a08060; transition: all 0.15s; }
+    .btn-icon:hover { border-color: #f48c25; color: #f48c25; }
+
+    /* Input */
+    .admin-input { background: #0e0a06; border: 1px solid #2a2015; border-radius: 8px; padding: 8px 12px; color: #fff; font-size: 13px; font-family: 'Manrope', sans-serif; outline: none; transition: border 0.15s; width: 100%; }
+    .admin-input:focus { border-color: #f48c25; }
+    .admin-input::placeholder { color: #6b5a46; }
+    .admin-select { background: #0e0a06; border: 1px solid #2a2015; border-radius: 8px; padding: 8px 12px; color: #fff; font-size: 13px; font-family: 'Manrope', sans-serif; outline: none; cursor: pointer; }
+    .admin-select:focus { border: 1px solid #f48c25; }
+
+    /* Mobile sidebar toggle */
+    #sidebar-toggle { display: none; }
+    @media (max-width: 768px) {
+      #admin-sidebar { transform: translateX(-100%); }
+      #admin-sidebar.open { transform: translateX(0); }
+      #admin-main { margin-left: 0; }
+      #sidebar-toggle { display: flex; }
+      .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 39; }
+      .overlay.show { display: block; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside id="admin-sidebar">
+    <div class="sidebar-logo">
+      <a href="/admin">
+        <img src="/logo.svg" alt="FlySky Guitar" />
+        <span>FlySky Guitar</span>
+      </a>
+    </div>
+
+    <div style="flex:1; overflow-y:auto; padding: 8px 0;">
+      <p class="sidebar-label">Menu chính</p>
+      {navItems.slice(0, 6).map(item => (
+        <a href={item.href} class={`nav-item ${activeNav === item.id ? 'active' : ''}`}>
+          <span class="material-symbols-outlined nav-icon">{item.icon}</span>
+          {item.label}
+          {item.badge ? <span class="nav-badge">{item.badge}</span> : null}
+        </a>
+      ))}
+      <p class="sidebar-label">Hệ thống</p>
+      <a href="/admin/settings" class={`nav-item ${activeNav === 'settings' ? 'active' : ''}`}>
+        <span class="material-symbols-outlined nav-icon">settings</span>
+        Cài đặt hệ thống
+      </a>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="admin-user">
+        <div class="admin-avatar">A</div>
+        <div class="admin-info">
+          <div class="admin-name">Admin FlySky</div>
+          <div class="admin-email">admin@flyskyguitar.vn</div>
+        </div>
+      </div>
+      <button class="logout-btn" id="logout-btn" onclick="logout()">
+        <span class="material-symbols-outlined" style="font-size:18px">logout</span>
+        Đăng xuất
+      </button>
+    </div>
+  </aside>
+
+  <!-- Overlay mobile -->
+  <div class="overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+  <!-- Main -->
+  <main id="admin-main">
+    <div class="admin-topbar">
+      <div style="display:flex;align-items:center;gap:14px;">
+        <button id="sidebar-toggle" class="btn-icon" onclick="toggleSidebar()" style="border:none;">
+          <span class="material-symbols-outlined">menu</span>
+        </button>
+        <nav class="breadcrumb">
+          <a href="/admin">Quản trị</a>
+          <span class="sep">›</span>
+          <span class="current">{title}</span>
+        </nav>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <a href="/" target="_blank" class="btn-secondary" style="font-size:12px;padding:6px 12px;">
+          <span class="material-symbols-outlined" style="font-size:16px;">open_in_new</span>
+          Xem trang web
+        </a>
+        <div class="admin-avatar" style="width:34px;height:34px;font-size:13px;cursor:pointer;">A</div>
+      </div>
+    </div>
+
+    <div class="admin-content">
+      <slot />
+    </div>
+  </main>
+
+  <script>
+    // Auth guard
+    if (!sessionStorage.getItem('flysky_admin_token')) {
+      window.location.href = '/admin/login';
+    }
+
+    function toggleSidebar() {
+      document.getElementById('admin-sidebar')!.classList.toggle('open');
+      document.getElementById('sidebar-overlay')!.classList.toggle('show');
+    }
+    function closeSidebar() {
+      document.getElementById('admin-sidebar')!.classList.remove('open');
+      document.getElementById('sidebar-overlay')!.classList.remove('show');
+    }
+    function logout() {
+      sessionStorage.removeItem('flysky_admin_token');
+      window.location.href = '/admin/login';
+    }
+    (window as any).toggleSidebar = toggleSidebar;
+    (window as any).closeSidebar = closeSidebar;
+    (window as any).logout = logout;
+  </script>
+</body>
+</html>

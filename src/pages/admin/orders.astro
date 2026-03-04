@@ -1,0 +1,104 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout title="Đơn hàng" activeNav="orders">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+    <div>
+      <h1 style="font-size:22px;font-weight:800;color:#fff;margin-bottom:4px;">Quản lý đơn hàng</h1>
+      <p style="font-size:13px;color:#6b5a46;">Theo dõi và xử lý các đơn hàng từ khách hàng.</p>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn-secondary">
+        <span class="material-symbols-outlined" style="font-size:16px;">file_download</span>
+        Xuất Excel
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;">
+    {[
+      { label: 'Tổng đơn hàng', value: '348', color: '#fff', icon: 'shopping_bag' },
+      { label: 'Chờ xác nhận', value: '12', color: '#f59e0b', icon: 'pending' },
+      { label: 'Đang giao', value: '8', color: '#3b82f6', icon: 'local_shipping' },
+      { label: 'Hoàn thành', value: '320', color: '#10b981', icon: 'check_circle' },
+    ].map(s => (
+      <div class="stat-card" style="display:flex;align-items:center;gap:14px;">
+        <div class="stat-icon" style={`background:rgba(255,255,255,0.05);color:${s.color};`}>
+          <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">{s.icon}</span>
+        </div>
+        <div>
+          <p class="stat-label">{s.label}</p>
+          <p class="stat-value" style={`color:${s.color};font-size:22px;`}>{s.value}</p>
+        </div>
+      </div>
+    ))}
+  </div>
+
+  <!-- Filter + Table -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Danh sách đơn hàng</span>
+      <div style="display:flex;gap:8px;">
+        <select class="admin-select" style="font-size:12px;padding:5px 10px;">
+          <option>Tất cả trạng thái</option>
+          <option>Chờ xác nhận</option>
+          <option>Đang giao</option>
+          <option>Hoàn thành</option>
+          <option>Đã hủy</option>
+        </select>
+        <input class="admin-input" placeholder="Tìm đơn hàng..." style="width:180px;font-size:12px;padding:5px 10px;" />
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Mã đơn</th>
+            <th>Khách hàng</th>
+            <th>Sản phẩm</th>
+            <th>Tổng tiền</th>
+            <th>Trạng thái</th>
+            <th>Ngày đặt</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {[
+            { id: 'FS-2401', name: 'Nguyễn Văn An', product: 'FlySky Stratos Elite', price: '32.990.000₫', status: 'pending', date: '04/03/2024' },
+            { id: 'FS-2400', name: 'Trần Thị Bích', product: 'Vintage Jazz Master', price: '54.000.000₫', status: 'shipping', date: '04/03/2024' },
+            { id: 'FS-2399', name: 'Lê Minh Cường', product: 'FlySky Dreadnought Pro', price: '22.500.000₫', status: 'done', date: '03/03/2024' },
+            { id: 'FS-2398', name: 'Phạm Thu Hà', product: 'FlySky Grand Concert', price: '125.000.000₫', status: 'done', date: '03/03/2024' },
+            { id: 'FS-2397', name: 'Vũ Đình Hùng', product: 'FlySky Thunder Bass', price: '27.900.000₫', status: 'pending', date: '02/03/2024' },
+            { id: 'FS-2396', name: 'Đỗ Thị Lan', product: 'FlySky Digital Stage', price: '45.000.000₫', status: 'shipping', date: '02/03/2024' },
+            { id: 'FS-2395', name: 'Hoàng Văn Minh', product: 'FlySky Horizon SE', price: '19.900.000₫', status: 'done', date: '01/03/2024' },
+            { id: 'FS-2394', name: 'Ngô Thị Nga', product: 'FlySky Celestia Grand', price: '38.000.000₫', status: 'done', date: '01/03/2024' },
+          ].map(o => {
+            const statusMap: Record<string,{cls:string;label:string}> = {
+              pending:  { cls: 'badge-pending',   label: '⏳ Chờ xác nhận' },
+              shipping: { cls: 'badge-contacted', label: '🚚 Đang giao' },
+              done:     { cls: 'badge-closed',    label: '✅ Hoàn thành' },
+            };
+            const s = statusMap[o.status];
+            return (
+              <tr>
+                <td style="font-weight:700;color:#f48c25;font-size:12px;">{o.id}</td>
+                <td style="font-weight:600;color:#fff;">{o.name}</td>
+                <td style="color:#a08060;">{o.product}</td>
+                <td style="font-weight:700;color:#fff;">{o.price}</td>
+                <td><span class={`badge ${s.cls}`}>{s.label}</span></td>
+                <td style="font-size:12px;color:#6b5a46;">{o.date}</td>
+                <td>
+                  <button class="btn-icon" title="Chi tiết">
+                    <span class="material-symbols-outlined" style="font-size:15px;">open_in_new</span>
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</AdminLayout>
