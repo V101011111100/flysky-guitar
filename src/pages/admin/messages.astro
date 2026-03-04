@@ -1,128 +1,452 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
+
+const barData = [40, 55, 45, 70, 65, 85, 90, 80, 60, 75, 95, 100];
+const months  = ['Th1','Th2','Th3','Th4','Th5','Th6','Th7','Th8','Th9','Th10','Th11','Th12'];
+
+const categories = [
+  { name: 'Đàn Electric (Điện)', pct: 45 },
+  { name: 'Đàn Acoustic',        pct: 30 },
+  { name: 'Đàn Bass',            pct: 15 },
+  { name: 'Phụ kiện & Khác',     pct: 10 },
+];
+
+const topProducts = [
+  {
+    name: 'Heritage Custom Shop 59', cat: 'Electric', catClass: 'cat-elec',
+    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDRnIZvfyg2KcoH3d0bIUWPOZjYNkP3kre_978ZuXjNw_Ts3frW44Tav1-rEAtPxfULtTSm34pDU0kDB1quH4ydxmfJCM6YlPDhhA-gH6NwMcAvQqaU0g2phD-aOS2AfeIUZDNJVoGAOrl9YjmhPD7U6zv-LKo1uJ0A5Y2tVuvh33Hc4Aiy_QgfQcfV4ux5EPerB8Cw-c2jawwNXepKSQZl16q-UcJuvDvKIQgaaBkyJbGL6ODAJh9fhLLBFU98dCrHQFAazpR_mn5h',
+    qty: 412, revenue: '3.200.000.000 ₫', pct: 21,
+  },
+  {
+    name: 'Rosewood Artisan Acoustic', cat: 'Acoustic', catClass: 'cat-acou',
+    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAaf2l-IWkGNf1DtnBbI3nSYGykC4FrqoOn_sF7kI7SE91uVypfJ2AZ28yI-d_bLsjmcwIzqCxEs04zqTTodwuoeaD2YqlDbHgmgEZ_8Zywo3Fx_3TKXfYG33QRGvIi-SbK92h8A-R6iUOSU_NgQP8kjd0oxw79SddK_XA5YmUKLKsI7Xuw0G-j4CMZ08J-AQa9quKA4E8WsLOyVUwrdEjVs1r67a9lxHtn4OF1nc1zB0jkFUMwAy7EwItvjB1OuYyelBUfjEk1HgAe',
+    qty: 356, revenue: '2.800.000.000 ₫', pct: 18,
+  },
+  {
+    name: 'Maple Burst Standard', cat: 'Electric', catClass: 'cat-elec',
+    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD_9QgETdm1EnrEjqNnYFhnszLbbMx5FUzoyHP1HWGt-YJSs8-afttgYFLkM9NucR4gMj-IoeN9hQMfMvOt0moEJaLGCcNcEqIXx49XrVUS8PFeCEdHmIJ19xmGmaF9PRzbz6N-WFBZvFwKJ0mA1Tn6d6doZrS6OS2SUjYU1ZLQP7T0-9vUxm02CUDQoeMre9QAUix06GylWYwJ7b8MDxHSkDt2sxHz7JF5MzJBsk3ZUP-WoeK5MEpDw8LAOQnBM9bNZSjyrcH3OKIL',
+    qty: 298, revenue: '2.100.000.000 ₫', pct: 14,
+  },
+  {
+    name: 'Thunder Deep Bass 5-String', cat: 'Bass', catClass: 'cat-bass',
+    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD8fxWHedAqBX9-stJldOUvYL07kqbuE5r639v3HmTQrH3RH4lCdQkQokKbnAdduDnLiSQSW9KUAJvM21sgJqTiIyEViCaRSK9ZmENNDgd2meqaUAr-PYmbbKZm2v7jeQANGm7LWQCIibolzZFBmK-_e8zuG30smWnIcAYVymYyuVxT2FYywinCFxiaFuzmvRxjK9sIeD6u3rFJYzGHczecw4lQ7nK5Gd3kEzsDk1DzGhom1kGsVXQf2LeqKym59PrAbPxUjEbA3vXG',
+    qty: 184, revenue: '1.500.000.000 ₫', pct: 10,
+  },
+  {
+    name: 'Professional Studio Cables', cat: 'Accessories', catClass: 'cat-acc',
+    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDL1LcQTkN9pdQAXBuIRaNFA0k9D38wEnlwV1i9X7fsEgY3jYnlpX_eUedJmi6E1xELerIu44sXzfGNFwyTkHAR7yjE3gClZfWEEjinduR7GYSdsN6Iq-g10uJ1icZMd40nTVHzqFeR08EDytG3eTcVpafClzwn0ro6yCiGWKti3mdgCP5W3dxidB91ZjgtrYKCEqpnSYNng3cMxhB6fdVZ5xevIA2bsNBwtzoUMi4eDL-mNjkqFgXrJe7KTFiqqbJtrPtox4_fFzCP',
+    qty: 842, revenue: '950.000.000 ₫', pct: 6,
+  },
+];
 ---
 
-<AdminLayout title="Tin nhắn mẫu" activeNav="messages">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
-    <div>
-      <h1 style="font-size:22px;font-weight:800;color:#fff;margin-bottom:4px;">Cấu hình tin nhắn mẫu</h1>
-      <p style="font-size:13px;color:#6b5a46;">Quản lý các mẫu trả lời nhanh cho đội tư vấn khách hàng.</p>
+<AdminLayout
+  title="Báo cáo doanh thu chi tiết theo năm"
+  subtitle="Phân tích chuyên sâu về hiệu suất kinh doanh của FlySky"
+  activeNav="messages"
+>
+
+  <!-- ── FILTER BAR ── -->
+  <div class="rpt-filter-bar">
+    <div class="year-btns">
+      <button class="year-btn">Năm 2023</button>
+      <button class="year-btn year-active">Năm 2024</button>
+      <button class="year-btn">Năm 2025</button>
     </div>
-    <button class="btn-primary" onclick="addTemplate()">
-      <span class="material-symbols-outlined" style="font-size:18px;">add</span>
-      Thêm mẫu mới
-    </button>
+    <div class="period-switcher">
+      <button class="period-btn">Hàng ngày</button>
+      <button class="period-btn">Hàng tháng</button>
+      <button class="period-btn period-active">Hàng năm</button>
+    </div>
+    <div class="export-btns">
+      <button class="btn-export-pdf">
+        <span class="material-symbols-outlined">download</span>
+        Tải PDF
+      </button>
+      <button class="btn-export-excel">
+        <span class="material-symbols-outlined">table_chart</span>
+        Xuất Excel
+      </button>
+    </div>
   </div>
 
-  <div style="display:grid;grid-template-columns:240px 1fr;gap:20px;">
-    <!-- Categories sidebar -->
-    <div class="card" style="height:fit-content;">
-      <div class="card-header"><span class="card-title">Danh mục</span></div>
-      <div style="padding:8px;">
-        {[
-          { id: 'greeting', label: 'Chào hỏi', icon: 'waving_hand', count: 3 },
-          { id: 'product', label: 'Tư vấn sản phẩm', icon: 'library_music', count: 5 },
-          { id: 'warranty', label: 'Bảo hành', icon: 'verified_user', count: 2 },
-          { id: 'visit', label: 'Mời ghé showroom', icon: 'store', count: 2 },
-          { id: 'closing', label: 'Chốt đơn', icon: 'handshake', count: 4 },
-        ].map(c => (
-          <button
-            class="cat-btn"
-            data-cat={c.id}
-            style="width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;border:none;background:transparent;color:#a08060;cursor:pointer;font-family:'Manrope',sans-serif;font-size:13px;font-weight:600;transition:all 0.15s;text-align:left;margin-bottom:2px;"
-          >
-            <span class="material-symbols-outlined" style="font-size:18px;color:#f48c25;">{c.icon}</span>
-            <span style="flex:1;">{c.label}</span>
-            <span style="background:#2a2015;color:#a08060;font-size:10px;padding:1px 6px;border-radius:4px;">{c.count}</span>
-          </button>
+  <!-- ── KPI CARDS ── -->
+  <div class="kpi-grid">
+
+    <div class="kpi-card">
+      <div class="kpi-top">
+        <div class="kpi-icon orange"><span class="material-symbols-outlined">payments</span></div>
+        <span class="kpi-trend up"><span class="material-symbols-outlined">trending_up</span>12.5%</span>
+      </div>
+      <p class="kpi-label">Tổng doanh thu năm</p>
+      <h3 class="kpi-val">15.200.000.000 ₫</h3>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-top">
+        <div class="kpi-icon blue"><span class="material-symbols-outlined">show_chart</span></div>
+        <span class="kpi-trend up"><span class="material-symbols-outlined">add</span>2.1%</span>
+      </div>
+      <p class="kpi-label">Tăng trưởng so với 2023</p>
+      <h3 class="kpi-val">+12.5%</h3>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-top">
+        <div class="kpi-icon purple"><span class="material-symbols-outlined">shopping_basket</span></div>
+        <span class="kpi-trend down"><span class="material-symbols-outlined">trending_down</span>0.5%</span>
+      </div>
+      <p class="kpi-label">Giá trị đơn hàng trung bình</p>
+      <h3 class="kpi-val">4.500.000 ₫</h3>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-top">
+        <div class="kpi-icon orange-light"><span class="material-symbols-outlined">inventory_2</span></div>
+        <span class="kpi-trend up"><span class="material-symbols-outlined">trending_up</span>8.2%</span>
+      </div>
+      <p class="kpi-label">Tổng sản phẩm đã bán</p>
+      <h3 class="kpi-val">3.380 chiếc</h3>
+    </div>
+
+  </div>
+
+  <!-- ── CHARTS ── -->
+  <div class="chart-grid">
+
+    <!-- Bar Chart -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <h4 class="chart-title">Biểu đồ doanh thu theo tháng</h4>
+          <p class="chart-sub">Dữ liệu doanh thu thực tế trong năm 2024</p>
+        </div>
+        <select class="unit-select">
+          <option>Đơn vị: Triệu VNĐ</option>
+          <option>Đơn vị: Tỷ VNĐ</option>
+        </select>
+      </div>
+      <div class="bar-chart-area">
+        {barData.map((h, i) => (
+          <div class="bar-col">
+            <div class={`bar-fill ${i === 11 ? 'bar-highlight' : ''}`} style={`height:${h}%`}></div>
+            <span class="bar-label">{months[i]}</span>
+          </div>
         ))}
       </div>
     </div>
 
-    <!-- Template list -->
-    <div style="display:flex;flex-direction:column;gap:14px;" id="templates-list">
-      {[
-        { cat: 'greeting', title: 'Chào hỏi & Giới thiệu', content: 'Chào bạn, cảm ơn bạn đã quan tâm đến FlySky Guitar! Mình là tư vấn viên của FlySky, mình có thể hỗ trợ gì cho bạn ạ? 😊', tags: ['chào', 'mặc định'] },
-        { cat: 'greeting', title: 'Chào buổi sáng', content: 'Chào buổi sáng! FlySky Guitar chúc bạn một ngày tràn đầy âm nhạc và niềm vui. Bạn cần tư vấn gì không ạ?', tags: ['sáng'] },
-        { cat: 'product', title: 'Tư vấn giá sản phẩm', content: 'Dạ, sản phẩm [Tên SP] hiện đang có giá ưu đãi là [Giá]. Bên em đang có chương trình tặng kèm bao đàn và phụ kiện ạ.', tags: ['giá', 'ưu đãi'] },
-        { cat: 'product', title: 'So sánh sản phẩm', content: 'Với nhu cầu của bạn, em nghĩ có 2 lựa chọn phù hợp: [SP1] phù hợp cho [điểm mạnh] và [SP2] phù hợp cho [điểm mạnh]. Bạn ưu tiên yếu tố nào hơn ạ?', tags: ['so sánh'] },
-        { cat: 'warranty', title: 'Thông tin bảo hành chính hãng', content: 'Sản phẩm FlySky được bảo hành chính hãng 12 tháng đối với lỗi sản xuất. Miễn phí bảo trì, điều chỉnh trọn đời tại showroom FlySky ạ.', tags: ['bảo hành'] },
-        { cat: 'visit', title: 'Mời ghé showroom', content: 'Mời bạn ghé showroom FlySky tại [Địa chỉ] để trải nghiệm trực tiếp âm thanh và cảm nhận cây đàn nhé. Shop mở cửa từ 8h-21h, 7 ngày/tuần ạ.', tags: ['showroom', 'trải nghiệm'] },
-        { cat: 'closing', title: 'Xác nhận đơn hàng', content: 'Tuyệt vời! Em đã nhận thông tin đặt hàng của bạn. Đơn hàng sẽ được xác nhận trong vòng 30 phút và giao trong 2-3 ngày làm việc ạ.', tags: ['xác nhận', 'đặt hàng'] },
-      ].map((t, i) => (
-        <div class="card template-card" data-cat={t.cat}
-          style="transition:all 0.2s;"
-          onmouseenter="this.style.transform='translateX(4px)';this.style.borderColor='rgba(244,140,37,0.3)'"
-          onmouseleave="this.style.transform='';this.style.borderColor=''">
-          <div class="card-header" style="border-bottom:none;padding-bottom:8px;">
-            <span style="font-size:14px;font-weight:700;color:#fff;">{t.title}</span>
-            <div style="display:flex;gap:6px;">
-              <button class="btn-icon" style="width:28px;height:28px;" title="Sao chép" onclick={`copyTemplate(${i})`}>
-                <span class="material-symbols-outlined" style="font-size:15px;">content_copy</span>
-              </button>
-              <button class="btn-icon" style="width:28px;height:28px;" title="Chỉnh sửa">
-                <span class="material-symbols-outlined" style="font-size:15px;">edit</span>
-              </button>
-              <button class="btn-icon" style="width:28px;height:28px;color:#ef4444;" title="Xoá">
-                <span class="material-symbols-outlined" style="font-size:15px;">delete</span>
-              </button>
+    <!-- Category -->
+    <div class="chart-card cat-chart-card">
+      <h4 class="chart-title" style="margin-bottom:24px;">Doanh thu theo danh mục</h4>
+      <div class="cat-bars">
+        {categories.map((c, i) => (
+          <div class="cat-item">
+            <div class="cat-row">
+              <span class="cat-name">{c.name}</span>
+              <span class="cat-pct">{c.pct}%</span>
+            </div>
+            <div class="prog-track">
+              <div class="prog-bar" style={`width:${c.pct}%;opacity:${1 - i*0.15}`}></div>
             </div>
           </div>
-          <div style="padding:0 20px 16px;">
-            <p style="font-size:13px;color:#a08060;line-height:1.6;background:#0e0a06;border-radius:8px;padding:12px;">{t.content}</p>
-            <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
-              {t.tags.map(tag => (
-                <span style="background:#1a120b;border:1px solid #2a2015;color:#6b5a46;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;">#{tag}</span>
-              ))}
-            </div>
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
+      <div class="cat-footer">
+        <p class="cat-note">Top categories represent 75% of total wood source usage.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── TOP 5 TABLE ── -->
+  <div class="top-card">
+    <div class="top-header">
+      <h4 class="chart-title">Top 5 Sản phẩm bán chạy nhất</h4>
+      <button class="view-all">Xem tất cả</button>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="top-table">
+        <thead>
+          <tr>
+            <th>Sản phẩm</th>
+            <th>Danh mục</th>
+            <th>Số lượng đã bán</th>
+            <th>Doanh thu</th>
+            <th>Tỷ trọng</th>
+          </tr>
+        </thead>
+        <tbody>
+          {topProducts.map(p => (
+            <tr>
+              <td>
+                <div class="prod-cell">
+                  <div class="prod-img">
+                    <img src={p.img} alt={p.name} />
+                  </div>
+                  <span class="prod-name">{p.name}</span>
+                </div>
+              </td>
+              <td><span class={`cat-chip ${p.catClass}`}>{p.cat}</span></td>
+              <td class="qty-col">{p.qty}</td>
+              <td class="rev-col">{p.revenue}</td>
+              <td>
+                <div class="ratio-cell">
+                  <div class="ratio-bar">
+                    <div class="ratio-fill" style={`width:${p.pct}%`}></div>
+                  </div>
+                  <span class="ratio-txt">{p.pct}%</span>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   </div>
+
+  <!-- Footer -->
+  <footer class="rpt-footer">
+    © 2024 FlySky Guitar Studio &amp; Wood. All rights reserved. Design for premium guitar manufacturers.
+  </footer>
+
 </AdminLayout>
 
-<script>
-  const catBtns = document.querySelectorAll('.cat-btn');
-  const templateCards = document.querySelectorAll<HTMLElement>('.template-card');
+<style>
+  /* ── FILTER BAR ── */
+  .rpt-filter-bar {
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    margin-bottom: 28px;
+  }
+  .year-btns { display: flex; gap: 8px; }
+  .year-btn {
+    padding: 8px 16px; border-radius: 8px;
+    background: rgba(30,41,59,.6); border: 1px solid #334155;
+    color: #94a3b8; font-size: 13px; font-weight: 600;
+    font-family: 'Manrope', sans-serif; cursor: pointer;
+    transition: border-color .15s;
+  }
+  .year-btn:hover { border-color: rgba(244,140,37,.4); }
+  .year-active { background: #f48c25; color: #221910; font-weight: 700; border-color: #f48c25; }
+  .period-switcher {
+    display: flex;
+    background: rgba(30,41,59,.5);
+    border: 1px solid #334155;
+    border-radius: 8px; padding: 4px; margin-left: auto;
+  }
+  .period-btn {
+    padding: 6px 14px; border-radius: 6px;
+    background: none; border: none; cursor: pointer;
+    font-size: 12px; font-weight: 700; color: #94a3b8;
+    font-family: 'Manrope', sans-serif; transition: all .15s;
+  }
+  .period-btn:hover { color: #f1f5f9; }
+  .period-active { background: #f48c25; color: #221910; box-shadow: 0 4px 12px rgba(244,140,37,.3); }
+  .export-btns { display: flex; gap: 8px; }
+  .btn-export-pdf {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: 8px;
+    background: rgba(30,41,59,.6); border: 1px solid #334155;
+    color: #f1f5f9; font-size: 13px; font-weight: 700;
+    font-family: 'Manrope', sans-serif; cursor: pointer; transition: background .15s;
+  }
+  .btn-export-pdf:hover { background: rgba(51,65,85,.8); }
+  .btn-export-pdf .material-symbols-outlined { font-size: 18px; }
+  .btn-export-excel {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: 8px;
+    background: rgba(244,140,37,.1); border: 1px solid rgba(244,140,37,.2);
+    color: #f48c25; font-size: 13px; font-weight: 700;
+    font-family: 'Manrope', sans-serif; cursor: pointer; transition: background .15s;
+  }
+  .btn-export-excel:hover { background: rgba(244,140,37,.2); }
+  .btn-export-excel .material-symbols-outlined { font-size: 18px; }
 
-  let activeCat = 'all';
+  /* ── KPI ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 28px;
+  }
+  .kpi-card {
+    background: rgba(30,41,59,.35);
+    border: 1px solid rgba(51,65,85,.5);
+    border-radius: 12px; padding: 24px;
+    transition: border-color .2s;
+  }
+  .kpi-card:hover { border-color: rgba(244,140,37,.3); }
+  .kpi-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+  .kpi-icon { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  .kpi-icon .material-symbols-outlined { font-size: 20px; }
+  .kpi-icon.orange       { background: rgba(244,140,37,.1); color: #f48c25; }
+  .kpi-icon.blue         { background: rgba(59,130,246,.1); color: #60a5fa; }
+  .kpi-icon.purple       { background: rgba(168,85,247,.1); color: #c084fc; }
+  .kpi-icon.orange-light { background: rgba(249,115,22,.1); color: #fb923c; }
+  .kpi-trend {
+    font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; gap: 2px;
+  }
+  .kpi-trend .material-symbols-outlined { font-size: 14px; }
+  .kpi-trend.up   { color: #34d399; }
+  .kpi-trend.down { color: #f87171; }
+  .kpi-label { font-size: 13px; color: #94a3b8; font-weight: 500; margin-bottom: 4px; }
+  .kpi-val   { font-size: 22px; font-weight: 900; color: #f9fafb; }
 
-  catBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      catBtns.forEach(b => { (b as HTMLElement).style.background = 'transparent'; (b as HTMLElement).style.color = '#a08060'; });
-      (btn as HTMLElement).style.background = 'rgba(244,140,37,0.1)'; (btn as HTMLElement).style.color = '#f48c25';
-      activeCat = (btn as HTMLElement).dataset.cat || 'all';
-      templateCards.forEach(card => {
-        const match = activeCat === 'all' || card.dataset.cat === activeCat;
-        card.style.display = match ? '' : 'none';
-      });
-    });
-  });
-
-  const templateContents = [
-    'Chào bạn, cảm ơn bạn đã quan tâm đến FlySky Guitar! Mình là tư vấn viên của FlySky...',
-    'Chào buổi sáng! FlySky Guitar chúc bạn một ngày tràn đầy âm nhạc và niềm vui...',
-    'Dạ, sản phẩm [Tên SP] hiện đang có giá ưu đãi là [Giá]...',
-    'Với nhu cầu của bạn, em nghĩ có 2 lựa chọn phù hợp...',
-    'Sản phẩm FlySky được bảo hành chính hãng 12 tháng...',
-    'Mời bạn ghé showroom FlySky tại [Địa chỉ]...',
-    'Tuyệt vời! Em đã nhận thông tin đặt hàng của bạn...',
-  ];
-
-  function copyTemplate(i: number) {
-    navigator.clipboard.writeText(templateContents[i]).then(() => {
-      const btn = document.querySelectorAll('[title="Sao chép"]')[i];
-      const icon = btn.querySelector('.material-symbols-outlined')!;
-      icon.textContent = 'check';
-      setTimeout(() => { icon.textContent = 'content_copy'; }, 1500);
-    });
+  /* ── CHARTS GRID ── */
+  .chart-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+    margin-bottom: 28px;
+    align-items: start;
+  }
+  .chart-card {
+    background: rgba(30,41,59,.35);
+    border: 1px solid rgba(51,65,85,.5);
+    border-radius: 12px; padding: 28px;
+  }
+  .chart-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 28px;
+  }
+  .chart-title { font-size: 16px; font-weight: 800; color: #f9fafb; }
+  .chart-sub   { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+  .unit-select {
+    background: rgba(15,23,42,.8); border: none;
+    color: #94a3b8; font-size: 12px; font-weight: 700;
+    border-radius: 8px; padding: 6px 12px; cursor: pointer;
+    font-family: 'Manrope', sans-serif; outline: none;
   }
 
-  function addTemplate() {
-    alert('Tính năng thêm mẫu mới — sẽ tích hợp API trong phiên bản tiếp theo.');
+  /* Bar chart */
+  .bar-chart-area {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    height: 280px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid rgba(51,65,85,.5);
+    gap: 6px;
+  }
+  .bar-col {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: flex-end; height: 100%;
+    position: relative;
+  }
+  .bar-fill {
+    width: 100%;
+    background: rgba(244,140,37,.25);
+    border-radius: 4px 4px 0 0;
+    transition: background .2s;
+    position: relative; overflow: hidden;
+  }
+  .bar-fill::after {
+    content: '';
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 50%;
+    background: rgba(244,140,37,.4);
+  }
+  .bar-fill.bar-highlight { background: rgba(244,140,37,.45); }
+  .bar-fill.bar-highlight::after { background: #f48c25; }
+  .bar-col:hover .bar-fill { background: rgba(244,140,37,.4); }
+  .bar-label {
+    position: absolute; bottom: -22px;
+    font-size: 9px; font-weight: 700;
+    color: #64748b; text-transform: uppercase; white-space: nowrap;
   }
 
-  (window as any).copyTemplate = copyTemplate;
-  (window as any).addTemplate = addTemplate;
-</script>
+  /* Category bars */
+  .cat-chart-card { display: flex; flex-direction: column; }
+  .cat-bars { display: flex; flex-direction: column; gap: 20px; }
+  .cat-item { }
+  .cat-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+  .cat-name { font-size: 12px; font-weight: 700; color: #cbd5e1; }
+  .cat-pct  { font-size: 12px; font-weight: 700; color: #f48c25; }
+  .prog-track {
+    width: 100%; height: 8px;
+    background: #334155; border-radius: 999px; overflow: hidden;
+  }
+  .prog-bar {
+    height: 100%; background: #f48c25; border-radius: 999px;
+    box-shadow: 0 0 8px rgba(244,140,37,.4);
+  }
+  .cat-footer {
+    margin-top: 24px; padding-top: 24px;
+    border-top: 1px solid rgba(51,65,85,.5);
+  }
+  .cat-note { font-size: 11px; color: #64748b; }
+
+  /* ── TOP TABLE ── */
+  .top-card {
+    background: rgba(30,41,59,.35);
+    border: 1px solid rgba(51,65,85,.5);
+    border-radius: 12px; overflow: hidden;
+    margin-bottom: 8px;
+  }
+  .top-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 20px 24px; border-bottom: 1px solid rgba(51,65,85,.5);
+  }
+  .view-all {
+    font-size: 12px; font-weight: 700; color: #f48c25;
+    background: none; border: none; cursor: pointer;
+    font-family: 'Manrope', sans-serif;
+  }
+  .view-all:hover { text-decoration: underline; }
+
+  .top-table { width: 100%; border-collapse: collapse; text-align: left; }
+  .top-table thead { background: rgba(15,23,42,.5); }
+  .top-table th {
+    padding: 14px 24px;
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .1em;
+    color: #64748b; white-space: nowrap;
+  }
+  .top-table tbody tr { border-top: 1px solid rgba(51,65,85,.3); transition: background .15s; }
+  .top-table tbody tr:hover { background: rgba(51,65,85,.2); }
+  .top-table td { padding: 16px 24px; vertical-align: middle; }
+
+  .prod-cell { display: flex; align-items: center; gap: 12px; }
+  .prod-img  {
+    width: 40px; height: 40px; border-radius: 6px;
+    background: #334155; overflow: hidden; flex-shrink: 0;
+  }
+  .prod-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .prod-name { font-size: 13.5px; font-weight: 700; color: #f9fafb; }
+
+  .cat-chip {
+    display: inline-block; padding: 3px 8px; border-radius: 4px;
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+  }
+  .cat-elec { background: rgba(244,140,37,.1); color: #f48c25; }
+  .cat-acou { background: rgba(59,130,246,.1);  color: #60a5fa; }
+  .cat-bass { background: rgba(168,85,247,.1);  color: #c084fc; }
+  .cat-acc  { background: rgba(249,115,22,.1);  color: #fb923c; }
+
+  .qty-col { font-size: 13px; color: #cbd5e1; }
+  .rev-col { font-size: 13px; font-weight: 700; color: #f9fafb; white-space: nowrap; }
+
+  .ratio-cell { display: flex; align-items: center; gap: 8px; }
+  .ratio-bar  {
+    width: 64px; height: 6px;
+    background: #334155; border-radius: 999px; overflow: hidden; flex-shrink: 0;
+  }
+  .ratio-fill { height: 100%; background: #f48c25; border-radius: 999px; }
+  .ratio-txt  { font-size: 11px; color: #94a3b8; }
+
+  /* ── FOOTER ── */
+  .rpt-footer {
+    margin-top: 32px; padding-top: 20px;
+    border-top: 1px solid rgba(51,65,85,.3);
+    text-align: center;
+    font-size: 11px; color: #475569;
+  }
+
+  @media (max-width: 1100px) {
+    .chart-grid { grid-template-columns: 1fr; }
+    .kpi-grid   { grid-template-columns: 1fr 1fr; }
+    .rpt-filter-bar { flex-direction: column; align-items: flex-start; }
+    .period-switcher { margin-left: 0; }
+  }
+</style>

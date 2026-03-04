@@ -3,221 +3,460 @@
 ---
 
 <!doctype html>
-<html lang="vi" class="dark">
+<html lang="vi">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Đăng nhập Quản trị viên | FlySky Guitar</title>
   <link rel="icon" href="/favicon.ico" />
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; font-family: 'Manrope', sans-serif; background: #0e0a06; color: #fff; }
+    html, body { height: 100%; font-family: 'Manrope', sans-serif; }
 
     .login-page {
       min-height: 100vh;
+      background: #0c0a07;
       display: grid;
-      grid-template-columns: 1fr 1fr;
-    }
-
-    /* Left panel — branding */
-    .login-left {
-      background: linear-gradient(145deg, #1a120b 0%, #0e0a06 60%);
-      border-right: 1px solid #2a2015;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: 60px;
+      grid-template-rows: 56px 1fr;
       position: relative;
       overflow: hidden;
     }
-    .login-left::before {
-      content: '';
-      position: absolute;
-      top: -100px; left: -100px;
-      width: 500px; height: 500px;
-      background: radial-gradient(circle, rgba(244,140,37,0.12) 0%, transparent 70%);
-    }
-    .login-left::after {
-      content: '';
-      position: absolute;
-      bottom: -80px; right: -80px;
-      width: 400px; height: 400px;
-      background: radial-gradient(circle, rgba(244,140,37,0.07) 0%, transparent 70%);
-    }
-    .brand-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 60px; position: relative; z-index: 1; }
-    .brand-logo img { height: 40px; width: auto; }
-    .brand-logo span { font-size: 20px; font-weight: 800; color: #fff; }
-    .brand-tag { font-size: 12px; font-weight: 700; color: #f48c25; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 16px; position: relative; z-index: 1; }
-    .brand-headline { font-size: 36px; font-weight: 800; line-height: 1.2; color: #fff; margin-bottom: 20px; position: relative; z-index: 1; }
-    .brand-headline em { color: #f48c25; font-style: normal; }
-    .brand-desc { font-size: 14px; color: #a08060; line-height: 1.7; position: relative; z-index: 1; max-width: 380px; }
 
-    /* Decorative guitar silhouette */
-    .guitar-deco {
+    /* Background guitar glow */
+    .login-page::before {
+      content: '';
       position: absolute;
-      right: -30px; bottom: 0;
-      font-size: 280px;
-      opacity: 0.04;
-      color: #f48c25;
+      left: -200px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 700px;
+      height: 700px;
+      background: radial-gradient(ellipse at center, rgba(244,140,37,0.08) 0%, transparent 65%);
       pointer-events: none;
       z-index: 0;
+    }
+
+    /* Guitar silhouette bg */
+    .guitar-bg {
+      position: absolute;
+      left: 80px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 380px;
+      color: rgba(244,140,37,0.04);
       line-height: 1;
+      pointer-events: none;
+      z-index: 0;
+      user-select: none;
     }
 
-    /* Features */
-    .features { display: flex; flex-direction: column; gap: 16px; margin-top: 48px; position: relative; z-index: 1; }
-    .feature-item { display: flex; align-items: center; gap: 12px; }
-    .feature-icon { width: 36px; height: 36px; border-radius: 10px; background: rgba(244,140,37,0.15); border: 1px solid rgba(244,140,37,0.2); display: flex; align-items: center; justify-content: center; font-size: 18px; color: #f48c25; flex-shrink: 0; }
-    .feature-label { font-size: 13px; font-weight: 600; color: #a08060; }
-
-    /* Right panel — form */
-    .login-right {
+    /* ── Top bar ── */
+    .topbar {
       display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: 60px;
-      background: #0e0a06;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      position: relative;
+      z-index: 10;
     }
-    .login-form-wrap { max-width: 400px; width: 100%; margin: 0 auto; }
-    .login-title { font-size: 26px; font-weight: 800; color: #fff; margin-bottom: 8px; }
-    .login-sub { font-size: 14px; color: #6b5a46; margin-bottom: 40px; }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+    .brand img { height: 30px; width: auto; }
+    .brand-name { font-size: 16px; font-weight: 800; color: #fff; }
+    .topbar-tag {
+      font-size: 11px;
+      font-weight: 700;
+      color: #a08060;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .topbar-tag span { color: #f48c25; }
 
-    .form-group { margin-bottom: 18px; }
-    .form-label { display: block; font-size: 12px; font-weight: 700; color: #a08060; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+    /* ── Main area ── */
+    .main {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Left branding text — show on large screens */
+    .brand-text-area {
+      position: absolute;
+      left: 60px;
+      bottom: 60px;
+      max-width: 320px;
+      z-index: 2;
+    }
+    .brand-headline {
+      font-size: 38px;
+      font-weight: 800;
+      line-height: 1.2;
+      color: #fff;
+      margin-bottom: 16px;
+    }
+    .brand-headline em { color: #f48c25; font-style: normal; }
+    .brand-desc { font-size: 13px; color: #6b5a46; line-height: 1.7; }
+
+    /* ── Form card ── */
+    .form-card {
+      background: #14100c;
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 20px;
+      padding: 44px 48px;
+      width: 100%;
+      max-width: 460px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+      position: relative;
+    }
+
+    .form-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 6px;
+      text-align: center;
+    }
+    .form-sub {
+      font-size: 13px;
+      color: #6b5a46;
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    /* Fields */
+    .field { margin-bottom: 18px; }
+    .field-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .field-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #a08060;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+    .forgot-link {
+      font-size: 12px;
+      font-weight: 600;
+      color: #f48c25;
+      text-decoration: none;
+      transition: opacity 0.15s;
+    }
+    .forgot-link:hover { opacity: 0.8; }
+
+    .input-wrap {
+      position: relative;
+    }
+    .input-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #6b5a46;
+      font-size: 19px;
+      pointer-events: none;
+    }
     .form-input {
       width: 100%;
-      background: #1a120b;
+      background: #0c0a07;
       border: 1px solid #2a2015;
       border-radius: 10px;
-      padding: 12px 16px;
+      padding: 13px 16px 13px 44px;
       color: #fff;
       font-size: 14px;
       font-family: 'Manrope', sans-serif;
       outline: none;
-      transition: border 0.2s;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
-    .form-input:focus { border-color: #f48c25; box-shadow: 0 0 0 2px rgba(244,140,37,0.1); }
-    .form-input::placeholder { color: #6b5a46; }
-    .input-icon-wrap { position: relative; }
-    .input-icon { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: #6b5a46; font-size: 20px; cursor: pointer; }
-    .input-icon:hover { color: #f48c25; }
+    .form-input:focus {
+      border-color: #f48c25;
+      box-shadow: 0 0 0 3px rgba(244,140,37,0.1);
+    }
+    .form-input::placeholder { color: #4a3a2a; }
+    .input-eye {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #6b5a46;
+      font-size: 19px;
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+    .input-eye:hover { color: #f48c25; }
 
+    /* Remember me */
+    .remember-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+    .remember-checkbox {
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border: 1px solid #2a2015;
+      border-radius: 4px;
+      background: #0c0a07;
+      cursor: pointer;
+      position: relative;
+      flex-shrink: 0;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .remember-checkbox:checked {
+      background: #f48c25;
+      border-color: #f48c25;
+    }
+    .remember-checkbox:checked::after {
+      content: '';
+      position: absolute;
+      top: 2px; left: 5px;
+      width: 5px; height: 9px;
+      border: 2px solid #0c0a07;
+      border-top: none; border-left: none;
+      transform: rotate(45deg);
+    }
+    .remember-label {
+      font-size: 13px;
+      color: #a08060;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    /* Login button */
     .login-btn {
       width: 100%;
       background: #f48c25;
-      color: #0e0a06;
+      color: #0c0a07;
       font-weight: 800;
       font-size: 15px;
       padding: 14px;
       border-radius: 10px;
       border: none;
       cursor: pointer;
-      transition: all 0.2s;
+      font-family: 'Manrope', sans-serif;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      margin-top: 10px;
-      font-family: 'Manrope', sans-serif;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
     }
-    .login-btn:hover { background: #e07b10; box-shadow: 0 0 24px rgba(244,140,37,0.45); transform: translateY(-1px); }
+    .login-btn:hover {
+      background: #e07b10;
+      box-shadow: 0 0 28px rgba(244,140,37,0.4);
+      transform: translateY(-1px);
+    }
     .login-btn:active { transform: translateY(0); }
+    .login-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
+    /* Error box */
     .error-box {
       display: none;
       background: rgba(239,68,68,0.1);
-      border: 1px solid rgba(239,68,68,0.2);
+      border: 1px solid rgba(239,68,68,0.25);
       border-radius: 10px;
       padding: 12px 16px;
       font-size: 13px;
-      color: #ef4444;
-      margin-top: 16px;
+      color: #f87171;
       text-align: center;
+      margin-top: 16px;
     }
 
-    .hint-box {
-      background: rgba(244,140,37,0.07);
-      border: 1px solid rgba(244,140,37,0.15);
-      border-radius: 10px;
-      padding: 12px 16px;
-      font-size: 12px;
-      color: #a08060;
-      margin-bottom: 24px;
+    /* Divider */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 28px 0 20px;
+      color: #2a2015;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #4a3a2a;
     }
-    .hint-box strong { color: #f48c25; }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #2a2015;
+    }
 
-    .login-footer { text-align: center; margin-top: 32px; font-size: 12px; color: #6b5a46; }
-    .login-footer a { color: #f48c25; text-decoration: none; }
+    /* Footer */
+    .form-footer {
+      margin-top: 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+    .social-links {
+      display: flex;
+      gap: 16px;
+    }
+    .social-link {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid #2a2015;
+      background: #0c0a07;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .social-link:hover {
+      border-color: #f48c25;
+      background: rgba(244,140,37,0.1);
+    }
+    .social-link svg { width: 16px; height: 16px; fill: #a08060; }
+    .social-link:hover svg { fill: #f48c25; }
+    .copyright { font-size: 11px; color: #4a3a2a; text-align: center; }
+
+    /* Shake animation */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+    .shake { animation: shake 0.4s ease; }
+
+    /* Success state */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .btn-spinner { animation: spin 0.7s linear infinite; display: inline-block; }
 
     @media (max-width: 768px) {
-      .login-page { grid-template-columns: 1fr; }
-      .login-left { display: none; }
-      .login-right { padding: 40px 24px; }
+      .brand-text-area { display: none; }
+      .form-card { padding: 32px 24px; }
+      .brand-headline { font-size: 26px; }
+      .guitar-bg { display: none; }
     }
   </style>
 </head>
 <body>
   <div class="login-page">
-    <!-- Left: Branding -->
-    <div class="login-left">
-      <div class="brand-logo">
-        <img src="/logo.svg" alt="FlySky Guitar" />
-        <span>FlySky Guitar</span>
-      </div>
-      <p class="brand-tag">Hệ thống quản trị</p>
-      <h1 class="brand-headline">Âm thanh tuyệt đỉnh,<br/><em>Quản lý thông minh.</em></h1>
-      <p class="brand-desc">Chào mừng quay trở lại với trang quản trị FlySky Guitar. Hãy đăng nhập để bắt đầu phiên làm việc của bạn.</p>
-
-      <div class="features">
-        {[
-          { icon: 'dashboard', label: 'Tổng quan doanh thu real-time' },
-          { icon: 'support_agent', label: 'Quản lý tư vấn khách hàng' },
-          { icon: 'inventory_2', label: 'Theo dõi kho hàng tức thời' },
-          { icon: 'settings', label: 'Cấu hình hệ thống linh hoạt' },
-        ].map(f => `
-          <div class="feature-item">
-            <div class="feature-icon"><span class="material-symbols-outlined">${f.icon}</span></div>
-            <span class="feature-label">${f.label}</span>
-          </div>`).join('')}
-      </div>
-      <div class="guitar-deco"><span class="material-symbols-outlined">music_note</span></div>
+    <!-- Background guitar silhouette -->
+    <div class="guitar-bg">
+      <span class="material-symbols-outlined">acoustic_guitar</span>
     </div>
 
-    <!-- Right: Form -->
-    <div class="login-right">
-      <div class="login-form-wrap">
-        <h2 class="login-title">Đăng nhập Quản trị viên</h2>
-        <p class="login-sub">Vui lòng nhập thông tin để truy cập hệ thống.</p>
+    <!-- Top navigation bar -->
+    <nav class="topbar">
+      <a class="brand" href="/">
+        <img src="/logo.svg" alt="FlySky Guitar" />
+        <span class="brand-name">FlySky Guitar</span>
+      </a>
+      <div class="topbar-tag">
+        <span class="material-symbols-outlined" style="font-size:16px;color:#f48c25;">admin_panel_settings</span>
+        Hệ thống quản trị
+      </div>
+    </nav>
 
-        <div class="hint-box">
-          Tài khoản demo: <strong>admin</strong> / Mật khẩu: <strong>flysky2024</strong>
-        </div>
+    <!-- Main content -->
+    <div class="main">
+      <!-- Left branding (desktop only) -->
+      <div class="brand-text-area">
+        <h1 class="brand-headline">Âm thanh tuyệt đỉnh,<br/><em>Quản lý thông minh.</em></h1>
+        <p class="brand-desc">Chào mừng quay trở lại với trang quản trị FlySky Guitar. Hãy đăng nhập để bắt đầu phiên làm việc của bạn.</p>
+      </div>
 
-        <form id="login-form" onsubmit="handleLogin(event)">
-          <div class="form-group">
-            <label class="form-label" for="username">Tên đăng nhập</label>
-            <input id="username" class="form-input" type="text" placeholder="Nhập tên đăng nhập" autocomplete="username" />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="password">Mật khẩu</label>
-            <div class="input-icon-wrap">
-              <input id="password" class="form-input" type="password" placeholder="Nhập mật khẩu" autocomplete="current-password" />
-              <span class="material-symbols-outlined input-icon" id="pw-toggle" onclick="togglePw()">visibility</span>
+      <!-- Login form -->
+      <div class="form-card">
+        <h2 class="form-title">Đăng nhập Quản trị viên</h2>
+        <p class="form-sub">Vui lòng nhập thông tin để truy cập hệ thống.</p>
+
+        <form id="login-form" onsubmit="handleLogin(event)" novalidate>
+          <!-- Username -->
+          <div class="field">
+            <div class="field-header">
+              <label class="field-label" for="username">Tên đăng nhập hoặc Email</label>
+            </div>
+            <div class="input-wrap">
+              <span class="material-symbols-outlined input-icon">person</span>
+              <input
+                id="username"
+                class="form-input"
+                type="text"
+                placeholder="Nhập tên đăng nhập hoặc email"
+                autocomplete="username"
+              />
             </div>
           </div>
+
+          <!-- Password -->
+          <div class="field">
+            <div class="field-header">
+              <label class="field-label" for="password">Mật khẩu</label>
+              <a href="#" class="forgot-link" onclick="return false;">Quên mật khẩu?</a>
+            </div>
+            <div class="input-wrap">
+              <span class="material-symbols-outlined input-icon">lock</span>
+              <input
+                id="password"
+                class="form-input"
+                type="password"
+                placeholder="Nhập mật khẩu"
+                autocomplete="current-password"
+              />
+              <span class="material-symbols-outlined input-eye" id="pw-eye" onclick="togglePw()">visibility</span>
+            </div>
+          </div>
+
+          <!-- Remember me -->
+          <div class="remember-wrap">
+            <input type="checkbox" id="remember" class="remember-checkbox" />
+            <label for="remember" class="remember-label">Ghi nhớ đăng nhập</label>
+          </div>
+
+          <!-- Submit -->
           <button class="login-btn" type="submit" id="login-btn">
-            <span class="material-symbols-outlined" style="font-size:20px">login</span>
-            Đăng nhập
+            <span class="material-symbols-outlined" style="font-size:20px;">login</span>
+            Đăng nhập Quản trị viên
           </button>
+
           <div class="error-box" id="error-box">
-            Tên đăng nhập hoặc mật khẩu không đúng. Vui lòng thử lại.
+            ❌ Tên đăng nhập hoặc mật khẩu không đúng. Vui lòng thử lại.
           </div>
         </form>
 
-        <div class="login-footer">
-          © 2024 FlySky Guitar Admin Portal
+        <!-- Footer -->
+        <div class="form-footer">
+          <div class="divider">Theo dõi FlySky Guitar</div>
+          <div class="social-links">
+            <!-- Facebook -->
+            <a href="https://facebook.com" target="_blank" class="social-link" title="Facebook">
+              <svg viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+            </a>
+            <!-- Instagram -->
+            <a href="https://instagram.com" target="_blank" class="social-link" title="Instagram">
+              <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" style="fill:none;stroke:#a08060;stroke-width:2"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" style="stroke:#a08060;stroke-width:2;stroke-linecap:round"/></svg>
+            </a>
+            <!-- YouTube -->
+            <a href="https://youtube.com" target="_blank" class="social-link" title="YouTube">
+              <svg viewBox="0 0 24 24"><path d="M22.54 6.42A2.78 2.78 0 0 0 20.58 4.4C18.88 4 12 4 12 4s-6.88 0-8.58.46a2.78 2.78 0 0 0-1.95 2 29 29 0 0 0-.47 5.25 29 29 0 0 0 .47 5.25A2.78 2.78 0 0 0 3.42 19.6C5.12 20 12 20 12 20s6.88 0 8.58-.46a2.78 2.78 0 0 0 1.95-2 29 29 0 0 0 .47-5.25 29 29 0 0 0-.46-5.83z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" style="fill:#a08060"/></svg>
+            </a>
+          </div>
+          <p class="copyright">© 2024 FlySky Guitar Admin Portal. All Rights Reserved.</p>
         </div>
       </div>
     </div>
@@ -229,39 +468,67 @@
       window.location.href = '/admin';
     }
 
-    function handleLogin(e: Event) {
+    function handleLogin(e) {
       e.preventDefault();
-      const username = (document.getElementById('username') as HTMLInputElement).value.trim();
-      const password = (document.getElementById('password') as HTMLInputElement).value;
-      const errorBox = document.getElementById('error-box')!;
-      const btn = document.getElementById('login-btn')!;
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      const errorBox = document.getElementById('error-box');
+      const btn = document.getElementById('login-btn');
 
-      // Simple hardcoded auth
-      if (username === 'admin' && password === 'flysky2024') {
-        btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:20px">check_circle</span> Đang vào...';
-        sessionStorage.setItem('flysky_admin_token', 'flysky_admin_authenticated');
-        sessionStorage.setItem('flysky_admin_user', JSON.stringify({ name: 'Admin FlySky', email: 'admin@flyskyguitar.vn' }));
-        setTimeout(() => { window.location.href = '/admin'; }, 800);
-      } else {
-        errorBox.style.display = 'block';
-        const inputs = document.querySelectorAll('.form-input');
-        inputs.forEach(el => (el as HTMLElement).style.borderColor = '#ef4444');
-        setTimeout(() => {
-          errorBox.style.display = 'none';
-          inputs.forEach(el => (el as HTMLElement).style.borderColor = '');
-        }, 3000);
+      if (!username || !password) {
+        showError('Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.');
+        return;
       }
+
+      // Loading state
+      btn.disabled = true;
+      btn.innerHTML = '<span class="material-symbols-outlined btn-spinner" style="font-size:20px;">autorenew</span> Đang xác thực...';
+
+      setTimeout(() => {
+        if ((username === 'admin' || username === 'admin@flyskyguitar.vn') && password === 'flysky2024') {
+          btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:20px;">check_circle</span> Đăng nhập thành công!';
+          btn.style.background = '#10b981';
+          sessionStorage.setItem('flysky_admin_token', 'flysky_admin_authenticated');
+          sessionStorage.setItem('flysky_admin_user', JSON.stringify({ name: 'Admin FlySky', email: 'admin@flyskyguitar.vn' }));
+          setTimeout(() => { window.location.href = '/admin'; }, 700);
+        } else {
+          btn.disabled = false;
+          btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:20px;">login</span> Đăng nhập Quản trị viên';
+          showError('Tên đăng nhập hoặc mật khẩu không đúng. Vui lòng thử lại.');
+        }
+      }, 800);
+    }
+
+    function showError(msg) {
+      const errorBox = document.getElementById('error-box');
+      errorBox.textContent = '❌ ' + msg;
+      errorBox.style.display = 'block';
+      const card = document.querySelector('.form-card');
+      card.classList.add('shake');
+      card.addEventListener('animationend', () => card.classList.remove('shake'), { once: true });
+      document.querySelectorAll('.form-input').forEach(el => {
+        el.style.borderColor = 'rgba(239,68,68,0.5)';
+      });
+      setTimeout(() => {
+        errorBox.style.display = 'none';
+        document.querySelectorAll('.form-input').forEach(el => el.style.borderColor = '');
+      }, 3500);
     }
 
     function togglePw() {
-      const pw = document.getElementById('password') as HTMLInputElement;
-      const icon = document.getElementById('pw-toggle')!;
-      if (pw.type === 'password') { pw.type = 'text'; icon.textContent = 'visibility_off'; }
-      else { pw.type = 'password'; icon.textContent = 'visibility'; }
+      const pw = document.getElementById('password');
+      const eye = document.getElementById('pw-eye');
+      if (pw.type === 'password') {
+        pw.type = 'text';
+        eye.textContent = 'visibility_off';
+      } else {
+        pw.type = 'password';
+        eye.textContent = 'visibility';
+      }
     }
 
-    (window as any).handleLogin = handleLogin;
-    (window as any).togglePw = togglePw;
+    window.handleLogin = handleLogin;
+    window.togglePw = togglePw;
   </script>
 </body>
 </html>

@@ -1,104 +1,335 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
+
+const orders = [
+  {
+    id: '#FS-1024',
+    customer: 'Nguyễn Văn An',
+    email: 'vanan@email.com',
+    product: 'Classic Guitar C-40',
+    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAI90GL-uDW-HCXdAIZMKfxKPWHfgV-0RhT2yCnc9AbjCSfT0HPGptYtTqFyNVcrQUcf0QyDHrWY03MAy3oIX8rkt4237uW6g5n18kZJvD6_p8TBxOpCXPaieRbT2bLsv4pF8b_nIVWhLbJLvz069iMffueKCqbz3D50OHorOYoR-yY__yfNg-Y3w3_Aa7X5q43r9dYK5L2iyA-J-KZGN3RukjFgh8uGnpeoYAORuHC7YEDSXNGoIqo3eZbrQjDqlNFonrW1YiRO-2E',
+    total: '4.500.000₫', status: 'pending', date: '12/10/2023',
+  },
+  {
+    id: '#FS-1025',
+    customer: 'Trần Thị Bích',
+    email: 'bich.tran@email.com',
+    product: 'Electric Guitar E-1',
+    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDf2HaH0DA08JsPTR5_9Jh64iJXJPtlrALQJRhMuMZiyBz7jtvs7H3zcgYbapUDdB7ttKDQ0q_W5IRvMV_XBiVmDhCrzBlfFO2Rwp8vlmNNtR1r8Xf34YnkZJvDLkflkU8TO6FPOdBjhbBRd9xmfV42oObkE9g1HT_C8mODaxk_Wrbd41e1K4s5iP1QLjs9_nCm9tlYlB5u2AamdErw3smrTYoEsyKgpDBQi5q_4O-AR8laFtXxc59ltqPMuPN5zW_ce078I_Rf7O56',
+    total: '12.000.000₫', status: 'shipping', date: '11/10/2023',
+  },
+  {
+    id: '#FS-1026',
+    customer: 'Lê Hoàng Nam',
+    email: 'namle@email.com',
+    product: 'Acoustic Wood W-2',
+    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD-5SP_EitEAGNjsO1vCP13_Trp0_I_pTty7Fvr_9YuBlYikDdypk7RxzXpQRCW6jRR-PWgNBMsZhAkp0w3OEWH7rqPih6dqXOiXNin8G2RAHTLaIa9DWIdIp1rX3oMivzKPUIaIsdBnLWEEsd7KwiQ97DWzEGNbKDUqbrZ6Hfbzmpr_t1Lo9OUl-ixhBX2nxHR3bBiEL89kxwDiHWKqNuxBfSxulLFsi4x4sz-k8iTb1waPCPfQZqsKf6EFCel0PbvIS1bdeO5R2_l',
+    total: '7.200.000₫', status: 'done', date: '10/10/2023',
+  },
+  {
+    id: '#FS-1027',
+    customer: 'Phạm Minh Đạo',
+    email: 'daopm@email.com',
+    product: 'Phụ kiện dây đàn Ernie Ball',
+    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAnIv42ti-JOB-wy6_C6SIih3X6KwCjl9g3FwJp9UpbD5QwuM7BYPcsuoHEWkBDK8jVoPra_sb26Bq77lU1GaQjleEs4ZljnSU9E9Co4AffhMEqxBIq7uJpYaimr5j5stjeyJU62c-iVKGll_D5EAI0N04WQvy3W45skoEE9pqYuFnjgLHi7-uFa1nhziGM63Yq_sTz8S87fqVluZWZ0M8KWw5qe3YCTbrEH0ZatGJwa4Gu1c8LUpsRPdJEi77m-DXZYACNxDO2qIs8',
+    total: '250.000₫', status: 'done', date: '09/10/2023',
+  },
+];
 ---
 
-<AdminLayout title="Đơn hàng" activeNav="orders">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
-    <div>
-      <h1 style="font-size:22px;font-weight:800;color:#fff;margin-bottom:4px;">Quản lý đơn hàng</h1>
-      <p style="font-size:13px;color:#6b5a46;">Theo dõi và xử lý các đơn hàng từ khách hàng.</p>
-    </div>
-    <div style="display:flex;gap:8px;">
-      <button class="btn-secondary">
-        <span class="material-symbols-outlined" style="font-size:16px;">file_download</span>
-        Xuất Excel
+<AdminLayout
+  title="Quản lý đơn hàng"
+  subtitle="Theo dõi, cập nhật và xuất dữ liệu đơn hàng nhạc cụ."
+  activeNav="orders"
+>
+  <!-- ── HEADER ACTIONS ── -->
+  <div class="orders-header">
+    <div class="orders-header-actions">
+      <button class="btn-export">
+        <span class="material-symbols-outlined">download</span>
+        Xuất file Excel
+      </button>
+      <button class="btn-create">
+        <span class="material-symbols-outlined">add</span>
+        Tạo đơn mới
       </button>
     </div>
   </div>
 
-  <!-- Stats -->
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;">
-    {[
-      { label: 'Tổng đơn hàng', value: '348', color: '#fff', icon: 'shopping_bag' },
-      { label: 'Chờ xác nhận', value: '12', color: '#f59e0b', icon: 'pending' },
-      { label: 'Đang giao', value: '8', color: '#3b82f6', icon: 'local_shipping' },
-      { label: 'Hoàn thành', value: '320', color: '#10b981', icon: 'check_circle' },
-    ].map(s => (
-      <div class="stat-card" style="display:flex;align-items:center;gap:14px;">
-        <div class="stat-icon" style={`background:rgba(255,255,255,0.05);color:${s.color};`}>
-          <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">{s.icon}</span>
-        </div>
-        <div>
-          <p class="stat-label">{s.label}</p>
-          <p class="stat-value" style={`color:${s.color};font-size:22px;`}>{s.value}</p>
-        </div>
-      </div>
-    ))}
+  <!-- ── FILTER TABS ── -->
+  <div class="filter-tabs">
+    <button class="tab-btn tab-active">Tất cả</button>
+    <button class="tab-btn">Chờ xử lý</button>
+    <button class="tab-btn">Đang giao</button>
+    <button class="tab-btn">Hoàn thành</button>
+    <button class="tab-btn">Đã hủy</button>
   </div>
 
-  <!-- Filter + Table -->
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">Danh sách đơn hàng</span>
-      <div style="display:flex;gap:8px;">
-        <select class="admin-select" style="font-size:12px;padding:5px 10px;">
-          <option>Tất cả trạng thái</option>
-          <option>Chờ xác nhận</option>
-          <option>Đang giao</option>
-          <option>Hoàn thành</option>
-          <option>Đã hủy</option>
-        </select>
-        <input class="admin-input" placeholder="Tìm đơn hàng..." style="width:180px;font-size:12px;padding:5px 10px;" />
-      </div>
-    </div>
+  <!-- ── TABLE ── -->
+  <div class="table-wrap">
     <div style="overflow-x:auto;">
-      <table class="admin-table">
+      <table class="orders-table">
         <thead>
           <tr>
             <th>Mã đơn</th>
             <th>Khách hàng</th>
             <th>Sản phẩm</th>
-            <th>Tổng tiền</th>
-            <th>Trạng thái</th>
+            <th style="text-align:right;">Tổng tiền</th>
+            <th style="text-align:center;">Trạng thái</th>
             <th>Ngày đặt</th>
-            <th></th>
+            <th style="text-align:right;">Thao tác</th>
           </tr>
         </thead>
         <tbody>
-          {[
-            { id: 'FS-2401', name: 'Nguyễn Văn An', product: 'FlySky Stratos Elite', price: '32.990.000₫', status: 'pending', date: '04/03/2024' },
-            { id: 'FS-2400', name: 'Trần Thị Bích', product: 'Vintage Jazz Master', price: '54.000.000₫', status: 'shipping', date: '04/03/2024' },
-            { id: 'FS-2399', name: 'Lê Minh Cường', product: 'FlySky Dreadnought Pro', price: '22.500.000₫', status: 'done', date: '03/03/2024' },
-            { id: 'FS-2398', name: 'Phạm Thu Hà', product: 'FlySky Grand Concert', price: '125.000.000₫', status: 'done', date: '03/03/2024' },
-            { id: 'FS-2397', name: 'Vũ Đình Hùng', product: 'FlySky Thunder Bass', price: '27.900.000₫', status: 'pending', date: '02/03/2024' },
-            { id: 'FS-2396', name: 'Đỗ Thị Lan', product: 'FlySky Digital Stage', price: '45.000.000₫', status: 'shipping', date: '02/03/2024' },
-            { id: 'FS-2395', name: 'Hoàng Văn Minh', product: 'FlySky Horizon SE', price: '19.900.000₫', status: 'done', date: '01/03/2024' },
-            { id: 'FS-2394', name: 'Ngô Thị Nga', product: 'FlySky Celestia Grand', price: '38.000.000₫', status: 'done', date: '01/03/2024' },
-          ].map(o => {
-            const statusMap: Record<string,{cls:string;label:string}> = {
-              pending:  { cls: 'badge-pending',   label: '⏳ Chờ xác nhận' },
-              shipping: { cls: 'badge-contacted', label: '🚚 Đang giao' },
-              done:     { cls: 'badge-closed',    label: '✅ Hoàn thành' },
-            };
-            const s = statusMap[o.status];
-            return (
-              <tr>
-                <td style="font-weight:700;color:#f48c25;font-size:12px;">{o.id}</td>
-                <td style="font-weight:600;color:#fff;">{o.name}</td>
-                <td style="color:#a08060;">{o.product}</td>
-                <td style="font-weight:700;color:#fff;">{o.price}</td>
-                <td><span class={`badge ${s.cls}`}>{s.label}</span></td>
-                <td style="font-size:12px;color:#6b5a46;">{o.date}</td>
-                <td>
-                  <button class="btn-icon" title="Chi tiết">
-                    <span class="material-symbols-outlined" style="font-size:15px;">open_in_new</span>
-                  </button>
-                </td>
-              </tr>
-            );
-          })}
+          {orders.map(o => (
+            <tr>
+              <td class="order-id">{o.id}</td>
+              <td>
+                <div class="cus-name">{o.customer}</div>
+                <div class="cus-email">{o.email}</div>
+              </td>
+              <td>
+                <div class="prod-cell">
+                  <div class="prod-thumb" style={`background-image:url('${o.img}')`}></div>
+                  <span class="prod-name">{o.product}</span>
+                </div>
+              </td>
+              <td class="total-col">{o.total}</td>
+              <td class="status-col">
+                {o.status === 'pending'  && <span class="badge badge-amber">Chờ xử lý</span>}
+                {o.status === 'shipping' && <span class="badge badge-blue">Đang giao</span>}
+                {o.status === 'done'     && <span class="badge badge-green">Hoàn thành</span>}
+                {o.status === 'cancelled'&& <span class="badge badge-red">Đã hủy</span>}
+              </td>
+              <td class="date-col">{o.date}</td>
+              <td class="action-col">
+                <button class="act-btn" title="Xem chi tiết">
+                  <span class="material-symbols-outlined">visibility</span>
+                </button>
+                <button class="act-btn" title="Chỉnh sửa">
+                  <span class="material-symbols-outlined">edit</span>
+                </button>
+              </td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>
+
+    <!-- Pagination -->
+    <div class="pagination">
+      <span class="page-info">Hiển thị 1 đến 4 trong số 102 đơn hàng</span>
+      <div class="page-btns">
+        <button class="page-nav"><span class="material-symbols-outlined">chevron_left</span></button>
+        <button class="page-num page-active">1</button>
+        <button class="page-num">2</button>
+        <button class="page-num">3</button>
+        <span class="page-ellipsis">...</span>
+        <button class="page-num">26</button>
+        <button class="page-nav"><span class="material-symbols-outlined">chevron_right</span></button>
+      </div>
+    </div>
   </div>
+
+  <!-- Footer -->
+  <footer class="orders-footer">
+    <span class="footer-version">FlySky Guitar Admin System v2.4.0</span>
+    <div class="footer-links">
+      <a href="#">Hỗ trợ</a>
+      <a href="#">Chính sách bảo mật</a>
+    </div>
+  </footer>
+
 </AdminLayout>
+
+<style>
+  /* ── HEADER ── */
+  .orders-header {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 28px;
+  }
+  .orders-header-actions { display: flex; gap: 12px; align-items: center; }
+
+  .btn-export {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 20px; border-radius: 12px;
+    font-size: 13px; font-weight: 600;
+    background: #2d2218; border: 1px solid #4a3a2a;
+    color: #f1f5f9; cursor: pointer;
+    font-family: 'Manrope', sans-serif;
+    transition: background .15s;
+  }
+  .btn-export:hover { background: #4a3a2a; }
+  .btn-export .material-symbols-outlined { font-size: 18px; }
+
+  .btn-create {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 20px; border-radius: 12px;
+    font-size: 13px; font-weight: 700;
+    background: #f48c25; color: #221910;
+    border: none; cursor: pointer;
+    font-family: 'Manrope', sans-serif;
+    box-shadow: 0 4px 16px rgba(244,140,37,.2);
+    transition: filter .15s;
+  }
+  .btn-create:hover { filter: brightness(1.1); }
+  .btn-create .material-symbols-outlined { font-size: 18px; }
+
+  /* ── FILTER TABS ── */
+  .filter-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid rgba(74,58,42,.5);
+    margin-bottom: 20px;
+  }
+  .tab-btn {
+    padding: 12px 20px;
+    font-size: 13px; font-weight: 600;
+    background: none; border: none; cursor: pointer;
+    font-family: 'Manrope', sans-serif;
+    color: #64748b;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all .15s;
+  }
+  .tab-btn:hover { color: #cbd5e1; }
+  .tab-active {
+    color: #f48c25;
+    border-bottom-color: #f48c25;
+    font-weight: 700;
+  }
+
+  /* ── TABLE ── */
+  .table-wrap {
+    background: rgba(45,34,24,.4);
+    border: 1px solid #4a3a2a;
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .orders-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+  }
+  .orders-table thead tr {
+    background: rgba(45,34,24,.7);
+  }
+  .orders-table th {
+    padding: 16px 24px;
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .1em;
+    color: #94a3b8;
+    white-space: nowrap;
+  }
+  .orders-table tbody tr {
+    border-top: 1px solid #4a3a2a;
+    transition: background .15s;
+  }
+  .orders-table tbody tr:hover { background: rgba(74,58,42,.25); }
+  .orders-table td {
+    padding: 20px 24px;
+    vertical-align: middle;
+  }
+
+  .order-id {
+    font-family: 'Courier New', monospace;
+    font-size: 13px; font-weight: 700;
+    color: #f48c25;
+    white-space: nowrap;
+  }
+
+  .cus-name  { font-size: 13.5px; font-weight: 700; color: #f9fafb; }
+  .cus-email { font-size: 11px; color: #64748b; margin-top: 2px; }
+
+  .prod-cell {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .prod-thumb {
+    width: 32px; height: 32px;
+    border-radius: 6px;
+    background: #4a3a2a center/cover no-repeat;
+    flex-shrink: 0;
+  }
+  .prod-name { font-size: 13px; color: #e2e8f0; }
+
+  .total-col { text-align: right; font-size: 13px; font-weight: 600; color: #f9fafb; white-space: nowrap; }
+  .status-col { text-align: center; }
+  .date-col  { font-size: 13px; color: #94a3b8; white-space: nowrap; }
+  .action-col { text-align: right; }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    padding: 4px 12px; border-radius: 999px;
+    font-size: 11px; font-weight: 700;
+    border: 1px solid;
+    white-space: nowrap;
+  }
+  .badge-amber { background: rgba(245,158,11,.15); color: #f59e0b; border-color: rgba(245,158,11,.3); }
+  .badge-blue  { background: rgba(59,130,246,.15);  color: #60a5fa; border-color: rgba(59,130,246,.3); }
+  .badge-green { background: rgba(16,185,129,.15);  color: #34d399; border-color: rgba(16,185,129,.3); }
+  .badge-red   { background: rgba(239,68,68,.15);   color: #f87171; border-color: rgba(239,68,68,.3); }
+
+  /* Action buttons */
+  .act-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 34px; height: 34px; border-radius: 8px;
+    background: none; border: none; cursor: pointer;
+    color: #64748b; transition: all .15s;
+  }
+  .act-btn:hover { background: rgba(244,140,37,.2); color: #f48c25; }
+  .act-btn .material-symbols-outlined { font-size: 18px; }
+
+  /* ── PAGINATION ── */
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 24px;
+    background: rgba(45,34,24,.4);
+    border-top: 1px solid #4a3a2a;
+  }
+  .page-info { font-size: 11px; color: #64748b; }
+  .page-btns { display: flex; align-items: center; gap: 4px; }
+  .page-nav {
+    width: 30px; height: 30px; border-radius: 8px;
+    background: none; border: none; cursor: pointer;
+    color: #94a3b8; display: flex; align-items: center; justify-content: center;
+    transition: background .15s;
+  }
+  .page-nav:hover { background: #4a3a2a; }
+  .page-nav .material-symbols-outlined { font-size: 18px; }
+  .page-num {
+    width: 30px; height: 30px; border-radius: 8px;
+    background: none; border: none; cursor: pointer;
+    font-size: 12px; font-weight: 700;
+    color: #94a3b8; font-family: 'Manrope', sans-serif;
+    transition: background .15s;
+  }
+  .page-num:hover { background: #4a3a2a; }
+  .page-active { background: #f48c25 !important; color: #221910 !important; }
+  .page-ellipsis { color: #64748b; font-size: 13px; padding: 0 4px; }
+
+  /* ── FOOTER ── */
+  .orders-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(74,58,42,.4);
+  }
+  .footer-version {
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .12em;
+    color: #374151;
+  }
+  .footer-links { display: flex; align-items: center; gap: 20px; }
+  .footer-links a {
+    font-size: 12px; color: #64748b; text-decoration: none;
+    transition: color .15s;
+  }
+  .footer-links a:hover { color: #f48c25; }
+</style>

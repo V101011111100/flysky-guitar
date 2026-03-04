@@ -1,119 +1,125 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import { products } from '../../data/products';
+
+type Category = 'all' | 'electric' | 'acoustic' | 'bass' | 'piano';
+const cats: { id: Category; label: string }[] = [
+  { id: 'all', label: 'Tất cả' },
+  { id: 'electric', label: 'Guitar Điện' },
+  { id: 'acoustic', label: 'Guitar Acoustic' },
+  { id: 'bass', label: 'Guitar Bass' },
+  { id: 'piano', label: 'Piano' },
+];
+const stocks = [24, 3, 0, 12, 8, 5, 0, 11, 6, 1, 9, 3];
 ---
 
-<AdminLayout title="Quản lý sản phẩm" activeNav="products">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
-    <div>
-      <h1 style="font-size:22px;font-weight:800;color:#fff;margin-bottom:4px;">Quản lý sản phẩm</h1>
-      <p style="font-size:13px;color:#6b5a46;">Xem và quản lý toàn bộ catalog sản phẩm FlySky Guitar.</p>
+<AdminLayout
+  title="Quản lý Sản phẩm"
+  subtitle="Quản trị toàn bộ danh mục sản phẩm âm nhạc tại FlySky Guitar."
+  activeNav="products"
+>
+  <!-- Toolbar -->
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+    <div class="search-wrap" style="flex:1;min-width:220px;max-width:340px;">
+      <span class="material-symbols-outlined search-icon">search</span>
+      <input class="admin-input" id="prod-search" placeholder="Tìm kiếm tên, SKU hoặc dòng gì đó..." />
     </div>
-    <div style="display:flex;gap:8px;">
-      <div style="display:flex;gap:4px;">
-        <button class="btn-icon view-btn active" id="grid-btn" title="Lưới">
-          <span class="material-symbols-outlined" style="font-size:18px;">grid_view</span>
-        </button>
-        <button class="btn-icon view-btn" id="list-btn" title="Danh sách">
-          <span class="material-symbols-outlined" style="font-size:18px;">list</span>
-        </button>
+    <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="material-symbols-outlined" style="color:#5a4a36;font-size:17px;">filter_list</span>
+        <select class="admin-select" id="cat-select" style="min-width:150px;">
+          {cats.map(c => <option value={c.id}>{c.label}</option>)}
+        </select>
       </div>
-      <button class="btn-primary">
-        <span class="material-symbols-outlined" style="font-size:18px;">add</span>
-        Thêm sản phẩm
+      <button class="btn-primary" style="gap:7px;">
+        <span class="material-symbols-outlined" style="font-size:17px;">add_circle</span>
+        Thêm sản phẩm mới
       </button>
     </div>
   </div>
 
-  <!-- Filter bar -->
-  <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:center;">
-    <input class="admin-input" placeholder="Tìm sản phẩm..." style="max-width:200px;font-size:13px;" id="prod-search" />
-    <div style="display:flex;gap:6px;flex-wrap:wrap;">
-      {['all','electric','acoustic','bass','piano'].map(cat => (
-        <button class={`badge-filter ${cat === 'all' ? 'active' : ''}`} data-cat={cat}
-          style={`padding:6px 14px;border-radius:999px;border:1px solid #2a2015;background:transparent;color:#a08060;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.15s;font-family:'Manrope',sans-serif;`}>
-          {cat === 'all' ? 'Tất cả' : cat === 'electric' ? 'Guitar Điện' : cat === 'acoustic' ? 'Acoustic' : cat === 'bass' ? 'Bass' : 'Piano'}
-        </button>
-      ))}
-    </div>
-    <p style="font-size:12px;color:#6b5a46;margin-left:auto;" id="count-label">{products.length} sản phẩm</p>
-  </div>
-
-  <!-- Product grid -->
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;" id="prod-grid">
-    {products.map(p => (
-      <div class="card prod-card" data-cat={p.category} style="transition:all 0.2s;">
-        <!-- Product image -->
-        <div style={`height:160px;background-image:url('${p.image}');background-size:contain;background-position:center;background-repeat:no-repeat;background-color:#0e0a06;border-radius:10px 10px 0 0;position:relative;`}>
-          {p.badge && (
-            <span style="position:absolute;top:8px;left:8px;background:#f48c25;color:#0e0a06;font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;">{p.badge}</span>
-          )}
-          <div style="position:absolute;top:8px;right:8px;display:flex;gap:4px;">
-            <a href={`/products/${p.id}`} target="_blank" class="btn-icon" style="width:28px;height:28px;background:#1a120b;" title="Xem trang web">
-              <span class="material-symbols-outlined" style="font-size:14px;">open_in_new</span>
-            </a>
-          </div>
-        </div>
-        <div style="padding:14px;">
-          <p style="font-size:10px;font-weight:700;color:#f48c25;text-transform:uppercase;margin-bottom:4px;">{p.categoryLabel}</p>
-          <p style="font-size:13px;font-weight:700;color:#fff;margin-bottom:4px;line-height:1.3;">{p.name}</p>
-          <p style="font-size:11px;color:#6b5a46;margin-bottom:10px;">{p.subtitle}</p>
-          <div style="display:flex;align-items:center;justify-content:space-between;">
-            <span style="font-size:14px;font-weight:800;color:#f48c25;">{p.priceFormatted}</span>
-            <div style="display:flex;gap:4px;">
-              <button class="btn-icon" style="width:28px;height:28px;" title="Sửa">
+  <!-- Product Grid -->
+  <div id="prod-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;">
+    {products.map((p, i) => {
+      const stock = stocks[i % 12];
+      const isLow = stock < 5;
+      const isOut = stock === 0;
+      return (
+        <div class="product-card" data-cat={p.category} data-name={p.name.toLowerCase()}>
+          <div style="position:relative;">
+            <img src={p.image} alt={p.name} class="product-card-img" />
+            <div style="position:absolute;top:10px;left:10px;display:flex;gap:6px;">
+              {isOut
+                ? <span class="badge badge-cancelled">Hết hàng</span>
+                : isLow
+                ? <span class="badge badge-pending">Sắp hết</span>
+                : <span class="badge badge-done">Còn hàng</span>
+              }
+            </div>
+            <div style="position:absolute;top:10px;right:10px;display:flex;gap:5px;">
+              <button class="btn-icon" style="width:28px;height:28px;border-radius:7px;" title="Chỉnh sửa">
                 <span class="material-symbols-outlined" style="font-size:14px;">edit</span>
-              </button>
-              <button class="btn-icon" style="width:28px;height:28px;color:#ef4444;" title="Xoá">
-                <span class="material-symbols-outlined" style="font-size:14px;">delete</span>
               </button>
             </div>
           </div>
-          <!-- Star rating -->
-          <div style="display:flex;gap:2px;margin-top:8px;">
-            {Array.from({length:5}).map((_,i) => (
-              <span class="material-symbols-outlined" style={`font-size:12px;color:${i < p.rating ? '#f48c25' : '#2a2015'};`} innerHTML="star"></span>
-            ))}
-            <span style="font-size:11px;color:#6b5a46;margin-left:4px;">({p.reviews})</span>
+          <div class="product-card-body">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px;">
+              <div>
+                <p class="product-card-name">{p.name}</p>
+                <p class="product-card-sub">{p.categoryLabel} · {p.subtitle}</p>
+              </div>
+              <div style="text-align:right;flex-shrink:0;">
+                <p class="product-card-price">{(p.price / 1000000).toFixed(1)}tr</p>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.05);">
+              <span class="product-card-stock">
+                <span class="material-symbols-outlined" style={`font-size:14px;vertical-align:-3px;color:${isOut?'#f87171':isLow?'#fbbf24':'#34d399'}`}>inventory_2</span>
+                {' '}{stock} chiếc
+              </span>
+              <button class="btn-icon" style="width:28px;height:28px;border-radius:7px;" title="Xóa">
+                <span class="material-symbols-outlined" style="font-size:14px;color:#f87171;">delete</span>
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    ))}
+      );
+    })}
+  </div>
+
+  <!-- Add card -->
+  <div style="border:2px dashed rgba(244,140,37,.2);border-radius:14px;padding:32px;text-align:center;cursor:pointer;transition:border-color .15s;" onmouseenter="this.style.borderColor='rgba(244,140,37,.4)'" onmouseleave="this.style.borderColor='rgba(244,140,37,.2)'">
+    <span class="material-symbols-outlined" style="font-size:32px;color:#f48c25;margin-bottom:8px;display:block;">add_circle_outline</span>
+    <p style="font-size:14px;font-weight:700;color:#f48c25;margin-bottom:4px;">Thêm sản phẩm mới</p>
+    <p style="font-size:12px;color:#3a2d1a;">Số lượng hiện tại: {products.length} sản phẩm</p>
+  </div>
+
+  <!-- Pagination -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px;">
+    <span style="font-size:12px;color:#3a2d1a;">Hiển thị 1–{products.length} trong số 48 sản phẩm</span>
+    <div style="display:flex;gap:4px;">
+      {[1,2,3,'…',8].map(p => (
+        <button style={`width:30px;height:30px;border-radius:7px;border:1px solid rgba(255,255,255,.08);font-size:12px;font-weight:700;cursor:pointer;background:${p===1?'#f48c25':'rgba(255,255,255,.03)'};color:${p===1?'#0d0b08':'#5a4a36'};`}>{p}</button>
+      ))}
+      <button style="width:30px;height:30px;border-radius:7px;border:1px solid rgba(255,255,255,.08);font-size:13px;cursor:pointer;background:rgba(255,255,255,.03);color:#5a4a36;">›</button>
+    </div>
   </div>
 </AdminLayout>
 
-<style>
-  .badge-filter.active { background: rgba(244,140,37,0.15) !important; color: #f48c25 !important; border-color: #f48c25 !important; }
-  .badge-filter:hover { border-color: #f48c25 !important; color: #f48c25 !important; }
-  .prod-card:hover { box-shadow: 0 0 20px rgba(244,140,37,0.12); transform: translateY(-2px); }
-</style>
-
 <script>
-  const filterBtns = document.querySelectorAll('.badge-filter');
-  const prodCards = document.querySelectorAll<HTMLElement>('.prod-card');
   const searchInput = document.getElementById('prod-search') as HTMLInputElement;
-  const countLabel = document.getElementById('count-label')!;
-  let currentCat = 'all';
+  const catSelect = document.getElementById('cat-select') as HTMLSelectElement;
+  const cards = document.querySelectorAll('#prod-grid .product-card') as NodeListOf<HTMLElement>;
 
   function filterProducts() {
     const q = searchInput.value.toLowerCase();
-    let count = 0;
-    prodCards.forEach(card => {
-      const matchCat = currentCat === 'all' || card.dataset.cat === currentCat;
-      const matchQ = !q || card.textContent!.toLowerCase().includes(q);
+    const cat = catSelect.value;
+    cards.forEach(card => {
+      const matchCat = cat === 'all' || card.dataset.cat === cat;
+      const matchQ = !q || (card.dataset.name || '').includes(q) || card.textContent!.toLowerCase().includes(q);
       card.style.display = matchCat && matchQ ? '' : 'none';
-      if (matchCat && matchQ) count++;
     });
-    countLabel.textContent = `${count} sản phẩm`;
   }
-
-  filterBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      filterBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      currentCat = (btn as HTMLElement).dataset.cat || 'all';
-      filterProducts();
-    });
-  });
   searchInput.addEventListener('input', filterProducts);
+  catSelect.addEventListener('change', filterProducts);
 </script>

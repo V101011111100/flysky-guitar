@@ -1,0 +1,378 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+
+const roles = [
+  {
+    id: 'admin', icon: 'admin_panel_settings', name: 'Quản trị viên (Admin)',
+    desc: 'Toàn quyền kiểm soát tất cả module hệ thống.',
+    count: '5 nhân sự đang sử dụng', isDefault: true, active: true,
+  },
+  {
+    id: 'writer', icon: 'edit_note', name: 'Content Writer',
+    desc: 'Quản lý bài viết blog và mô tả sản phẩm.',
+    count: '12 nhân sự', isDefault: false, active: false,
+  },
+  {
+    id: 'sales', icon: 'payments', name: 'Sales Manager',
+    desc: 'Quản lý bán hàng, đơn hàng và khách hàng.',
+    count: '8 nhân sự', isDefault: false, active: false,
+  },
+  {
+    id: 'inventory', icon: 'conveyor_belt', name: 'Inventory Manager',
+    desc: 'Theo dõi tồn kho và nhập xuất vật tư.',
+    count: '3 nhân sự', isDefault: false, active: false,
+  },
+];
+
+const modules = [
+  { icon: 'analytics',            name: 'Bảng điều khiển (Dashboard)' },
+  { icon: 'piano',                name: 'Sản phẩm' },
+  { icon: 'local_shipping',       name: 'Đơn hàng & Vận chuyển' },
+  { icon: 'groups',               name: 'Quản lý Khách hàng' },
+  { icon: 'settings_applications',name: 'Cấu hình Hệ thống' },
+];
+---
+
+<AdminLayout
+  title="Quản lý Phân quyền"
+  subtitle="Thiết lập vai trò và cấu hình quyền truy cập hệ thống chi tiết."
+  activeNav="permissions"
+>
+  <!-- ── TOP ACTIONS ── -->
+  <div class="perm-actions">
+    <div class="search-wrap">
+      <span class="material-symbols-outlined s-ico">search</span>
+      <input type="text" placeholder="Tìm kiếm vai trò..." class="search-in" />
+    </div>
+    <button class="btn-add-role">
+      <span class="material-symbols-outlined">add</span>
+      Thêm vai trò mới
+    </button>
+  </div>
+
+  <!-- ── TWO-COLUMN GRID ── -->
+  <div class="perm-grid">
+
+    <!-- ROLES LIST -->
+    <div class="roles-col">
+      <span class="roles-col-label">Danh sách vai trò</span>
+      <div class="roles-list">
+        {roles.map(r => (
+          <button class={`role-card ${r.active ? 'role-active' : ''}`}>
+            <div class="role-card-top">
+              <span class="material-symbols-outlined role-icon">{r.icon}</span>
+              {r.isDefault && <span class="default-badge">Mặc định</span>}
+            </div>
+            <h4 class="role-name">{r.name}</h4>
+            <p class="role-desc">{r.desc}</p>
+            <div class="role-footer">
+              <span class={`role-dot ${r.active ? 'dot-active' : ''}`}></span>
+              <span class="role-count">{r.count}</span>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+
+    <!-- PERMISSION EDITOR -->
+    <div class="editor-col">
+      <div class="editor-card">
+        <!-- Header -->
+        <div class="editor-header">
+          <div>
+            <h3 class="editor-title">Cấu hình Quyền hạn: <span class="hl">Admin</span></h3>
+            <p class="editor-sub">Chỉnh sửa chi tiết quyền cho vai trò này.</p>
+          </div>
+          <div class="editor-header-btns">
+            <button class="btn-cancel-sm">Hủy bỏ</button>
+            <button class="btn-save-sm">Lưu thay đổi</button>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div style="overflow-x:auto;">
+          <table class="perm-table">
+            <thead>
+              <tr>
+                <th>Module hệ thống</th>
+                <th style="text-align:center;">Xem</th>
+                <th style="text-align:center;">Thêm</th>
+                <th style="text-align:center;">Sửa</th>
+                <th style="text-align:center;">Xóa</th>
+              </tr>
+            </thead>
+            <tbody>
+              {modules.map(m => (
+                <tr>
+                  <td>
+                    <div class="mod-cell">
+                      <span class="material-symbols-outlined mod-icon">{m.icon}</span>
+                      <span class="mod-name">{m.name}</span>
+                    </div>
+                  </td>
+                  <td style="text-align:center;"><input type="checkbox" checked class="perm-chk" /></td>
+                  <td style="text-align:center;"><input type="checkbox" checked class="perm-chk" /></td>
+                  <td style="text-align:center;"><input type="checkbox" checked class="perm-chk" /></td>
+                  <td style="text-align:center;"><input type="checkbox" checked class="perm-chk" /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Table Footer -->
+        <div class="table-footer">
+          <div class="footer-info">
+            <span class="material-symbols-outlined footer-icon">info</span>
+            <p class="footer-text">Thay đổi sẽ áp dụng ngay lập tức cho tất cả nhân viên thuộc vai trò này.</p>
+          </div>
+          <div class="footer-links">
+            <button class="link-select-all">Chọn tất cả</button>
+            <button class="link-deselect">Bỏ chọn tất cả</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Advanced Security Card -->
+      <div class="security-card">
+        <h4 class="security-title">
+          <span class="material-symbols-outlined" style="color:#f48c25;">security</span>
+          Quyền bảo mật nâng cao
+        </h4>
+        <div class="security-grid">
+          <label class="toggle-item">
+            <div>
+              <span class="toggle-label">Yêu cầu xác thực 2FA</span>
+              <span class="toggle-desc">Bắt buộc đăng nhập 2 bước cho vai trò này.</span>
+            </div>
+            <div class="toggle-wrap">
+              <input type="checkbox" class="toggle-chk" checked />
+              <div class="toggle-track">
+                <div class="toggle-thumb"></div>
+              </div>
+            </div>
+          </label>
+          <label class="toggle-item">
+            <div>
+              <span class="toggle-label">Truy cập API</span>
+              <span class="toggle-desc">Cho phép gọi API từ các ứng dụng bên thứ 3.</span>
+            </div>
+            <div class="toggle-wrap">
+              <input type="checkbox" class="toggle-chk" />
+              <div class="toggle-track">
+                <div class="toggle-thumb"></div>
+              </div>
+            </div>
+          </label>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</AdminLayout>
+
+<style>
+  /* ── TOP ACTIONS ── */
+  .perm-actions {
+    display: flex; align-items: center; justify-content: flex-end;
+    gap: 12px; margin-bottom: 28px;
+  }
+  .search-wrap { position: relative; display: flex; align-items: center; }
+  .s-ico { position: absolute; left: 12px; font-size: 20px; color: rgba(244,140,37,.45); pointer-events: none; }
+  .search-in {
+    padding: 9px 16px 9px 40px; width: 260px;
+    background: rgba(244,140,37,.05); border: 1px solid rgba(244,140,37,.2);
+    border-radius: 8px; font-size: 13px; color: #f1f5f9;
+    font-family: 'Manrope', sans-serif; outline: none; transition: border .2s;
+  }
+  .search-in::placeholder { color: rgba(244,140,37,.3); }
+  .search-in:focus { border-color: #f48c25; }
+  .btn-add-role {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 20px; border-radius: 8px;
+    background: #f48c25; color: #221910;
+    font-size: 13px; font-weight: 700; border: none; cursor: pointer;
+    font-family: 'Manrope', sans-serif;
+    box-shadow: 0 4px 16px rgba(244,140,37,.25);
+    transition: filter .15s;
+  }
+  .btn-add-role:hover { filter: brightness(1.1); }
+  .btn-add-role .material-symbols-outlined { font-size: 18px; }
+
+  /* ── GRID ── */
+  .perm-grid {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 28px;
+    align-items: start;
+  }
+
+  /* ── ROLES ── */
+  .roles-col { display: flex; flex-direction: column; gap: 12px; }
+  .roles-col-label {
+    font-size: 10px; font-weight: 900; text-transform: uppercase;
+    letter-spacing: .14em; color: #f48c25; padding: 0 4px;
+  }
+  .roles-list { display: flex; flex-direction: column; gap: 10px; }
+  .role-card {
+    width: 100%; text-align: left;
+    padding: 18px;
+    border-radius: 12px;
+    border: 1px solid rgba(244,140,37,.2);
+    background: rgba(34,25,16,.6);
+    color: #94a3b8; cursor: pointer;
+    transition: border-color .15s, background .15s;
+    font-family: 'Manrope', sans-serif;
+  }
+  .role-card:hover { border-color: rgba(244,140,37,.5); }
+  .role-active {
+    background: #f48c25 !important;
+    border-color: #f48c25 !important;
+    color: #221910 !important;
+    box-shadow: 0 8px 24px rgba(244,140,37,.25);
+  }
+  .role-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .role-icon { font-size: 28px; }
+  .role-active .role-icon { color: #221910; opacity: .85; }
+  .default-badge {
+    background: rgba(0,0,0,.2); color: inherit;
+    font-size: 9px; font-weight: 800; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 4px;
+  }
+  .role-name { font-size: 15px; font-weight: 800; color: inherit; margin-bottom: 6px; }
+  .role-active .role-name { color: #221910; }
+  .role-desc { font-size: 12px; color: #64748b; margin-bottom: 14px; line-height: 1.5; }
+  .role-active .role-desc { color: rgba(34,25,16,.7); }
+  .role-footer { display: flex; align-items: center; gap: 8px; padding-top: 14px; border-top: 1px solid rgba(244,140,37,.1); }
+  .role-active .role-footer { border-top-color: rgba(0,0,0,.15); }
+  .role-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(244,140,37,.4); flex-shrink: 0; }
+  .dot-active { background: rgba(34,25,16,.35) !important; animation: pulse-dot 1.5s infinite; }
+  @keyframes pulse-dot { 0%,100%{opacity:1}50%{opacity:.5} }
+  .role-count { font-size: 11px; font-weight: 700; }
+  .role-active .role-count { color: #221910; }
+
+  /* ── EDITOR ── */
+  .editor-col { display: flex; flex-direction: column; gap: 24px; }
+  .editor-card {
+    background: rgba(244,140,37,.04);
+    border: 1px solid rgba(244,140,37,.12);
+    border-radius: 16px; overflow: hidden;
+  }
+  .editor-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    padding: 24px; border-bottom: 1px solid rgba(244,140,37,.1);
+    background: rgba(244,140,37,.04);
+  }
+  .editor-title { font-size: 17px; font-weight: 800; color: #f9fafb; }
+  .hl { color: #f48c25; }
+  .editor-sub { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+  .editor-header-btns { display: flex; gap: 8px; }
+  .btn-cancel-sm {
+    padding: 8px 16px; border-radius: 8px;
+    border: 1px solid rgba(244,140,37,.2);
+    background: none; color: #cbd5e1; font-size: 13px; font-weight: 700;
+    font-family: 'Manrope', sans-serif; cursor: pointer; transition: background .15s;
+  }
+  .btn-cancel-sm:hover { background: rgba(244,140,37,.06); }
+  .btn-save-sm {
+    padding: 8px 20px; border-radius: 8px;
+    background: #f48c25; color: #221910;
+    font-size: 13px; font-weight: 900; border: none; cursor: pointer;
+    font-family: 'Manrope', sans-serif; transition: filter .15s;
+  }
+  .btn-save-sm:hover { filter: brightness(1.08); }
+
+  /* Table */
+  .perm-table { width: 100%; border-collapse: collapse; text-align: left; }
+  .perm-table thead tr {
+    background: rgba(34,25,16,.7);
+    border-bottom: 1px solid rgba(244,140,37,.1);
+  }
+  .perm-table th {
+    padding: 14px 24px;
+    font-size: 10px; font-weight: 900; text-transform: uppercase;
+    letter-spacing: .1em; color: #f48c25;
+  }
+  .perm-table tbody tr {
+    border-bottom: 1px solid rgba(244,140,37,.05);
+    transition: background .15s;
+  }
+  .perm-table tbody tr:last-child { border-bottom: none; }
+  .perm-table tbody tr:hover { background: rgba(244,140,37,.04); }
+  .perm-table td { padding: 18px 24px; vertical-align: middle; }
+  .mod-cell { display: flex; align-items: center; gap: 12px; }
+  .mod-icon { font-size: 22px; color: #f48c25; }
+  .mod-name { font-size: 13px; font-weight: 700; color: #e2e8f0; }
+  .perm-chk {
+    width: 20px; height: 20px; cursor: pointer;
+    border-radius: 4px; border: 1.5px solid rgba(244,140,37,.4);
+    background: #221910;
+    accent-color: #f48c25;
+  }
+
+  /* Table Footer */
+  .table-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 24px;
+    background: rgba(34,25,16,.7);
+    border-top: 1px solid rgba(244,140,37,.08);
+  }
+  .footer-info { display: flex; align-items: center; gap: 8px; }
+  .footer-icon { font-size: 20px; color: #475569; }
+  .footer-text { font-size: 12px; color: #94a3b8; }
+  .footer-links { display: flex; gap: 16px; align-items: center; }
+  .link-select-all {
+    font-size: 12px; font-weight: 800; color: #f48c25; font-family: 'Manrope', sans-serif;
+    background: none; border: none; cursor: pointer;
+    text-decoration: underline; text-underline-offset: 4px;
+  }
+  .link-deselect {
+    font-size: 12px; font-weight: 700; color: #64748b; font-family: 'Manrope', sans-serif;
+    background: none; border: none; cursor: pointer; transition: color .15s;
+  }
+  .link-deselect:hover { color: #cbd5e1; }
+
+  /* ── SECURITY CARD ── */
+  .security-card {
+    background: rgba(244,140,37,.04);
+    border: 1px solid rgba(244,140,37,.12);
+    border-radius: 16px; padding: 24px;
+  }
+  .security-title {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 16px; font-weight: 800; color: #f9fafb;
+    margin-bottom: 20px;
+  }
+  .security-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .toggle-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px; border-radius: 12px;
+    background: rgba(244,140,37,.05);
+    border: 1px solid rgba(244,140,37,.1);
+    cursor: pointer; gap: 16px;
+    transition: border-color .15s;
+  }
+  .toggle-item:hover { border-color: rgba(244,140,37,.35); }
+  .toggle-label { display: block; font-size: 13px; font-weight: 700; color: #e2e8f0; margin-bottom: 4px; }
+  .toggle-desc  { display: block; font-size: 11px; color: #64748b; }
+  .toggle-wrap  { position: relative; flex-shrink: 0; }
+  .toggle-chk   { position: absolute; opacity: 0; width: 0; height: 0; }
+  .toggle-track {
+    width: 44px; height: 24px; border-radius: 999px;
+    background: #475569; position: relative;
+    transition: background .2s;
+  }
+  .toggle-chk:checked + .toggle-track { background: #f48c25; }
+  .toggle-thumb {
+    position: absolute; top: 2px; left: 2px;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: #fff; transition: left .2s;
+  }
+  .toggle-chk:checked + .toggle-track .toggle-thumb { left: 22px; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 1100px) {
+    .perm-grid { grid-template-columns: 1fr; }
+    .security-grid { grid-template-columns: 1fr; }
+  }
+</style>

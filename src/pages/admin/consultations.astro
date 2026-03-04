@@ -1,181 +1,373 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
+
+const inquiries = [
+  {
+    id: '#FS-901', initials: 'NV', initBg: 'rgba(244,140,37,.2)', initColor: '#f48c25',
+    name: 'Nguyễn Văn A', phone: '0901 234 567',
+    msg: 'Muốn mua đàn Acoustic gỗ Mahogany cao cấp...',
+    status: 'pending', time: '10 phút trước',
+  },
+  {
+    id: '#FS-902', initials: 'TB', initBg: 'rgba(168,85,247,.2)', initColor: '#c084fc',
+    name: 'Trần Thị B', phone: '0888 555 444',
+    msg: 'Cần tư vấn khóa học Guitar Solo cho người mới',
+    status: 'contacted', time: '1 giờ trước',
+  },
+  {
+    id: '#FS-903', initials: 'LC', initBg: 'rgba(245,158,11,.2)', initColor: '#fbbf24',
+    name: 'Lê Văn C', phone: '0977 111 222',
+    msg: 'Hỏi về chính sách bảo hành Studio của shop',
+    status: 'closed', time: '3 giờ trước',
+  },
+  {
+    id: '#FS-904', initials: 'PD', initBg: 'rgba(244,63,94,.2)', initColor: '#fb7185',
+    name: 'Phạm Minh D', phone: '0911 333 444',
+    msg: 'Đàn Classic có sẵn tại cửa hàng không shop?',
+    status: 'pending', time: '5 giờ trước',
+  },
+];
+
+const quickReplies = [
+  { title: 'Chào hỏi & Cảm ơn', preview: 'Chào anh/chị, cảm ơn anh/chị đã quan tâm đến FlySky...' },
+  { title: 'Tư vấn Acoustic',   preview: 'Mẫu đàn Acoustic gỗ Mahogany đang có ưu đãi 10%...' },
+  { title: 'Chính sách bảo hành', preview: 'Sản phẩm được bảo hành 2 năm và bảo trì trọn đời...' },
+  { title: 'Địa chỉ cửa hàng', preview: 'Showroom của chúng tôi nằm tại số 123 đường Studio...' },
+];
 ---
 
-<AdminLayout title="Tư vấn khách hàng" activeNav="consultations">
-  <!-- Stats -->
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;">
+<AdminLayout
+  title="Quản lý yêu cầu tư vấn"
+  subtitle="Theo dõi và phản hồi các thắc mắc từ khách hàng một cách chuyên nghiệp."
+  activeNav="consultations"
+>
+
+  <!-- ── STAT CARDS ── -->
+  <div class="con-stats">
     {[
-      { label: 'Tổng yêu cầu', value: '1,248', color: '#fff' },
-      { label: 'Chờ xử lý', value: '42', color: '#f59e0b' },
-      { label: 'Đã liên hệ', value: '856', color: '#3b82f6' },
-      { label: 'Đã chốt đơn', value: '350', color: '#10b981' },
+      { label: 'Tổng yêu cầu', val: '1,284', tag: '+12%', tagType: 'green' },
+      { label: 'Đang chờ',     val: '42',    tag: '+5%',  tagType: 'green' },
+      { label: 'Đã liên hệ',  val: '156',   tag: '-2%',  tagType: 'red' },
+      { label: 'Đã đóng',     val: '1,086', tag: '+15%', tagType: 'green' },
     ].map(s => (
-      <div class="stat-card" style="text-align:center;">
-        <p class="stat-label">{s.label}</p>
-        <p class="stat-value" style={`color:${s.color};font-size:30px;`}>{s.value}</p>
+      <div class="con-card">
+        <p class="con-card-label">{s.label}</p>
+        <div class="con-card-bottom">
+          <span class="con-card-val">{s.val}</span>
+          <span class={`con-tag ${s.tagType === 'green' ? 'tag-green' : 'tag-red'}`}>{s.tag}</span>
+        </div>
       </div>
     ))}
   </div>
 
-  <div style="display:grid;grid-template-columns:1fr 380px;gap:20px;">
-    <!-- Main table -->
-    <div class="card">
-      <div class="card-header">
-        <span class="card-title">Danh sách yêu cầu tư vấn</span>
-        <div style="display:flex;gap:8px;">
-          <select class="admin-select" id="status-filter" style="font-size:12px;padding:5px 10px;">
-            <option value="all">Tất cả</option>
-            <option value="pending">Chờ xử lý</option>
-            <option value="contacted">Đã liên hệ</option>
-            <option value="closed">Đã chốt</option>
-          </select>
-          <input class="admin-input" placeholder="Tìm kiếm..." style="width:160px;font-size:12px;padding:5px 10px;" id="search-input" />
-        </div>
-      </div>
+  <!-- ── ACTION BAR ── -->
+  <div class="action-bar">
+    <div class="search-wrap">
+      <span class="material-symbols-outlined s-icon">search</span>
+      <input type="text" placeholder="Tìm tên, SĐT hoặc ID..." class="search-in" />
+    </div>
+    <div class="action-btns">
+      <button class="act-btn-outline">
+        <span class="material-symbols-outlined">filter_list</span>
+        Lọc kết quả
+      </button>
+      <button class="act-btn-outline">
+        <span class="material-symbols-outlined">download</span>
+        Xuất báo cáo
+      </button>
+    </div>
+  </div>
+
+  <!-- ── TWO-COLUMN LAYOUT ── -->
+  <div class="con-grid">
+
+    <!-- Table -->
+    <div class="con-table-card">
       <div style="overflow-x:auto;">
-        <table class="admin-table" id="consult-table">
+        <table class="con-table">
           <thead>
             <tr>
-              <th>#</th>
+              <th>ID</th>
               <th>Khách hàng</th>
-              <th>Số điện thoại</th>
+              <th>Liên hệ</th>
               <th>Nội dung</th>
-              <th>Trạng thái</th>
+              <th style="text-align:center;">Trạng thái</th>
               <th>Thời gian</th>
-              <th></th>
             </tr>
           </thead>
           <tbody>
-            {[
-              { id: 'REQ-1023', name: 'Trần Thị Bích', phone: '0901 234 567', msg: 'Muốn tư vấn guitar acoustic Cordoba C5', status: 'pending', time: '5 phút' },
-              { id: 'REQ-1022', name: 'Nguyễn Văn An', phone: '0912 345 678', msg: 'Cần tư vấn dòng Electric cho nhạc Rock', status: 'contacted', time: '30 phút' },
-              { id: 'REQ-1021', name: 'Lê Minh Cường', phone: '0933 456 789', msg: 'Khóa đàn số 3 bị kẹt, cần bảo hành', status: 'closed', time: '1 giờ' },
-              { id: 'REQ-1020', name: 'Phạm Thu Hà', phone: '0944 567 890', msg: 'Tư vấn guitar bass FlySky Thunder', status: 'pending', time: '2 giờ' },
-              { id: 'REQ-1019', name: 'Vũ Đình Hùng', phone: '0955 678 901', msg: 'Hỏi giá Piano Grand Concert', status: 'contacted', time: '3 giờ' },
-              { id: 'REQ-1018', name: 'Đỗ Thị Lan', phone: '0966 789 012', msg: 'Cần đàn acoustic tầm 15 triệu', status: 'closed', time: '5 giờ' },
-            ].map((r, i) => (
-              <tr data-status={r.status} class="consult-row">
-                <td style="font-size:11px;color:#6b5a46;">{r.id}</td>
-                <td style="font-weight:600;color:#fff;">{r.name}</td>
-                <td style="color:#f48c25;">{r.phone}</td>
-                <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{r.msg}</td>
+            {inquiries.map(r => (
+              <tr>
+                <td class="inq-id">{r.id}</td>
                 <td>
-                  <span class={`badge badge-${r.status}`}>
-                    {r.status === 'pending' ? '⏳ Chờ xử lý' : r.status === 'contacted' ? '📞 Đã liên hệ' : '✅ Đã chốt'}
-                  </span>
+                  <div class="cus-cell">
+                    <div class="cus-init" style={`background:${r.initBg};color:${r.initColor};`}>{r.initials}</div>
+                    <span class="cus-name">{r.name}</span>
+                  </div>
                 </td>
-                <td style="color:#6b5a46;font-size:12px;">{r.time} trước</td>
-                <td>
-                  <button class="btn-icon" onclick={`openDetail(${i})`} title="Xem chi tiết">
-                    <span class="material-symbols-outlined" style="font-size:16px;">open_in_new</span>
-                  </button>
+                <td class="phone-col">{r.phone}</td>
+                <td class="msg-col">{r.msg}</td>
+                <td style="text-align:center;">
+                  {r.status === 'pending'   && <span class="badge badge-pending">Đang chờ</span>}
+                  {r.status === 'contacted' && <span class="badge badge-contacted">Đã liên hệ</span>}
+                  {r.status === 'closed'    && <span class="badge badge-closed">Đã đóng</span>}
                 </td>
+                <td class="time-col">{r.time}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-    </div>
 
-    <!-- Detail panel -->
-    <div class="card" id="detail-panel">
-      <div class="card-header">
-        <span class="card-title" style="color:#f48c25;">#REQ-1023 — Trần Thị Bích</span>
-        <span class="badge badge-pending">⏳ Chờ xử lý</span>
-      </div>
-      <div class="card-body" style="display:flex;flex-direction:column;gap:16px;">
-        <!-- Customer info -->
-        <div style="background:#0e0a06;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px;">
-          <div style="display:flex;gap:8px;font-size:12px;"><span style="color:#6b5a46;width:70px;flex-shrink:0;">Tên:</span><span style="color:#fff;font-weight:600;">Trần Thị Bích</span></div>
-          <div style="display:flex;gap:8px;font-size:12px;"><span style="color:#6b5a46;width:70px;flex-shrink:0;">SĐT:</span><span style="color:#f48c25;font-weight:700;">0901 234 567</span></div>
-          <div style="display:flex;gap:8px;font-size:12px;"><span style="color:#6b5a46;width:70px;flex-shrink:0;">Nội dung:</span><span style="color:#ccc;">Muốn tư vấn guitar acoustic Cordoba C5</span></div>
-        </div>
-
-        <!-- Chat history -->
-        <div>
-          <p style="font-size:11px;font-weight:700;color:#6b5a46;text-transform:uppercase;margin-bottom:10px;">Lịch sử trao đổi</p>
-          <div style="display:flex;flex-direction:column;gap:10px;max-height:180px;overflow-y:auto;">
-            <div style="background:rgba(244,140,37,0.1);border-radius:8px;padding:10px;font-size:12px;">
-              <p style="color:#f48c25;font-weight:700;margin-bottom:4px;">Admin</p>
-              <p style="color:#ccc;">Chào chị Bích, em là admin FlySky. Chị cần tư vấn thêm về mẫu acoustic không ạ?</p>
-            </div>
-            <div style="background:#0e0a06;border-radius:8px;padding:10px;font-size:12px;margin-left:16px;">
-              <p style="color:#3b82f6;font-weight:700;margin-bottom:4px;">Khách hàng</p>
-              <p style="color:#ccc;">Dạ, mình đang phân vân giá cả chút xíu. Shop có ưu đãi gì không?</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Quick reply -->
-        <div>
-          <p style="font-size:11px;font-weight:700;color:#6b5a46;text-transform:uppercase;margin-bottom:8px;">Mẫu trả lời nhanh</p>
-          <div style="display:flex;flex-direction:column;gap:6px;">
-            {['Chào hỏi & Giới thiệu', 'Tư vấn sản phẩm', 'Thông tin bảo hành', 'Mời ghé showroom'].map(t => (
-              <button class="btn-secondary" style="font-size:11px;justify-content:flex-start;text-align:left;padding:6px 10px;" onclick={`insertTemplate('${t}')`}>{t}</button>
-            ))}
-          </div>
-        </div>
-
-        <!-- Reply box -->
-        <div>
-          <textarea id="reply-box" class="admin-input" rows="3" placeholder="Nhập nội dung trả lời..." style="resize:none;"></textarea>
-          <div style="display:flex;gap:8px;margin-top:8px;">
-            <button class="btn-primary" style="flex:1;justify-content:center;">
-              <span class="material-symbols-outlined" style="font-size:16px;">send</span>
-              Gửi trả lời
-            </button>
-            <button class="btn-secondary" style="font-size:12px;padding:8px 12px;" onclick="markContacted()">
-              <span class="material-symbols-outlined" style="font-size:15px;">phone_in_talk</span>
-            </button>
-          </div>
+      <!-- Pagination -->
+      <div class="con-pagination">
+        <span class="page-info">Hiển thị 4 trong số 1,284 yêu cầu</span>
+        <div class="page-btns">
+          <button class="pg-nav"><span class="material-symbols-outlined">chevron_left</span></button>
+          <button class="pg-num pg-active">1</button>
+          <button class="pg-num">2</button>
+          <button class="pg-num">3</button>
+          <button class="pg-nav"><span class="material-symbols-outlined">chevron_right</span></button>
         </div>
       </div>
     </div>
+
+    <!-- Quick Reply Panel -->
+    <div class="quick-panel">
+      <h3 class="qp-title">
+        <span class="material-symbols-outlined" style="color:#f48c25;">bolt</span>
+        Phản hồi nhanh
+      </h3>
+      <div class="qp-list">
+        {quickReplies.map(qr => (
+          <button class="qr-btn">
+            <p class="qr-title">{qr.title}</p>
+            <p class="qr-preview">{qr.preview}</p>
+          </button>
+        ))}
+      </div>
+      <div class="qp-footer">
+        <button class="btn-new-template">
+          <span class="material-symbols-outlined">add_circle</span>
+          Tạo mẫu mới
+        </button>
+      </div>
+    </div>
+
   </div>
+
 </AdminLayout>
 
-<script>
-  const statusFilter = document.getElementById('status-filter') as HTMLSelectElement;
-  const searchInput = document.getElementById('search-input') as HTMLInputElement;
+<style>
+  /* ── STATS ── */
+  .con-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .con-card {
+    background: #2d2218;
+    border: 1px solid #4a3a2a;
+    border-radius: 12px;
+    padding: 24px;
+    transition: border-color .2s;
+  }
+  .con-card:hover { border-color: rgba(244,140,37,.5); }
+  .con-card-label { font-size: 13px; color: #94a3b8; font-weight: 500; margin-bottom: 8px; }
+  .con-card-bottom { display: flex; align-items: flex-end; justify-content: space-between; }
+  .con-card-val { font-size: 28px; font-weight: 900; color: #f9fafb; line-height: 1; }
+  .con-tag {
+    font-size: 11px; font-weight: 700;
+    padding: 3px 8px; border-radius: 4px;
+    margin-bottom: 2px;
+  }
+  .tag-green { background: rgba(16,185,129,.1); color: #34d399; }
+  .tag-red   { background: rgba(244,63,94,.1);  color: #fb7185; }
 
-  function filterTable() {
-    const status = statusFilter.value;
-    const q = searchInput.value.toLowerCase();
-    document.querySelectorAll('.consult-row').forEach((row: any) => {
-      const rowStatus = row.dataset.status;
-      const text = row.textContent.toLowerCase();
-      const matchStatus = status === 'all' || rowStatus === status;
-      const matchSearch = !q || text.includes(q);
-      row.style.display = matchStatus && matchSearch ? '' : 'none';
-    });
+  /* ── ACTION BAR ── */
+  .action-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .search-wrap {
+    position: relative;
+    display: flex; align-items: center;
+    flex: 1; max-width: 400px;
+  }
+  .s-icon {
+    position: absolute; left: 12px;
+    font-size: 20px; color: #94a3b8;
+    pointer-events: none;
+  }
+  .search-in {
+    width: 100%;
+    padding: 10px 16px 10px 40px;
+    background: #2d2218;
+    border: 1px solid #4a3a2a;
+    border-radius: 8px;
+    font-size: 13px; color: #f1f5f9;
+    font-family: 'Manrope', sans-serif;
+    outline: none; transition: border .2s;
+  }
+  .search-in::placeholder { color: #64748b; }
+  .search-in:focus { border-color: #f48c25; }
+  .action-btns { display: flex; gap: 8px; }
+  .act-btn-outline {
+    display: flex; align-items: center; gap: 6px;
+    padding: 10px 16px; border-radius: 8px;
+    background: none;
+    border: 1px solid #4a3a2a;
+    color: #f1f5f9; font-size: 13px; font-weight: 600;
+    font-family: 'Manrope', sans-serif; cursor: pointer;
+    transition: background .15s;
+    white-space: nowrap;
+  }
+  .act-btn-outline:hover { background: #2d2218; }
+  .act-btn-outline .material-symbols-outlined { font-size: 18px; }
+
+  /* ── TWO-COLUMN ── */
+  .con-grid {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 24px;
+    align-items: start;
   }
 
-  statusFilter.addEventListener('change', filterTable);
-  searchInput.addEventListener('input', filterTable);
-
-  const templates: Record<string, string> = {
-    'Chào hỏi & Giới thiệu': 'Chào bạn, cảm ơn bạn đã quan tâm đến FlySky Guitar. Mình có thể giúp gì cho bạn ạ?',
-    'Tư vấn sản phẩm': 'Dạ, sản phẩm này hiện đang có giá ưu đãi. Bên em đang có chương trình tặng kèm bao đàn và phụ kiện ạ.',
-    'Thông tin bảo hành': 'Sản phẩm được bảo hành chính hãng 12 tháng, bảo trì trọn đời tại showroom FlySky ạ.',
-    'Mời ghé showroom': 'Mời bạn ghé showroom để trải nghiệm trực tiếp âm thanh nhé. Shop mở cửa từ 8h-21h hàng ngày ạ.',
-  };
-
-  function insertTemplate(name: string) {
-    const box = document.getElementById('reply-box') as HTMLTextAreaElement;
-    box.value = templates[name] || '';
-    box.focus();
+  /* ── TABLE ── */
+  .con-table-card {
+    background: #2d2218;
+    border: 1px solid #4a3a2a;
+    border-radius: 12px;
+    overflow: hidden;
   }
-
-  function markContacted() {
-    alert('Đã đánh dấu trạng thái: Đã liên hệ');
+  .con-table {
+    width: 100%; border-collapse: collapse; text-align: left;
   }
-
-  function openDetail(i: number) {
-    // Future: open modal or navigate
+  .con-table thead tr {
+    background: rgba(34,25,16,.5);
+    border-bottom: 1px solid #4a3a2a;
   }
+  .con-table th {
+    padding: 14px 24px;
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .1em;
+    color: #94a3b8; white-space: nowrap;
+  }
+  .con-table tbody tr {
+    border-bottom: 1px solid rgba(74,58,42,.4);
+    transition: background .15s; cursor: pointer;
+  }
+  .con-table tbody tr:last-child { border-bottom: none; }
+  .con-table tbody tr:hover { background: rgba(244,140,37,.04); }
+  .con-table td { padding: 18px 24px; vertical-align: middle; }
 
-  (window as any).insertTemplate = insertTemplate;
-  (window as any).markContacted = markContacted;
-  (window as any).openDetail = openDetail;
-</script>
+  .inq-id { font-size: 13px; font-weight: 600; color: #f48c25; font-family: monospace; white-space: nowrap; }
+
+  .cus-cell { display: flex; align-items: center; gap: 8px; }
+  .cus-init {
+    width: 32px; height: 32px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 800; flex-shrink: 0;
+  }
+  .cus-name  { font-size: 13px; font-weight: 700; color: #f9fafb; white-space: nowrap; }
+  .phone-col { font-size: 13px; color: #94a3b8; white-space: nowrap; }
+  .msg-col   {
+    font-size: 13px; color: #94a3b8;
+    max-width: 220px; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap;
+  }
+  .time-col  { font-size: 13px; color: #94a3b8; font-style: italic; white-space: nowrap; }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    padding: 4px 12px; border-radius: 999px;
+    font-size: 10px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: .05em;
+    border: 1px solid;
+    white-space: nowrap;
+  }
+  .badge-pending   { background: rgba(244,140,37,.2); color: #f48c25; border-color: rgba(244,140,37,.3); }
+  .badge-contacted { background: rgba(59,130,246,.2); color: #60a5fa; border-color: rgba(59,130,246,.3); }
+  .badge-closed    { background: rgba(100,116,139,.2);color: #94a3b8; border-color: rgba(100,116,139,.3); }
+
+  /* Pagination */
+  .con-pagination {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 24px;
+    background: rgba(34,25,16,.35);
+    border-top: 1px solid #4a3a2a;
+  }
+  .page-info { font-size: 11px; color: #64748b; font-style: italic; }
+  .page-btns { display: flex; gap: 4px; align-items: center; }
+  .pg-nav {
+    width: 32px; height: 32px; border-radius: 6px;
+    background: none; border: 1px solid #4a3a2a;
+    color: #94a3b8; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: background .15s;
+  }
+  .pg-nav:hover { background: rgba(244,140,37,.15); }
+  .pg-nav .material-symbols-outlined { font-size: 18px; }
+  .pg-num {
+    width: 32px; height: 32px; border-radius: 6px;
+    background: none; border: 1px solid #4a3a2a;
+    font-size: 12px; font-weight: 700; color: #94a3b8;
+    font-family: 'Manrope', sans-serif; cursor: pointer;
+    transition: background .15s;
+  }
+  .pg-num:hover { background: rgba(244,140,37,.15); }
+  .pg-active { background: #f48c25 !important; color: #221910 !important; border-color: #f48c25 !important; }
+
+  /* ── QUICK PANEL ── */
+  .quick-panel {
+    background: #2d2218;
+    border: 1px solid #4a3a2a;
+    border-radius: 12px;
+    padding: 24px;
+    position: sticky; top: 24px;
+  }
+  .qp-title {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 16px; font-weight: 800; color: #f9fafb;
+    margin-bottom: 16px;
+  }
+  .qp-list { display: flex; flex-direction: column; gap: 8px; }
+  .qr-btn {
+    width: 100%; text-align: left;
+    padding: 12px; border-radius: 8px;
+    background: rgba(34,25,16,.6);
+    border: 1px solid #4a3a2a;
+    cursor: pointer; transition: border-color .15s;
+  }
+  .qr-btn:hover { border-color: rgba(244,140,37,.5); }
+  .qr-btn:hover .qr-title { color: #f48c25; }
+  .qr-title   { font-size: 13px; font-weight: 700; color: #e2e8f0; margin-bottom: 4px; transition: color .15s; }
+  .qr-preview {
+    font-size: 11px; color: #64748b; font-style: italic;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .qp-footer { margin-top: 20px; padding-top: 20px; border-top: 1px solid #4a3a2a; }
+  .btn-new-template {
+    width: 100%;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 10px 16px; border-radius: 8px;
+    background: rgba(244,140,37,.1); color: #f48c25;
+    font-size: 13px; font-weight: 700;
+    border: none; cursor: pointer;
+    font-family: 'Manrope', sans-serif;
+    transition: all .15s;
+  }
+  .btn-new-template:hover { background: #f48c25; color: #221910; }
+  .btn-new-template .material-symbols-outlined { font-size: 16px; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 1200px) {
+    .con-grid { grid-template-columns: 1fr; }
+    .con-stats { grid-template-columns: 1fr 1fr; }
+  }
+</style>

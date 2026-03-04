@@ -1,121 +1,477 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
-import { products } from '../../data/products';
+
+const items = [
+  {
+    sku: 'FS-G001',
+    name: 'Classic Studio Wood A+',
+    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuARF7Hz_VbgAMgHUmozowd2ldnCFltYaOAP8il3pjr1xP3yqqdYYxtgbfPM0TPPQcpTqod1miuXgQgBIDHEDD8rjLfp8KkFzyTiVxoqSHNrcJu9RZ3V1u0QNT9BC-lCwUeUDm0BJRlKMntvf6rG_s-PYK5KPtXIDv9m5FiKlkJzyKgFoYQheq8CpyyxE3gSmHOeorrPLCNlBSMRu2uypG_ysgXtCMtu4N47kWzK7Fls3_hlienxHHwE4jKlHojopMhL3PTaieTebKOG',
+    cat: 'Đàn Guitar', price: '15.000.000đ',
+    qty: 85, pct: 85, status: 'in',
+  },
+  {
+    sku: 'FS-W042',
+    name: 'Gỗ Tuyết Tùng Cedar A+',
+    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDHITn6ZoRi66nuewRoh_P2iWh90HzxMsdK6Z29wPOhBR5DefZGrYyX4zQGUNkNFjSYbx9X2dUV5QTeyAirAA0zv0NzagJTTJ32i1CQScbJzXnhA9U-P9BVHWx48NFvUPn93NWVDU075Jk9IJQFXFku4C4iM55oreE6cx-b7n8hqhAMzbE_vYd16Oka_KwlIOfCct5fBQI9IhRfEPaCk_VpdAzAqGxqy9rThKHubVoqR6fKm5kho2TPNL1ruKqlMv-HQP-XOkLpo-a7',
+    cat: 'Vật liệu', price: '2.500.000đ',
+    qty: 5, pct: 12, status: 'low',
+  },
+  {
+    sku: 'FS-A102',
+    name: 'Bộ dây Elixir Acoustic Nanoweb',
+    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAiQgoiAoTzLE72T6yQzNNBO8f7NsHPMO9D9LBTz2K5bKLTITvn7zkOsHPGTDMi3dA1ep3a0BpLv6wr_huQO-8A9S-xDosSc-Pkjxgv5-us_l7Kt9B0AONpmd17MyJrcVCdWUE629wunWalhvtUDciimWXt1N2tKLgVbnzITwT3tzgmScXFjUqrjFXb16Ylu31wBHhqoRVw0uYiWIj45RCWUd5UAsW50o-pRBiV-qiE0i2tPITM4zmXjKWxvbb3NqtwaSQ5TulnWnzS',
+    cat: 'Phụ kiện', price: '450.000đ',
+    qty: 120, pct: 100, status: 'in',
+  },
+  {
+    sku: 'FS-G009',
+    name: 'Acoustic Custom Dark Limited',
+    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAFbhbNCcMkMuxVX4d8LdISaehQlTcCJNwDClfmxYbI1ntXjFSWrtvk0t2ZeNOZ3CpvPvY9eQlGD-xwu5PmKU2-PeCEJmjnqDFdqo4QMqvtJBFL3lipAqSfZ07riDcJ9DMFwsLgerbBybTg9DlgC9Q8K1rvOtMJ1KLEsLbRax_7DgqOQ8NkCkXQhOTQ-3wUWQBAz49X7fiNxtJ64qK-ITCLqG67GgInAiIgy89HMRMk5B6RKtGsOv6TQAfpD0m3JMick7whC5858W4U',
+    cat: 'Đàn Guitar', price: '22.000.000đ',
+    qty: 0, pct: 0, status: 'out',
+  },
+];
 ---
 
-<AdminLayout title="Kho hàng" activeNav="inventory">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
-    <div>
-      <h1 style="font-size:22px;font-weight:800;color:#fff;margin-bottom:4px;">Quản lý kho hàng</h1>
-      <p style="font-size:13px;color:#6b5a46;">Theo dõi tồn kho và cập nhật số lượng sản phẩm.</p>
+<AdminLayout
+  title="Quản lý Kho hàng"
+  subtitle="Theo dõi và cập nhật số lượng tồn kho theo thời gian thực"
+  activeNav="inventory"
+>
+  <!-- ── HEADER ACTIONS ── -->
+  <div class="inv-actions">
+    <div class="search-box">
+      <span class="material-symbols-outlined search-icon">search</span>
+      <input type="text" placeholder="Tìm kiếm sản phẩm..." class="search-input" />
     </div>
-    <button class="btn-primary">
-      <span class="material-symbols-outlined" style="font-size:18px;">add</span>
-      Nhập hàng mới
+    <button class="btn-add-inv">
+      <span class="material-symbols-outlined">add</span>
+      Thêm sản phẩm
     </button>
   </div>
 
-  <!-- Alert: low stock -->
-  <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:10px;margin-bottom:20px;">
-    <span class="material-symbols-outlined" style="color:#ef4444;font-size:20px;" >warning</span>
-    <span style="font-size:13px;color:#ef4444;font-weight:600;">5 sản phẩm sắp hết hàng — cần nhập thêm.</span>
+  <!-- ── STAT CARDS ── -->
+  <div class="inv-stats">
+
+    <div class="inv-card">
+      <div class="inv-card-top">
+        <span class="inv-card-label">Tổng sản phẩm</span>
+        <div class="inv-icon blue-icon">
+          <span class="material-symbols-outlined">inventory</span>
+        </div>
+      </div>
+      <div class="inv-card-val-row">
+        <span class="inv-card-val">1,250</span>
+        <span class="inv-tag green">+5% <span class="material-symbols-outlined" style="font-size:12px;">trending_up</span></span>
+      </div>
+    </div>
+
+    <div class="inv-card">
+      <div class="inv-card-top">
+        <span class="inv-card-label">Sắp hết hàng</span>
+        <div class="inv-icon orange-icon">
+          <span class="material-symbols-outlined">warning</span>
+        </div>
+      </div>
+      <div class="inv-card-val-row">
+        <span class="inv-card-val orange-val">12</span>
+        <span class="inv-tag muted">Cần nhập sớm</span>
+      </div>
+    </div>
+
+    <div class="inv-card">
+      <div class="inv-card-top">
+        <span class="inv-card-label">Sẵn có</span>
+        <div class="inv-icon green-icon">
+          <span class="material-symbols-outlined">check_circle</span>
+        </div>
+      </div>
+      <div class="inv-card-val-row">
+        <span class="inv-card-val">1,180</span>
+        <span class="inv-tag green">94%</span>
+      </div>
+    </div>
+
+    <div class="inv-card">
+      <div class="inv-card-top">
+        <span class="inv-card-label">Hết hàng</span>
+        <div class="inv-icon red-icon">
+          <span class="material-symbols-outlined">dangerous</span>
+        </div>
+      </div>
+      <div class="inv-card-val-row">
+        <span class="inv-card-val red-val">58</span>
+        <span class="inv-tag red">-1% <span class="material-symbols-outlined" style="font-size:12px;">trending_down</span></span>
+      </div>
+    </div>
+
   </div>
 
-  <!-- Filters -->
-  <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
-    <input class="admin-input" placeholder="Tìm sản phẩm..." style="max-width:220px;font-size:13px;" id="inv-search" />
-    <select class="admin-select" id="cat-filter">
-      <option value="all">Tất cả danh mục</option>
-      <option value="electric">Guitar Điện</option>
-      <option value="acoustic">Guitar Acoustic</option>
-      <option value="bass">Guitar Bass</option>
-      <option value="piano">Piano</option>
-    </select>
-    <select class="admin-select" id="stock-filter">
-      <option value="all">Tất cả mức tồn</option>
-      <option value="low">Sắp hết (&lt;5)</option>
-      <option value="ok">Còn hàng</option>
-    </select>
-  </div>
+  <!-- ── TABLE CARD ── -->
+  <div class="inv-table-card">
+    <!-- Filter Tabs -->
+    <div class="inv-tabs">
+      <button class="inv-tab inv-tab-active">Tất cả</button>
+      <button class="inv-tab">Đàn Guitar</button>
+      <button class="inv-tab">Phụ kiện</button>
+      <button class="inv-tab">Gỗ &amp; Vật liệu</button>
+      <button class="inv-tab">Khác</button>
+    </div>
 
-  <!-- Inventory table -->
-  <div class="card">
+    <!-- Table -->
     <div style="overflow-x:auto;">
-      <table class="admin-table" id="inv-table">
+      <table class="inv-table">
         <thead>
           <tr>
-            <th>Sản phẩm</th>
+            <th>Mã SKU</th>
+            <th>Tên sản phẩm</th>
             <th>Danh mục</th>
-            <th>Giá bán</th>
+            <th style="text-align:right;">Giá bán</th>
             <th>Tồn kho</th>
             <th>Trạng thái</th>
-            <th>Cập nhật</th>
-            <th></th>
+            <th style="text-align:center;">Thao tác</th>
           </tr>
         </thead>
         <tbody>
-          {products.map((p, i) => {
-            const stock = [15, 3, 8, 2, 22, 7, 4, 11, 18, 1, 9, 6][i % 12];
-            const isLow = stock < 5;
-            return (
-              <tr data-cat={p.category} data-stock={isLow ? 'low' : 'ok'} class="inv-row">
-                <td>
-                  <div style="display:flex;align-items:center;gap:10px;">
-                    <div style={`width:36px;height:36px;border-radius:8px;background-image:url('${p.image}');background-size:contain;background-position:center;background-repeat:no-repeat;background-color:#0e0a06;flex-shrink:0;`}></div>
-                    <span style="font-weight:600;color:#fff;">{p.name}</span>
+          {items.map(item => (
+            <tr class={item.status === 'out' ? 'row-faded' : ''}>
+              <td class="sku-col">{item.sku}</td>
+              <td>
+                <div class="prod-cell">
+                  <div class="prod-img">
+                    <img src={item.img} alt={item.name} />
                   </div>
-                </td>
-                <td><span style="font-size:11px;color:#f48c25;font-weight:700;">{p.categoryLabel}</span></td>
-                <td style="font-weight:700;color:#fff;">{p.priceFormatted}</td>
-                <td>
-                  <div style="display:flex;align-items:center;gap:10px;">
-                    <input
-                      type="number"
-                      value={stock}
-                      min="0"
-                      class="admin-input"
-                      style={`width:70px;text-align:center;color:${isLow ? '#ef4444' : '#10b981'};font-weight:700;`}
-                    />
+                  <span class="prod-name">{item.name}</span>
+                </div>
+              </td>
+              <td>
+                <span class="cat-chip">{item.cat}</span>
+              </td>
+              <td class="price-col">{item.price}</td>
+              <td>
+                <div class="stock-cell">
+                  <div class="stock-bar">
+                    <div
+                      class={`stock-fill ${item.status === 'in' ? 'fill-green' : item.status === 'low' ? 'fill-orange' : 'fill-red'}`}
+                      style={`width:${item.pct}%`}
+                    ></div>
                   </div>
-                </td>
-                <td><span class={`badge ${isLow ? 'badge-low' : 'badge-ok'}`}>{isLow ? '⚠ Sắp hết' : '✅ Còn hàng'}</span></td>
-                <td style="font-size:11px;color:#6b5a46;">vừa cập nhật</td>
-                <td>
-                  <div style="display:flex;gap:6px;">
-                    <button class="btn-icon" title="Lưu">
-                      <span class="material-symbols-outlined" style="font-size:15px;">save</span>
-                    </button>
-                    <button class="btn-icon" title="Xem sản phẩm">
-                      <span class="material-symbols-outlined" style="font-size:15px;">open_in_new</span>
-                    </button>
+                  <span class={`stock-num ${item.status === 'low' ? 'orange-txt' : item.status === 'out' ? 'red-txt' : ''}`}>
+                    {item.qty}
+                  </span>
+                </div>
+              </td>
+              <td>
+                {item.status === 'in' && (
+                  <span class="status-dot green-status">
+                    <span class="dot dot-green pulse"></span>Còn hàng
+                  </span>
+                )}
+                {item.status === 'low' && (
+                  <span class="status-dot orange-status">
+                    <span class="dot dot-orange"></span>Sắp hết
+                  </span>
+                )}
+                {item.status === 'out' && (
+                  <span class="status-dot red-status">
+                    <span class="dot dot-red"></span>Hết hàng
+                  </span>
+                )}
+              </td>
+              <td class="actions-center">
+                {(item.status === 'in') && (
+                  <div class="act-row">
+                    <button class="act-ico"><span class="material-symbols-outlined">edit</span></button>
+                    <button class="act-ico"><span class="material-symbols-outlined">history</span></button>
                   </div>
-                </td>
-              </tr>
-            );
-          })}
+                )}
+                {item.status === 'low' && (
+                  <button class="btn-restock">Nhập kho</button>
+                )}
+                {item.status === 'out' && (
+                  <button class="btn-urgent">Nhập gấp</button>
+                )}
+              </td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>
+
+    <!-- Pagination -->
+    <div class="inv-pagination">
+      <span class="page-info">Hiển thị 1-10 trên 1,250 sản phẩm</span>
+      <div class="page-btns">
+        <button class="page-nav"><span class="material-symbols-outlined">chevron_left</span></button>
+        <button class="pnum pnum-active">1</button>
+        <button class="pnum">2</button>
+        <button class="pnum">3</button>
+        <span class="pellipsis">...</span>
+        <button class="pnum">125</button>
+        <button class="page-nav"><span class="material-symbols-outlined">chevron_right</span></button>
+      </div>
+    </div>
   </div>
+
 </AdminLayout>
 
-<script>
-  const search = document.getElementById('inv-search') as HTMLInputElement;
-  const catF = document.getElementById('cat-filter') as HTMLSelectElement;
-  const stockF = document.getElementById('stock-filter') as HTMLSelectElement;
-
-  function filterInv() {
-    const q = search.value.toLowerCase();
-    const cat = catF.value;
-    const stock = stockF.value;
-    document.querySelectorAll('.inv-row').forEach((row: any) => {
-      const matchQ = !q || row.textContent.toLowerCase().includes(q);
-      const matchCat = cat === 'all' || row.dataset.cat === cat;
-      const matchStock = stock === 'all' || row.dataset.stock === stock;
-      row.style.display = matchQ && matchCat && matchStock ? '' : 'none';
-    });
+<style>
+  /* ── HEADER ── */
+  .inv-actions {
+    display: flex; gap: 12px; align-items: center;
+    justify-content: flex-end;
+    margin-bottom: 24px;
   }
-  search.addEventListener('input', filterInv);
-  catF.addEventListener('change', filterInv);
-  stockF.addEventListener('change', filterInv);
-</script>
+  .search-box {
+    position: relative;
+    display: flex; align-items: center;
+  }
+  .search-icon {
+    position: absolute; left: 12px;
+    font-size: 20px; color: rgba(244,140,37,.4);
+    pointer-events: none;
+  }
+  .search-input {
+    padding: 9px 16px 9px 40px;
+    width: 260px;
+    background: rgba(244,140,37,.05);
+    border: 1px solid rgba(244,140,37,.2);
+    border-radius: 8px;
+    font-size: 13px; color: #f1f5f9;
+    font-family: 'Manrope', sans-serif;
+    outline: none; transition: border .2s;
+  }
+  .search-input::placeholder { color: rgba(244,140,37,.35); }
+  .search-input:focus { border-color: #f48c25; }
+  .btn-add-inv {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 18px; border-radius: 8px;
+    background: #f48c25; color: #221910;
+    font-size: 13px; font-weight: 700;
+    border: none; cursor: pointer;
+    font-family: 'Manrope', sans-serif;
+    transition: filter .15s;
+  }
+  .btn-add-inv:hover { filter: brightness(1.1); }
+  .btn-add-inv .material-symbols-outlined { font-size: 18px; }
+
+  /* ── STATS ── */
+  .inv-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+  .inv-card {
+    background: rgba(244,140,37,.05);
+    border: 1px solid rgba(244,140,37,.1);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex; flex-direction: column; gap: 12px;
+    transition: border-color .2s;
+  }
+  .inv-card:hover { border-color: rgba(244,140,37,.25); }
+  .inv-card-top {
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .inv-card-label {
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .12em;
+    color: rgba(244,140,37,.65);
+  }
+  .inv-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .inv-icon .material-symbols-outlined { font-size: 20px; }
+  .blue-icon   { background: rgba(59,130,246,.1);  color: #60a5fa; }
+  .orange-icon { background: rgba(249,115,22,.1);   color: #fb923c; }
+  .green-icon  { background: rgba(16,185,129,.1);   color: #34d399; }
+  .red-icon    { background: rgba(239,68,68,.1);    color: #f87171; }
+
+  .inv-card-val-row { display: flex; align-items: flex-end; gap: 10px; }
+  .inv-card-val  { font-size: 30px; font-weight: 900; color: #f9fafb; line-height: 1; }
+  .orange-val    { color: #fb923c; }
+  .red-val       { color: #f87171; }
+  .inv-tag {
+    font-size: 11px; font-weight: 700;
+    margin-bottom: 4px;
+    display: flex; align-items: center; gap: 2px;
+  }
+  .inv-tag.green { color: #34d399; }
+  .inv-tag.red   { color: #f87171; }
+  .inv-tag.muted { color: rgba(244,140,37,.5); font-style: italic; font-weight: 500; }
+
+  /* ── TABLE CARD ── */
+  .inv-table-card {
+    background: rgba(244,140,37,.05);
+    border: 1px solid rgba(244,140,37,.1);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  /* ── TABS ── */
+  .inv-tabs {
+    display: flex;
+    border-bottom: 1px solid rgba(244,140,37,.1);
+    padding: 0 8px;
+    overflow-x: auto;
+  }
+  .inv-tabs::-webkit-scrollbar { display: none; }
+  .inv-tab {
+    padding: 14px 18px;
+    font-size: 13px; font-weight: 600;
+    background: none; border: none; cursor: pointer;
+    font-family: 'Manrope', sans-serif;
+    color: rgba(244,140,37,.55);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    white-space: nowrap;
+    transition: all .15s;
+  }
+  .inv-tab:hover { color: #f48c25; }
+  .inv-tab-active { color: #f48c25; border-bottom-color: #f48c25; font-weight: 700; }
+
+  /* ── TABLE ── */
+  .inv-table {
+    width: 100%; border-collapse: collapse; text-align: left;
+  }
+  .inv-table thead tr {
+    background: rgba(244,140,37,.08);
+    border-bottom: 1px solid rgba(244,140,37,.1);
+  }
+  .inv-table th {
+    padding: 14px 24px;
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .1em;
+    color: rgba(244,140,37,.6);
+    white-space: nowrap;
+  }
+  .inv-table tbody tr {
+    border-bottom: 1px solid rgba(244,140,37,.05);
+    transition: background .15s;
+  }
+  .inv-table tbody tr:last-child { border-bottom: none; }
+  .inv-table tbody tr:hover { background: rgba(244,140,37,.04); }
+  .inv-table td { padding: 20px 24px; vertical-align: middle; }
+
+  .row-faded td { opacity: 0.6; }
+  .row-faded td:nth-child(5),
+  .row-faded td:nth-child(6),
+  .row-faded td:nth-child(7) { opacity: 1; }
+
+  .sku-col { font-family: monospace; font-size: 13px; color: rgba(244,140,37,.5); white-space: nowrap; }
+
+  .prod-cell { display: flex; align-items: center; gap: 12px; }
+  .prod-img {
+    width: 40px; height: 40px; border-radius: 8px;
+    background: rgba(244,140,37,.1); flex-shrink: 0; overflow: hidden;
+  }
+  .prod-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .prod-name { font-size: 13.5px; font-weight: 700; color: #f9fafb; }
+
+  .cat-chip {
+    display: inline-block;
+    padding: 4px 12px; border-radius: 999px;
+    background: rgba(244,140,37,.1);
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .06em;
+    color: rgba(244,140,37,.8);
+    white-space: nowrap;
+  }
+
+  .price-col { text-align: right; font-size: 13px; font-weight: 700; color: #f9fafb; white-space: nowrap; }
+
+  .stock-cell { display: flex; align-items: center; gap: 12px; }
+  .stock-bar {
+    width: 96px; height: 6px;
+    background: rgba(244,140,37,.1); border-radius: 999px; overflow: hidden; flex-shrink: 0;
+  }
+  .stock-fill { height: 100%; border-radius: 999px; transition: width .3s; }
+  .fill-green  { background: #10b981; }
+  .fill-orange { background: #f97316; }
+  .fill-red    { background: #ef4444; }
+  .stock-num { font-size: 13px; font-weight: 700; color: #f9fafb; }
+  .orange-txt { color: #f97316; }
+  .red-txt    { color: #ef4444; }
+
+  .status-dot {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+  }
+  .green-status  { color: #10b981; }
+  .orange-status { color: #f97316; }
+  .red-status    { color: #ef4444; }
+  .dot {
+    width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+  }
+  .dot-green  { background: #10b981; }
+  .dot-orange { background: #f97316; }
+  .dot-red    { background: #ef4444; }
+  @keyframes pulse-anim { 0%,100%{opacity:1}50%{opacity:.4} }
+  .pulse { animation: pulse-anim 1.5s infinite; }
+
+  .actions-center { text-align: center; }
+  .act-row { display: flex; justify-content: center; gap: 4px; }
+  .act-ico {
+    width: 32px; height: 32px; border-radius: 6px;
+    background: none; border: none; cursor: pointer;
+    color: rgba(244,140,37,.4);
+    display: flex; align-items: center; justify-content: center;
+    transition: all .15s;
+  }
+  .act-ico:hover { background: rgba(244,140,37,.15); color: #f48c25; }
+  .act-ico .material-symbols-outlined { font-size: 18px; }
+
+  .btn-restock {
+    padding: 6px 12px; border-radius: 8px;
+    font-size: 11px; font-weight: 900; text-transform: uppercase;
+    font-family: 'Manrope', sans-serif; cursor: pointer;
+    background: rgba(244,140,37,.2); color: #f48c25;
+    border: none; transition: all .15s;
+  }
+  .btn-restock:hover { background: #f48c25; color: #221910; }
+  .btn-urgent {
+    padding: 6px 12px; border-radius: 8px;
+    font-size: 11px; font-weight: 900; text-transform: uppercase;
+    font-family: 'Manrope', sans-serif; cursor: pointer;
+    background: rgba(239,68,68,.2); color: #ef4444;
+    border: none; transition: all .15s;
+  }
+  .btn-urgent:hover { background: #ef4444; color: #fff; }
+
+  /* ── PAGINATION ── */
+  .inv-pagination {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 24px;
+    background: rgba(244,140,37,.04);
+    border-top: 1px solid rgba(244,140,37,.1);
+  }
+  .page-info { font-size: 11px; color: rgba(244,140,37,.55); }
+  .page-btns { display: flex; align-items: center; gap: 4px; }
+  .page-nav {
+    width: 32px; height: 32px; border-radius: 6px;
+    background: none;
+    border: 1px solid rgba(244,140,37,.2);
+    color: #94a3b8; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s;
+  }
+  .page-nav:hover { background: rgba(244,140,37,.1); }
+  .page-nav .material-symbols-outlined { font-size: 18px; }
+  .pnum {
+    width: 32px; height: 32px; border-radius: 6px;
+    background: none;
+    border: 1px solid rgba(244,140,37,.2);
+    font-size: 12px; font-weight: 700; color: #94a3b8;
+    font-family: 'Manrope', sans-serif; cursor: pointer;
+    transition: background .15s;
+  }
+  .pnum:hover { background: rgba(244,140,37,.1); }
+  .pnum-active { background: #f48c25 !important; color: #221910 !important; border-color: #f48c25 !important; }
+  .pellipsis { color: #64748b; font-size: 13px; padding: 0 4px; }
+
+  @media (max-width: 1100px) {
+    .inv-stats { grid-template-columns: 1fr 1fr; }
+  }
+</style>
