@@ -1,0 +1,499 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout
+  title="Quản lý mã giảm giá"
+  subtitle="Tạo, cập nhật và theo dõi hiệu suất các chương trình khuyến mãi."
+  activeNav="discounts"
+>
+
+  <div class="dc-container">
+    <!-- Page Header & Stats -->
+    <div class="dc-header">
+      <h1 class="dc-title">Quản lý mã giảm giá</h1>
+      <div class="dc-header-right">
+        <p class="dc-sub">Tạo, cập nhật và theo dõi hiệu suất các chương trình khuyến mãi.</p>
+        <button class="btn-primary">
+          <span class="material-symbols-outlined">add_circle</span>
+          Tạo mã mới
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="dc-stats-grid">
+      <div class="dc-stat-card">
+        <div class="dc-stat-head">
+          <span class="material-symbols-outlined dc-icon-bg text-primary bg-primary-10">confirmation_number</span>
+          <span class="dc-trend text-emerald">+5%</span>
+        </div>
+        <p class="dc-stat-label">Mã đang chạy</p>
+        <p class="dc-stat-val">12</p>
+      </div>
+      <div class="dc-stat-card">
+        <div class="dc-stat-head">
+          <span class="material-symbols-outlined dc-icon-bg text-blue bg-blue-10">group</span>
+          <span class="dc-trend text-emerald">+12%</span>
+        </div>
+        <p class="dc-stat-label">Tổng lượt dùng</p>
+        <p class="dc-stat-val">1,450</p>
+      </div>
+      <div class="dc-stat-card">
+        <div class="dc-stat-head">
+          <span class="material-symbols-outlined dc-icon-bg text-amber bg-amber-10">payments</span>
+          <span class="dc-trend text-rose">-2.1%</span>
+        </div>
+        <p class="dc-stat-label">Tổng tiền giảm</p>
+        <p class="dc-stat-val">45.8M đ</p>
+      </div>
+      <div class="dc-stat-card">
+        <div class="dc-stat-head">
+          <span class="material-symbols-outlined dc-icon-bg text-purple bg-purple-10">analytics</span>
+          <span class="dc-trend text-emerald">+8%</span>
+        </div>
+        <p class="dc-stat-label">Tỷ lệ chuyển đổi</p>
+        <p class="dc-stat-val">18.5%</p>
+      </div>
+    </div>
+
+    <!-- Main Content Layout -->
+    <div class="dc-main-layout">
+      
+      <!-- Form Section -->
+      <div class="dc-col-side">
+        <div class="card dc-form-card">
+          <div class="dc-form-head">
+            <span class="material-symbols-outlined text-primary">edit_note</span>
+            <h3 class="dc-form-title">Cấu hình mã giảm giá</h3>
+          </div>
+          
+          <form class="dc-form">
+            <div class="form-group">
+              <label class="form-label">Tên mã (Code)</label>
+              <input type="text" class="form-input text-uppercase fw-bold tracking-wide" value="FLYSKY2024" />
+            </div>
+            
+            <div class="form-row-2">
+              <div class="form-group">
+                <label class="form-label">Loại giảm giá</label>
+                <select class="form-select">
+                  <option>Phần trăm (%)</option>
+                  <option>Số tiền cố định</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Giá trị</label>
+                <div class="input-with-suffix">
+                  <input type="number" class="form-input" value="15" />
+                  <span class="input-suffix">%</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-group">
+                <label class="form-label">Ngày bắt đầu</label>
+                <input type="date" class="form-input" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Ngày kết thúc</label>
+                <input type="date" class="form-input" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Giá trị đơn hàng tối thiểu (đ)</label>
+              <input type="number" class="form-input" placeholder="Ví dụ: 500,000" />
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-group">
+                <label class="form-label">Giới hạn số lần</label>
+                <input type="number" class="form-input" placeholder="100" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Mỗi khách hàng</label>
+                <input type="number" class="form-input" value="1" />
+              </div>
+            </div>
+
+            <div class="dc-form-actions">
+              <button type="submit" class="btn-primary btn-full">Lưu thay đổi</button>
+              <button type="reset" class="btn-outline">Hủy</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- List Section -->
+      <div class="dc-col-main">
+        <div class="card dc-list-card">
+          
+          <!-- Table Toolbar -->
+          <div class="dc-toolbar">
+            <div class="dc-tabs">
+              <button class="dc-tab active">Đang hoạt động</button>
+              <button class="dc-tab">Đã hết hạn</button>
+              <button class="dc-tab">Bản nháp</button>
+            </div>
+            <div class="dc-actions">
+              <button class="btn-icon"><span class="material-symbols-outlined">filter_list</span></button>
+              <button class="btn-icon"><span class="material-symbols-outlined">sort</span></button>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div class="table-responsive custom-scroll">
+            <table class="dc-table">
+              <thead>
+                <tr>
+                  <th>Thông tin mã</th>
+                  <th>Giá trị</th>
+                  <th>Hiệu suất</th>
+                  <th>Thời gian</th>
+                  <th class="text-right">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Row 1 -->
+                <tr>
+                  <td>
+                    <div class="dc-code-info">
+                      <span class="dc-code-name">GUITARNEW2024</span>
+                      <span class="dc-code-desc">Giảm cho khách hàng mới</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="badge badge-emerald">-20%</span>
+                  </td>
+                  <td>
+                    <div class="progress-wrap">
+                      <div class="progress-info">
+                        <span>85/100</span>
+                        <span class="text-light">85%</span>
+                      </div>
+                      <div class="progress-track">
+                        <div class="progress-fill" style="width: 85%"></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="dc-dates">
+                      <span class="text-light">BĐ: 01/01/2024</span>
+                      <span class="text-muted">KT: 31/03/2024</span>
+                    </div>
+                  </td>
+                  <td class="text-right">
+                    <div class="action-buttons">
+                      <button class="btn-act btn-act-edit"><span class="material-symbols-outlined">edit</span></button>
+                      <button class="btn-act btn-act-del"><span class="material-symbols-outlined">delete</span></button>
+                    </div>
+                  </td>
+                </tr>
+                
+                <!-- Row 2 -->
+                <tr>
+                  <td>
+                    <div class="dc-code-info">
+                      <span class="dc-code-name">WOODFEEL</span>
+                      <span class="dc-code-desc">Ưu đãi dòng Acoustic</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="badge badge-primary">-500k đ</span>
+                  </td>
+                  <td>
+                    <div class="progress-wrap">
+                      <div class="progress-info">
+                        <span>42/200</span>
+                        <span class="text-light">21%</span>
+                      </div>
+                      <div class="progress-track">
+                        <div class="progress-fill" style="width: 21%"></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="dc-dates">
+                      <span class="text-light">BĐ: 15/02/2024</span>
+                      <span class="text-muted">KT: 15/05/2024</span>
+                    </div>
+                  </td>
+                  <td class="text-right">
+                    <div class="action-buttons">
+                      <button class="btn-act btn-act-edit"><span class="material-symbols-outlined">edit</span></button>
+                      <button class="btn-act btn-act-del"><span class="material-symbols-outlined">delete</span></button>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- Row 3 -->
+                <tr>
+                  <td>
+                    <div class="dc-code-info">
+                      <span class="dc-code-name">VIPMEMBER</span>
+                      <span class="dc-code-desc">Dành riêng cho khách VIP</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="badge badge-emerald">-15%</span>
+                  </td>
+                  <td>
+                    <div class="progress-wrap">
+                      <div class="progress-info">
+                        <span>12/50</span>
+                        <span class="text-light">24%</span>
+                      </div>
+                      <div class="progress-track">
+                        <div class="progress-fill" style="width: 24%"></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="dc-dates">
+                      <span class="text-light">Vô thời hạn</span>
+                      <span class="text-muted">---</span>
+                    </div>
+                  </td>
+                  <td class="text-right">
+                    <div class="action-buttons">
+                      <button class="btn-act btn-act-edit"><span class="material-symbols-outlined">edit</span></button>
+                      <button class="btn-act btn-act-del"><span class="material-symbols-outlined">delete</span></button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Pagination -->
+          <div class="dc-pagination">
+            <span class="page-info">Hiển thị 1-3 trong 12 mã</span>
+            <div class="page-controls">
+              <button class="btn-page btn-page-nav" disabled><span class="material-symbols-outlined">chevron_left</span></button>
+              <button class="btn-page active">1</button>
+              <button class="btn-page">2</button>
+              <button class="btn-page">3</button>
+              <button class="btn-page btn-page-nav"><span class="material-symbols-outlined">chevron_right</span></button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      
+    </div>
+  </div>
+
+</AdminLayout>
+
+<style>
+  /* ── UTILITIES ── */
+  .text-primary { color: #f48c25; }
+  .bg-primary-10 { background: rgba(244,140,37,.1); }
+  
+  .text-emerald { color: #34d399; }
+  .bg-emerald-10 { background: rgba(52,211,153,.1); }
+  
+  .text-blue { color: #60a5fa; }
+  .bg-blue-10 { background: rgba(96,165,250,.1); }
+  
+  .text-amber { color: #fbbf24; }
+  .bg-amber-10 { background: rgba(251,191,36,.1); }
+  
+  .text-rose { color: #fb7185; }
+  
+  .text-purple { color: #c084fc; }
+  .bg-purple-10 { background: rgba(192,132,252,.1); }
+
+  .text-uppercase { text-transform: uppercase; }
+  .fw-bold { font-weight: 700; }
+  .tracking-wide { letter-spacing: 0.1em; }
+  .text-right { text-align: right; }
+  .text-light { color: #cbd5e1; }
+  .text-muted { color: #64748b; }
+
+  /* ── SHARED BTN/CARD ── */
+  .btn-primary {
+    background: #f48c25; color: #fff;
+    font-weight: 700; font-size: 14px;
+    padding: 12px 24px; border-radius: 12px;
+    border: none; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    box-shadow: 0 8px 24px rgba(244,140,37,.2); transition: all .15s;
+  }
+  .btn-primary:hover { background: rgba(244,140,37,.9); }
+  .btn-primary .material-symbols-outlined { font-size: 20px; }
+  .btn-full { width: 100%; flex: 1; min-height: 48px; }
+
+  .btn-outline {
+    background: transparent; border: 1px solid #4a3a2a;
+    color: #94a3b8; font-weight: 700; font-size: 14px;
+    padding: 12px 20px; border-radius: 12px; cursor: pointer;
+    transition: all .15s;
+  }
+  .btn-outline:hover { background: #2d2218; color: #f1f5f9; }
+
+  .card {
+    background: #2d2218;
+    border: 1px solid #4a3a2a;
+    border-radius: 16px;
+  }
+
+  /* ── LAYOUT ── */
+  .dc-container { display: flex; flex-direction: column; gap: 24px; }
+  
+  .dc-header {
+    display: flex; flex-direction: column; gap: 8px; align-items: flex-start; margin-bottom: 8px;
+  }
+  .dc-title { font-size: 24px; font-weight: 800; color: #f9fafb; }
+  .dc-header-right { width: 100%; display: flex; flex-direction: column; gap: 16px; }
+  @media (min-width: 768px) {
+    .dc-header-right { flex-direction: row; align-items: center; justify-content: space-between; gap: 24px; }
+  }
+  .dc-sub { font-size: 13.5px; color: #94a3b8; }
+
+  /* ── STATS CARDS ── */
+  .dc-stats-grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 8px; }
+  @media (min-width: 640px) { .dc-stats-grid { grid-template-columns: 1fr 1fr; } }
+  @media (min-width: 1024px) { .dc-stats-grid { grid-template-columns: repeat(4, 1fr); } }
+
+  .dc-stat-card {
+    background: #2d2218; border: 1px solid #4a3a2a;
+    border-radius: 16px; padding: 24px;
+  }
+  .dc-stat-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .dc-icon-bg { padding: 8px; border-radius: 8px; font-size: 20px; }
+  .dc-trend { font-size: 12px; font-weight: 700; }
+  .dc-stat-label { font-size: 14px; font-weight: 600; color: #94a3b8; margin-bottom: 4px; }
+  .dc-stat-val { font-size: 24px; font-weight: 700; color: #fff; }
+
+  /* ── MAIN GRID ── */
+  .dc-main-layout { display: grid; grid-template-columns: 1fr; gap: 32px; }
+  @media (min-width: 1100px) {
+    .dc-main-layout { grid-template-columns: 4fr 8fr; }
+  }
+  .dc-col-side { }
+  .dc-col-main { }
+
+  /* ── FORM CARD ── */
+  .dc-form-card { padding: 24px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+  .dc-form-head { display: flex; align-items: center; gap: 8px; margin-bottom: 24px; }
+  .dc-form-head .material-symbols-outlined { font-size: 24px; }
+  .dc-form-title { font-size: 18px; font-weight: 700; color: #f1f5f9; }
+
+  .dc-form { display: flex; flex-direction: column; gap: 20px; }
+  .form-group { display: flex; flex-direction: column; gap: 8px; }
+  .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  
+  .form-label { font-size: 14px; font-weight: 600; color: #cbd5e1; }
+  .form-input, .form-select {
+    width: 100%; background: #221910; border: 1px solid #4a3a2a;
+    border-radius: 8px; padding: 10px 16px;
+    font-size: 14px; color: #fff;
+    outline: none; transition: border .2s, box-shadow .2s; box-sizing: border-box;
+  }
+  .form-input:focus, .form-select:focus { border-color: #f48c25; box-shadow: 0 0 0 1px #f48c25; }
+  .form-input::placeholder { color: #64748b; }
+  
+  .input-with-suffix { position: relative; }
+  .input-suffix {
+    position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+    color: #94a3b8; font-size: 14px; pointer-events: none;
+  }
+
+  .dc-form-actions { display: flex; gap: 12px; padding-top: 16px; }
+
+  /* ── LIST CARD ── */
+  .dc-list-card { overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+  
+  .dc-toolbar {
+    display: flex; flex-direction: column; gap: 16px;
+    padding: 24px; border-bottom: 1px solid #4a3a2a;
+  }
+  @media (min-width: 640px) {
+    .dc-toolbar { flex-direction: row; align-items: center; justify-content: space-between; }
+  }
+  
+  .dc-tabs { display: flex; align-items: center; gap: 24px; }
+  .dc-tab {
+    background: none; border: none; border-bottom: 2px solid transparent; padding-bottom: 4px;
+    font-size: 14px; font-weight: 600; color: #94a3b8; cursor: pointer; transition: color .15s; font-family: inherit;
+  }
+  .dc-tab:hover { color: #e2e8f0; }
+  .dc-tab.active { color: #f48c25; border-bottom-color: #f48c25; font-weight: 700; }
+
+  .dc-actions { display: flex; align-items: center; gap: 8px; }
+  .btn-icon {
+    width: 36px; height: 36px; border-radius: 8px; border: 1px solid #4a3a2a;
+    background: transparent; color: #94a3b8; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all .15s;
+  }
+  .btn-icon:hover { background: #221910; color: #f1f5f9; }
+  .btn-icon .material-symbols-outlined { font-size: 16px; }
+
+  /* Table */
+  .table-responsive { overflow-x: auto; }
+  .custom-scroll::-webkit-scrollbar { height: 6px; }
+  .custom-scroll::-webkit-scrollbar-track { background: #221910; }
+  .custom-scroll::-webkit-scrollbar-thumb { background: #4a3a2a; border-radius: 10px; }
+
+  .dc-table { width: 100%; border-collapse: collapse; min-width: 700px; text-align: left; }
+  .dc-table th {
+    padding: 16px 24px; font-size: 12px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8;
+    background: rgba(34,25,16,.5);
+  }
+  .dc-table td {
+    padding: 16px 24px; border-top: 1px solid rgba(74,58,42,.5);
+    transition: background .15s;
+  }
+  .dc-table tbody tr:hover td { background: rgba(34,25,16,.3); }
+  .dc-table tbody tr { transition: background .15s; }
+
+  .dc-code-name { display: block; font-size: 14px; font-weight: 700; color: #fff; letter-spacing: 0.05em; margin-bottom: 4px; transition: color .15s; }
+  .dc-table tbody tr:hover .dc-code-name { color: #f48c25; }
+  .dc-code-desc { font-size: 12px; color: #64748b; }
+
+  .badge {
+    display: inline-block; padding: 4px 8px; border-radius: 6px;
+    font-size: 14px; font-weight: 700;
+  }
+  .badge-emerald { background: rgba(52,211,153,.1); color: #34d399; }
+  .badge-primary { background: rgba(244,140,37,.1); color: #f48c25; }
+
+  .progress-wrap { display: flex; flex-direction: column; gap: 4px; margin-bottom: 4px; }
+  .progress-info { display: flex; justify-content: space-between; font-size: 12px; color: #94a3b8; }
+  .progress-track { width: 128px; height: 6px; background: #221910; border-radius: 99px; overflow: hidden; }
+  .progress-fill { height: 100%; background: #f48c25; border-radius: 99px; }
+
+  .dc-dates { display: flex; flex-direction: column; gap: 4px; font-size: 12px; }
+
+  .action-buttons { display: flex; justify-content: flex-end; gap: 8px; }
+  .btn-act {
+    width: 36px; height: 36px; border-radius: 8px; background: none; border: none;
+    color: #94a3b8; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all .15s;
+  }
+  .btn-act-edit:hover { background: rgba(244,140,37,.2); color: #f48c25; }
+  .btn-act-del:hover { background: rgba(251,113,133,.2); color: #fb7185; }
+  .btn-act .material-symbols-outlined { font-size: 18px; }
+
+  /* Pagination */
+  .dc-pagination {
+    padding: 16px 24px; background: rgba(34,25,16,.3);
+    border-top: 1px solid #4a3a2a; display: flex; align-items: center; justify-content: space-between;
+  }
+  .page-info { font-size: 14px; color: #64748b; }
+  .page-controls { display: flex; gap: 8px; }
+  .btn-page {
+    min-width: 32px; height: 32px; padding: 0 10px; border-radius: 8px; border: none; background: transparent;
+    font-size: 14px; font-weight: 600; color: #94a3b8; cursor: pointer; transition: all .15s; font-family: inherit;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .btn-page:hover:not(:disabled) { background: #2d2218; color: #cbd5e1; }
+  .btn-page.active { background: rgba(244,140,37,.2); border: 1px solid rgba(244,140,37,.3); color: #f48c25; font-weight: 700; }
+  .btn-page-nav { padding: 0; width: 32px; border: 1px solid #4a3a2a; }
+  .btn-page-nav:disabled { opacity: 0.3; cursor: not-allowed; }
+  .btn-page-nav .material-symbols-outlined { font-size: 16px; }
+</style>

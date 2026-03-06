@@ -17,118 +17,584 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 
   <!-- ── TABS ── -->
   <div class="stg-tabs">
-    <button class="stg-tab stg-tab-active">Cài đặt chung</button>
-    <button class="stg-tab">Giao diện</button>
-    <button class="stg-tab">Thông báo</button>
-    <button class="stg-tab">Bảo mật &amp; Tài khoản</button>
+    <button class="stg-tab" onclick="switchTab('general', this)">Cài đặt chung</button>
+    <button class="stg-tab" onclick="switchTab('appearance', this)">Giao diện</button>
+    <button class="stg-tab" onclick="switchTab('notifications', this)">Thông báo</button>
+    <button class="stg-tab stg-tab-active" onclick="switchTab('security', this)">Bảo mật &amp; Tài khoản</button>
   </div>
 
-  <!-- ── SETTINGS CONTENT ── -->
-  <div class="stg-content">
+  <!-- ── TAB: CÀI ĐẶT CHUNG ── -->
+  <div id="tab-general" class="tab-pane" style="display:none;">
+    <div class="stg-content">
+      <section class="stg-section">
+        <div class="section-head">
+          <div>
+            <h3 class="section-title">Thông tin cửa hàng</h3>
+            <p class="section-desc">Thông tin cơ bản hiển thị trên website và hóa đơn.</p>
+          </div>
+          <button class="btn-save">
+            <span class="material-symbols-outlined">save</span>
+            Lưu thay đổi
+          </button>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Tên cửa hàng</label>
+            <input type="text" class="form-input" value="FlySky Guitar Studio" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email liên hệ</label>
+            <input type="email" class="form-input" value="contact@flysky.vn" />
+          </div>
+          <div class="form-group form-full">
+            <label class="form-label">Địa chỉ cửa hàng</label>
+            <input type="text" class="form-input" value="123 Đường Nhạc Cụ, Phường Hòa Âm, Quận Giai Điệu, TP. HCM" />
+          </div>
+        </div>
+      </section>
 
-    <!-- Store Info -->
-    <section class="stg-section">
-      <div class="section-head">
-        <div>
-          <h3 class="section-title">Thông tin cửa hàng</h3>
-          <p class="section-desc">Thông tin cơ bản hiển thị trên website và hóa đơn.</p>
-        </div>
-        <button class="btn-save">
-          <span class="material-symbols-outlined">save</span>
-          Lưu thay đổi
-        </button>
-      </div>
-      <div class="form-grid">
-        <div class="form-group">
-          <label class="form-label">Tên cửa hàng</label>
-          <input type="text" class="form-input" value="FlySky Guitar Studio" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Email liên hệ</label>
-          <input type="email" class="form-input" value="contact@flysky.vn" />
-        </div>
-        <div class="form-group form-full">
-          <label class="form-label">Địa chỉ cửa hàng</label>
-          <input type="text" class="form-input" value="123 Đường Nhạc Cụ, Phường Hòa Âm, Quận Giai Điệu, TP. HCM" />
-        </div>
-      </div>
-    </section>
+      <hr class="stg-divider" />
 
-    <hr class="stg-divider" />
-
-    <!-- Logo & Brand -->
-    <section class="stg-section stg-two-col">
-      <div class="stg-two-col-left">
-        <h3 class="section-title">Logo &amp; Thương hiệu</h3>
-        <p class="section-desc">Logo hiển thị tại header và footer của website.</p>
-      </div>
-      <div class="stg-two-col-right">
-        <div class="logo-area">
-          <div class="logo-preview">
-            <span class="material-symbols-outlined logo-icon">image</span>
-            <div class="logo-label">Logo Hiện Tại</div>
-            <div class="logo-hover-overlay">
-              <span class="material-symbols-outlined">upload</span>
+      <section class="stg-section stg-two-col">
+        <div class="stg-two-col-left">
+          <h3 class="section-title">Logo &amp; Thương hiệu</h3>
+          <p class="section-desc">Logo hiển thị tại header và footer của website.</p>
+        </div>
+        <div class="stg-two-col-right">
+          <div class="logo-area">
+            <div class="logo-preview">
+              <span class="material-symbols-outlined logo-icon">image</span>
+              <div class="logo-label">Logo Hiện Tại</div>
+              <div class="logo-hover-overlay">
+                <span class="material-symbols-outlined">upload</span>
+              </div>
+            </div>
+            <div class="logo-info">
+              <p class="form-label" style="margin-bottom:8px;">Thay đổi Logo</p>
+              <p class="section-desc" style="margin-bottom:16px;">Khuyên dùng định dạng PNG hoặc SVG. Kích thước tối ưu 512x512px.</p>
+              <button class="btn-upload">Tải lên ảnh mới</button>
             </div>
           </div>
-          <div class="logo-info">
-            <p class="form-label" style="margin-bottom:8px;">Thay đổi Logo</p>
-            <p class="section-desc" style="margin-bottom:16px;">Khuyên dùng định dạng PNG hoặc SVG. Kích thước tối ưu 512x512px.</p>
-            <button class="btn-upload">Tải lên ảnh mới</button>
+        </div>
+      </section>
+
+      <hr class="stg-divider" />
+
+      <section class="stg-section stg-two-col">
+        <div class="stg-two-col-left">
+          <h3 class="section-title">Liên hệ &amp; Mạng xã hội</h3>
+          <p class="section-desc">Liên kết với các nền tảng mạng xã hội của studio.</p>
+        </div>
+        <div class="stg-two-col-right">
+          <div class="icon-input-wrap">
+            <span class="material-symbols-outlined inp-icon">call</span>
+            <input type="text" class="form-input inp-with-icon" value="090 123 4567" />
+          </div>
+          <div class="icon-input-wrap" style="margin-top:12px;">
+            <span class="material-symbols-outlined inp-icon">public</span>
+            <input type="text" class="form-input inp-with-icon" value="https://facebook.com/flyskyguitar" />
+          </div>
+        </div>
+      </section>
+
+      <hr class="stg-divider" />
+
+      <section class="danger-zone">
+        <div class="danger-content">
+          <div>
+            <h3 class="danger-title">Bảo trì hệ thống</h3>
+            <p class="section-desc">Tạm thời đóng cửa hàng để nâng cấp hoặc bảo trì kỹ thuật.</p>
+          </div>
+          <button class="btn-danger">Bật chế độ bảo trì</button>
+        </div>
+      </section>
+
+      <div class="bottom-actions">
+        <button class="btn-cancel">Hủy bỏ</button>
+        <button class="btn-update">Cập nhật tất cả</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: GIAO DIỆN ── -->
+  <div id="tab-appearance" class="tab-pane" style="display:none;">
+    <div class="app-content">
+
+      <!-- Logo Section -->
+      <section class="app-section">
+        <div class="app-sec-head">
+          <span class="material-symbols-outlined app-sec-icon">image</span>
+          <h2 class="app-sec-title">Tùy chỉnh Logo</h2>
+        </div>
+        <div class="logo-grid">
+          <div class="logo-upload-card">
+            <div class="logo-upload-preview light-bg">
+              <span class="material-symbols-outlined logo-cam">add_a_photo</span>
+              <div class="logo-upload-hover"><p class="logo-hover-text">Tải ảnh lên</p></div>
+            </div>
+            <h3 class="logo-card-title">Logo Chế độ sáng (Light)</h3>
+            <p class="logo-card-desc">Khuyên dùng: PNG hoặc SVG nền trong suốt, tỷ lệ 3:1</p>
+          </div>
+          <div class="logo-upload-card">
+            <div class="logo-upload-preview dark-bg">
+              <span class="material-symbols-outlined logo-cam dark-cam">add_a_photo</span>
+              <div class="logo-upload-hover"><p class="logo-hover-text">Tải ảnh lên</p></div>
+            </div>
+            <h3 class="logo-card-title">Logo Chế độ tối (Dark)</h3>
+            <p class="logo-card-desc">Khuyên dùng: Bản sáng màu để hiển thị tốt trên nền tối</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Color Section -->
+      <section class="app-section">
+        <div class="app-sec-head">
+          <span class="material-symbols-outlined app-sec-icon">colorize</span>
+          <h2 class="app-sec-title">Tông màu chủ đạo (Accent Color)</h2>
+        </div>
+        <div class="color-card">
+          <p class="color-desc">Màu sắc này sẽ được áp dụng cho các nút bấm, icon và các thành phần nổi bật trên website.</p>
+          <div class="color-swatches">
+            <button class="swatch swatch-active" style="background:#f48c25;" title="Cam FlySky">
+              <span class="material-symbols-outlined swatch-check">check</span>
+            </button>
+            <button class="swatch" style="background:#3b82f6;" title="Xanh dương"></button>
+            <button class="swatch" style="background:#10b981;" title="Xanh lá"></button>
+            <button class="swatch" style="background:#8b5cf6;" title="Tím"></button>
+            <button class="swatch" style="background:#f43f5e;" title="Đỏ hồng"></button>
+            <button class="swatch swatch-add" title="Thêm màu">
+              <span class="material-symbols-outlined">add</span>
+            </button>
+          </div>
+          <div class="hex-row">
+            <div class="hex-wrap">
+              <label class="hex-label">Mã màu Hex</label>
+              <input type="text" class="hex-input" value="#f48c25" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Banner Section -->
+      <section class="app-section">
+        <div class="app-sec-head">
+          <span class="material-symbols-outlined app-sec-icon">view_carousel</span>
+          <h2 class="app-sec-title">Cấu hình Banner Trang chủ</h2>
+        </div>
+        <div class="banner-card">
+          <div class="banner-preview">
+            <img
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0RLO_GkP1fRoMq2dQAvkkSAoh92EvcaRoYm7v88XMkBwXklSgVUDfvRw7JybfkZieQJyaXd9fFflea7cRNVwiKU3-3SmPM4OmdO0KOfXowVPV1KGF6Yz-Wq2OpTSYFLBCNSRvvVgTK8ctQUTdPix0rAq-rdtWYojAKwee__2MBkSEiouRqBY_btC12ZwORO4u3s2mYAvAWTqd4dTMXHViImhVoSCfbY3Ks3UdNq0CZkLr4HkPdiuvZYHHNF_jz4AKml8fmbIxigi5"
+              alt="Banner preview"
+              class="banner-img"
+            />
+            <div class="banner-gradient"></div>
+            <div class="banner-overlay">
+              <div>
+                <span class="banner-badge">Xem trước banner</span>
+                <h3 class="banner-tagline">Âm nhạc là hơi thở của cuộc sống</h3>
+                <p class="banner-sub">Phong cách Studio &amp; Wood cổ điển</p>
+              </div>
+              <button class="banner-change-btn">
+                <span class="material-symbols-outlined">edit</span> Thay đổi ảnh
+              </button>
+            </div>
+          </div>
+          <div class="banner-fields">
+            <div class="form-group">
+              <label class="form-label">Tiêu đề chính (H1)</label>
+              <input type="text" class="form-input" placeholder="Nhập tiêu đề banner..." />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Lời kêu gọi hành động (CTA)</label>
+              <input type="text" class="form-input" placeholder="Ví dụ: Khám phá ngay" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Font Section -->
+      <section class="app-section">
+        <div class="app-sec-head">
+          <span class="material-symbols-outlined app-sec-icon">text_fields</span>
+          <h2 class="app-sec-title">Cấu hình Font chữ</h2>
+        </div>
+        <div class="font-card">
+          <div class="font-col">
+            <label class="font-col-label">Font Tiêu đề</label>
+            <select class="form-input">
+              <option>Manrope (Mặc định)</option>
+              <option>Montserrat</option>
+              <option>Playfair Display</option>
+              <option>Oswald</option>
+            </select>
+            <div class="font-preview-box">
+              <h4 class="font-preview-h">ABCDEFGHI</h4>
+              <p class="font-preview-sub">Xem trước font tiêu đề</p>
+            </div>
+          </div>
+          <div class="font-col">
+            <label class="font-col-label">Font Nội dung</label>
+            <select class="form-input">
+              <option>Manrope (Mặc định)</option>
+              <option>Inter</option>
+              <option>Roboto</option>
+              <option>Open Sans</option>
+            </select>
+            <div class="font-preview-box">
+              <p class="font-preview-body">Âm nhạc kết nối tâm hồn mọi người.</p>
+              <p class="font-preview-sub">Xem trước font nội dung</p>
+            </div>
+          </div>
+          <div class="font-tip-col">
+            <div class="font-tip">
+              <p class="font-tip-text">"Sử dụng font chữ serif như Playfair Display sẽ mang lại cảm giác cổ điển (Vintage) phù hợp với guitar acoustic."</p>
+              <div class="font-tip-footer">
+                <span class="material-symbols-outlined font-tip-icon">info</span>
+                <span class="font-tip-label">Gợi ý từ Studio</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Save Actions -->
+      <div class="app-actions">
+        <button class="btn-cancel">Hủy thay đổi</button>
+        <button class="btn-save">
+          <span class="material-symbols-outlined">save</span>
+          Lưu cấu hình
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: THÔNG BÁO ── -->
+  <div id="tab-notifications" class="tab-pane" style="display:none;">
+    <div class="ntf-content">
+
+      <div class="ntf-header">
+        <h2 class="ntf-title">Cấu hình thông báo</h2>
+        <p class="ntf-desc">Quản lý cách thức FlySky Guitar gửi thông báo đơn hàng và báo cáo đến bạn.</p>
+      </div>
+
+      <!-- Email Notifications -->
+      <section class="ntf-section">
+        <div class="ntf-sec-head">
+          <span class="material-symbols-outlined ntf-sec-icon">mail</span>
+          <h3 class="ntf-sec-title">Thông báo qua Email</h3>
+        </div>
+        <div class="ntf-list">
+          <div class="ntf-row">
+            <div class="ntf-row-text">
+              <span class="ntf-row-name">Đơn hàng mới</span>
+              <span class="ntf-row-sub">Nhận email ngay khi khách hàng hoàn tất đặt hàng</span>
+            </div>
+            <label class="toggle-label-wrap">
+              <input type="checkbox" class="toggle-chk" checked />
+              <div class="toggle-track"><div class="toggle-thumb"></div></div>
+            </label>
+          </div>
+          <div class="ntf-row">
+            <div class="ntf-row-text">
+              <span class="ntf-row-name">Yêu cầu tư vấn mới</span>
+              <span class="ntf-row-sub">Thông báo khi có khách hàng để lại thông tin cần hỗ trợ gỗ &amp; studio</span>
+            </div>
+            <label class="toggle-label-wrap">
+              <input type="checkbox" class="toggle-chk" checked />
+              <div class="toggle-track"><div class="toggle-thumb"></div></div>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- Push Notifications -->
+      <section class="ntf-section">
+        <div class="ntf-sec-head">
+          <span class="material-symbols-outlined ntf-sec-icon">notifications_active</span>
+          <h3 class="ntf-sec-title">Thông báo đẩy (Push)</h3>
+        </div>
+        <div class="ntf-card">
+          <div class="ntf-row" style="padding:0 0 16px;">
+            <div class="ntf-row-text">
+              <span class="ntf-row-name">Thông báo trình duyệt cho Admin</span>
+              <span class="ntf-row-sub">Hiển thị thông báo tức thì trên máy tính khi đang làm việc</span>
+            </div>
+            <label class="toggle-label-wrap">
+              <input type="checkbox" class="toggle-chk" />
+              <div class="toggle-track"><div class="toggle-thumb"></div></div>
+            </label>
+          </div>
+          <div class="ntf-info-note">
+            <span class="material-symbols-outlined ntf-info-icon">info</span>
+            <p class="ntf-info-text">Bạn cần cho phép trình duyệt hiển thị thông báo để tính năng này hoạt động.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Daily Reports -->
+      <section class="ntf-section">
+        <div class="ntf-sec-head">
+          <span class="material-symbols-outlined ntf-sec-icon">assessment</span>
+          <h3 class="ntf-sec-title">Báo cáo hàng ngày</h3>
+        </div>
+        <div class="ntf-card">
+          <div class="ntf-report-block">
+            <label class="form-label">Danh sách Email nhận báo cáo</label>
+            <p class="ntf-row-sub" style="margin-bottom:14px;">Các email này sẽ nhận được bản tóm tắt doanh thu và hoạt động vào 8:00 sáng mỗi ngày.</p>
+            <div class="ntf-tags">
+              <span class="ntf-tag">
+                admin@flyskyguitar.com
+                <button class="ntf-tag-del material-symbols-outlined">close</button>
+              </span>
+              <span class="ntf-tag">
+                manager@flyskyguitar.com
+                <button class="ntf-tag-del material-symbols-outlined">close</button>
+              </span>
+            </div>
+            <div class="ntf-add-row">
+              <input type="email" class="ntf-email-input" placeholder="Thêm email mới..." />
+              <button class="ntf-add-btn">
+                <span class="material-symbols-outlined">add</span>
+                Thêm
+              </button>
+            </div>
+          </div>
+          <div class="ntf-row ntf-chart-row">
+            <div class="ntf-row-text">
+              <span class="ntf-row-name">Bao gồm biểu đồ tăng trưởng</span>
+              <span class="ntf-row-sub">Đính kèm hình ảnh biểu đồ trong nội dung email báo cáo</span>
+            </div>
+            <label class="toggle-label-wrap">
+              <input type="checkbox" class="toggle-chk" checked />
+              <div class="toggle-track"><div class="toggle-thumb"></div></div>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- Actions -->
+      <div class="ntf-actions">
+        <button class="btn-cancel">Hủy thay đổi</button>
+        <button class="btn-save">
+          <span class="material-symbols-outlined">save</span>
+          Lưu cấu hình
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── TAB: BẢO MẬT & TÀI KHOẢN ── -->
+  <div id="tab-security" class="tab-pane">
+
+    <div class="sec-content">
+
+      <!-- ═══ PHẦN 1: THÔNG TIN TÀI KHOẢN ═══ -->
+      <div class="sec-card">
+        <div class="sec-card-header">
+          <h2 class="sec-section-title">Thông tin tài khoản</h2>
+          <p class="section-desc">Quản lý thông tin cá nhân và thiết lập hiển thị của bạn.</p>
+        </div>
+
+        <!-- Avatar row -->
+        <div class="avatar-row">
+          <div class="avatar-wrap">
+            <div class="avatar-circle">
+              <img
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8Q0jdsxpNU2XIDWvdQq6YnyDJbLyaBSgTHqFfXBjafk3RFy_MvxxI7h2_6jR9ZxzJAaN2cKrkjpAx9_KLkwa1ngAU3dzewG-XEn3YWq_o-O5acJD_oktbLOe27bGy9q6zwOZ47Gam_8v4Uzd1maWjcdE2TAa-gjYY6yzCscoAaCfLYmWq7NqnvrFSqyHYTDZZ49ytfclkVsD0AN_20erWVJirXpeonu7wUcBKrkudIO4j9RyQbAO_iy7q6ABOtYQzXwWxrt2Zxrnn"
+                alt="Avatar"
+              />
+            </div>
+            <button class="avatar-cam-btn">
+              <span class="material-symbols-outlined">photo_camera</span>
+            </button>
+          </div>
+          <div class="avatar-info">
+            <h3 class="sec-label">Ảnh đại diện</h3>
+            <p class="section-desc">Định dạng JPG, GIF hoặc PNG. Kích thước tối đa 2MB.</p>
+            <div class="avatar-btns">
+              <button class="btn-upload-img">Tải ảnh mới</button>
+              <button class="btn-delete-img">Xóa ảnh</button>
+            </div>
+          </div>
+        </div>
+
+        <hr class="stg-divider" style="margin:0;" />
+
+        <!-- Profile Form -->
+        <div class="form-grid profile-form">
+          <div class="form-group">
+            <label class="form-label">Họ và tên</label>
+            <div class="icon-input-wrap">
+              <span class="material-symbols-outlined inp-icon">person</span>
+              <input type="text" class="form-input inp-with-icon" value="Nguyễn Văn A" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Chức vụ</label>
+            <div class="icon-input-wrap">
+              <span class="material-symbols-outlined inp-icon">badge</span>
+              <select class="form-input inp-with-icon">
+                <option selected>Quản trị viên (Admin)</option>
+                <option>Biên tập viên (Editor)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email cá nhân</label>
+            <div class="icon-input-wrap">
+              <span class="material-symbols-outlined inp-icon">mail</span>
+              <input type="email" class="form-input inp-with-icon" value="vana.nguyen@studiowood.com" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Số điện thoại liên hệ</label>
+            <div class="icon-input-wrap">
+              <span class="material-symbols-outlined inp-icon">call</span>
+              <input type="tel" class="form-input inp-with-icon" value="+84 988 123 456" />
+            </div>
+          </div>
+        </div>
+
+        <div class="profile-actions">
+          <button class="btn-cancel">Chỉnh sửa</button>
+          <button class="btn-save">
+            <span class="material-symbols-outlined">save</span>
+            Lưu thay đổi
+          </button>
+        </div>
+
+        <!-- Account Security Tip -->
+        <div class="tip-card amber-tip">
+          <span class="material-symbols-outlined tip-icon">info</span>
+          <div>
+            <h4 class="tip-title amber-title">Bảo mật tài khoản</h4>
+            <p class="tip-text">Chúng tôi khuyên bạn nên cập nhật mật khẩu ít nhất 3 tháng một lần để đảm bảo an toàn cho quyền quản trị.</p>
           </div>
         </div>
       </div>
-    </section>
 
-    <hr class="stg-divider" />
-
-    <!-- Contact & Social -->
-    <section class="stg-section stg-two-col">
-      <div class="stg-two-col-left">
-        <h3 class="section-title">Liên hệ &amp; Mạng xã hội</h3>
-        <p class="section-desc">Liên kết với các nền tảng mạng xã hội của studio.</p>
-      </div>
-      <div class="stg-two-col-right">
-        <div class="icon-input-wrap">
-          <span class="material-symbols-outlined inp-icon">call</span>
-          <input type="text" class="form-input inp-with-icon" value="090 123 4567" />
+      <!-- ═══ PHẦN 2: MẬT KHẨU & XÁC THỰC ═══ -->
+      <div class="sec-card">
+        <h2 class="sec-section-title" style="padding:24px 24px 16px;">Mật khẩu &amp; Xác thực</h2>
+        <div class="auth-list">
+          <!-- Change Password -->
+          <div class="auth-item auth-item-hover">
+            <div class="auth-icon orange-bg">
+              <span class="material-symbols-outlined">key</span>
+            </div>
+            <div class="auth-texts">
+              <p class="auth-name">Đổi mật khẩu Admin</p>
+              <p class="auth-desc">Cập nhật mật khẩu định kỳ để bảo vệ hệ thống FlySky</p>
+            </div>
+            <span class="material-symbols-outlined auth-arrow">chevron_right</span>
+          </div>
+          <!-- 2FA -->
+          <div class="auth-item">
+            <div class="auth-icon orange-bg">
+              <span class="material-symbols-outlined">verified_user</span>
+            </div>
+            <div class="auth-texts">
+              <p class="auth-name">Xác thực 2 lớp (2FA)</p>
+              <p class="auth-desc">Yêu cầu mã xác minh từ ứng dụng Authenticator khi đăng nhập</p>
+            </div>
+            <label class="toggle-label-wrap">
+              <input type="checkbox" class="toggle-chk" checked />
+              <div class="toggle-track"><div class="toggle-thumb"></div></div>
+            </label>
+          </div>
         </div>
-        <div class="icon-input-wrap" style="margin-top:12px;">
-          <span class="material-symbols-outlined inp-icon">public</span>
-          <input type="text" class="form-input inp-with-icon" value="https://facebook.com/flyskyguitar" />
+      </div>
+
+      <!-- ═══ PHẦN 3: QUẢN LÝ PHIÊN ═══ -->
+      <div class="sec-card">
+        <h2 class="sec-section-title" style="padding:24px 24px 16px;">Quản lý phiên đăng nhập</h2>
+        <div class="session-list">
+          <div class="session-item">
+            <div class="session-icon green-bg">
+              <span class="material-symbols-outlined">laptop_mac</span>
+            </div>
+            <div class="session-info">
+              <p class="session-name">MacBook Pro - Chrome</p>
+              <p class="session-ip">Địa chỉ IP: 113.161.x.x • TP. Hồ Chí Minh, VN</p>
+              <span class="session-badge current-badge">
+                <span class="badge-dot"></span> Phiên hiện tại
+              </span>
+            </div>
+            <button class="session-logout"><span class="material-symbols-outlined">logout</span></button>
+          </div>
+          <div class="session-item session-divider">
+            <div class="session-icon grey-bg">
+              <span class="material-symbols-outlined">smartphone</span>
+            </div>
+            <div class="session-info">
+              <p class="session-name">iPhone 14 Pro - Safari</p>
+              <p class="session-ip">Địa chỉ IP: 27.72.x.x • Hà Nội, VN</p>
+              <p class="session-last">Hoạt động lần cuối: 2 giờ trước</p>
+            </div>
+            <button class="session-logout"><span class="material-symbols-outlined">logout</span></button>
+          </div>
+          <button class="btn-logout-all">Đăng xuất khỏi tất cả các thiết bị khác</button>
         </div>
       </div>
-    </section>
 
-    <hr class="stg-divider" />
+      <!-- ═══ PHẦN 4: TỰ ĐỘNG ĐĂNG XUẤT ═══ -->
+      <div class="sec-card">
+        <h2 class="sec-section-title" style="padding:24px 24px 16px;">Tự động đăng xuất</h2>
+        <div class="auto-logout-row">
+          <div>
+            <p class="auth-name">Thời gian chờ không hoạt động</p>
+            <p class="auth-desc" style="margin-top:4px;">Hệ thống sẽ tự động đăng xuất nếu không phát hiện thao tác nào sau khoảng thời gian này.</p>
+          </div>
+          <div class="auto-logout-ctrl">
+            <select class="timeout-select">
+              <option value="15">15 phút</option>
+              <option value="30" selected>30 phút</option>
+              <option value="60">1 giờ</option>
+              <option value="120">2 giờ</option>
+              <option value="0">Không bao giờ</option>
+            </select>
+            <button class="btn-save-sm-orange">Lưu thay đổi</button>
+          </div>
+        </div>
+      </div>
 
-    <!-- Danger Zone -->
-    <section class="danger-zone">
-      <div class="danger-content">
+      <!-- Mẹo bảo mật -->
+      <div class="tip-card orange-tip">
+        <span class="material-symbols-outlined tip-icon">info</span>
         <div>
-          <h3 class="danger-title">Bảo trì hệ thống</h3>
-          <p class="section-desc">Tạm thời đóng cửa hàng để nâng cấp hoặc bảo trì kỹ thuật.</p>
+          <h4 class="tip-title orange-title">Mẹo bảo mật</h4>
+          <p class="tip-text">Đảm bảo mật khẩu của bạn có ít nhất 12 ký tự, bao gồm chữ hoa, chữ thường và ký hiệu đặc biệt để đạt độ an toàn cao nhất.</p>
         </div>
-        <button class="btn-danger">Bật chế độ bảo trì</button>
       </div>
-    </section>
 
-  </div>
-
-  <!-- ── BOTTOM ACTIONS ── -->
-  <div class="bottom-actions">
-    <button class="btn-cancel">Hủy bỏ</button>
-    <button class="btn-update">Cập nhật tất cả</button>
+      <!-- Footer -->
+      <div class="sec-footer">
+        <span class="material-symbols-outlined footer-note-icon">music_note</span>
+        © 2024 FlySky Guitar Studio &amp; Wood. Bảo mật tuyệt đối.
+      </div>
+    </div>
   </div>
 
 </AdminLayout>
+
+<script>
+  function switchTab(tabId: string, btn: HTMLElement) {
+    document.querySelectorAll('.tab-pane').forEach((p: Element) => (p as HTMLElement).style.display = 'none');
+    document.querySelectorAll('.stg-tab').forEach(b => b.classList.remove('stg-tab-active'));
+    const pane = document.getElementById('tab-' + tabId);
+    if (pane) pane.style.display = 'block';
+    btn.classList.add('stg-tab-active');
+  }
+  (window as any).switchTab = switchTab;
+</script>
 
 <style>
   /* ── BREADCRUMBS ── */
   .breadcrumbs {
     display: flex; align-items: center; gap: 6px;
-    font-size: 13px; color: #94a3b8;
-    margin-bottom: 24px;
+    font-size: 13px; color: #94a3b8; margin-bottom: 24px;
   }
   .bc-link { color: #94a3b8; text-decoration: none; transition: color .15s; }
   .bc-link:hover { color: #f48c25; }
@@ -137,44 +603,35 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 
   /* ── TABS ── */
   .stg-tabs {
-    display: flex; gap: 0;
-    border-bottom: 1px solid rgba(74,58,42,.5);
-    margin-bottom: 32px;
-    overflow-x: auto;
+    display: flex; border-bottom: 1px solid rgba(74,58,42,.5);
+    margin-bottom: 28px; overflow-x: auto;
   }
   .stg-tabs::-webkit-scrollbar { display: none; }
   .stg-tab {
     padding: 14px 24px;
     font-size: 13px; font-weight: 600;
     background: none; border: none; cursor: pointer;
-    font-family: 'Manrope', sans-serif;
-    color: #64748b;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -1px;
-    white-space: nowrap;
-    transition: all .15s;
+    font-family: 'Manrope', sans-serif; color: #64748b;
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+    white-space: nowrap; transition: all .15s;
   }
   .stg-tab:hover { color: #f48c25; }
   .stg-tab-active { color: #f48c25; border-bottom-color: #f48c25; font-weight: 700; }
 
-  /* ── CONTENT ── */
+  /* ── GENERAL SETTINGS (reused) ── */
   .stg-content { display: flex; flex-direction: column; gap: 0; max-width: 860px; }
-
-  /* ── SECTION ── */
   .stg-section { padding: 32px 0; }
-  .section-head {
-    display: flex; justify-content: space-between; align-items: flex-start;
-    margin-bottom: 24px;
-  }
+  .stg-section.stg-two-col { display: grid; grid-template-columns: 1fr 2fr; gap: 40px; align-items: start; }
+  .section-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
   .section-title { font-size: 16px; font-weight: 800; color: #f9fafb; }
-  .section-desc  { font-size: 13px; color: #94a3b8; margin-top: 4px; }
+  .section-desc  { font-size: 13px; color: #94a3b8; margin-top: 4px; line-height: 1.5; }
+  .stg-divider { border: none; border-top: 1px solid rgba(74,58,42,.5); margin: 0; }
 
   .btn-save {
     display: flex; align-items: center; gap: 6px;
     padding: 9px 20px; border-radius: 10px;
     background: #f48c25; color: #221910;
-    font-size: 13px; font-weight: 700;
-    border: none; cursor: pointer;
+    font-size: 13px; font-weight: 700; border: none; cursor: pointer;
     font-family: 'Manrope', sans-serif;
     box-shadow: 0 4px 16px rgba(244,140,37,.2);
     transition: filter .15s; white-space: nowrap;
@@ -182,133 +639,395 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
   .btn-save:hover { filter: brightness(1.1); }
   .btn-save .material-symbols-outlined { font-size: 16px; }
 
-  /* Form */
-  .form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-  }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
   .form-group { display: flex; flex-direction: column; gap: 8px; }
   .form-full  { grid-column: 1 / -1; }
   .form-label { font-size: 13px; font-weight: 600; color: #cbd5e1; }
   .form-input {
-    width: 100%;
-    background: #2d2218;
-    border: 1px solid #4a3a2a;
-    border-radius: 10px;
-    padding: 10px 16px;
-    font-size: 13px; color: #f1f5f9;
-    font-family: 'Manrope', sans-serif;
-    outline: none; transition: border .2s;
-    box-sizing: border-box;
+    width: 100%; background: #2d2218; border: 1px solid #4a3a2a;
+    border-radius: 10px; padding: 10px 16px; font-size: 13px; color: #f1f5f9;
+    font-family: 'Manrope', sans-serif; outline: none; transition: border .2s; box-sizing: border-box;
   }
   .form-input:focus { border-color: #f48c25; }
-
-  /* Two-col layout */
-  .stg-two-col { display: grid; grid-template-columns: 1fr 2fr; gap: 40px; align-items: start; }
-  .stg-two-col-left {}
-  .stg-two-col-right {}
-
-  /* Logo */
+  .icon-input-wrap { position: relative; display: flex; align-items: center; }
+  .inp-icon { position: absolute; left: 14px; font-size: 18px; color: #94a3b8; pointer-events: none; }
+  .inp-with-icon { padding-left: 44px; }
   .logo-area { display: flex; align-items: center; gap: 32px; }
   .logo-preview {
     width: 128px; height: 128px; flex-shrink: 0;
-    border-radius: 16px;
-    background: #2d2218;
-    border: 2px dashed #4a3a2a;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    position: relative; overflow: hidden; cursor: pointer;
-    transition: border-color .2s;
+    border-radius: 16px; background: #2d2218; border: 2px dashed #4a3a2a;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    position: relative; overflow: hidden; cursor: pointer; transition: border-color .2s;
   }
   .logo-preview:hover { border-color: #f48c25; }
   .logo-preview:hover .logo-hover-overlay { opacity: 1; }
   .logo-preview:hover .logo-icon { display: none; }
   .logo-icon { font-size: 32px; color: #64748b; }
-  .logo-label {
-    position: absolute; bottom: 8px;
-    background: rgba(244,140,37,.1);
-    color: #f48c25; font-size: 9px; font-weight: 700;
-    padding: 2px 6px; border-radius: 4px;
+  .logo-label { position: absolute; bottom: 8px; background: rgba(244,140,37,.1); color: #f48c25; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
+  .logo-hover-overlay { position: absolute; inset: 0; background: rgba(244,140,37,.15); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .2s; }
+  .logo-hover-overlay .material-symbols-outlined { color: #f48c25; font-size: 28px; }
+  .btn-upload { padding: 8px 16px; border-radius: 8px; background: none; border: 1px solid #4a3a2a; color: #f1f5f9; font-size: 13px; font-weight: 600; font-family: 'Manrope', sans-serif; cursor: pointer; transition: background .15s; }
+  .btn-upload:hover { background: #4a3a2a; }
+  .danger-zone { padding: 24px; background: rgba(239,68,68,.06); border: 1px solid rgba(239,68,68,.2); border-radius: 16px; margin-top: 32px; }
+  .danger-content { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+  .danger-title { font-size: 16px; font-weight: 800; color: #f87171; }
+  .btn-danger { padding: 10px 24px; border-radius: 10px; background: #dc2626; color: #fff; font-size: 13px; font-weight: 700; border: none; cursor: pointer; font-family: 'Manrope', sans-serif; white-space: nowrap; transition: background .15s; }
+  .btn-danger:hover { background: #b91c1c; }
+  .bottom-actions { display: flex; align-items: center; justify-content: flex-end; gap: 16px; padding: 28px 0 8px; max-width: 860px; }
+  .btn-cancel { padding: 10px 24px; border-radius: 10px; background: none; border: none; cursor: pointer; font-size: 13px; font-weight: 700; color: #94a3b8; font-family: 'Manrope', sans-serif; transition: color .15s; }
+  .btn-cancel:hover { color: #f9fafb; }
+  .btn-update { padding: 10px 28px; border-radius: 10px; background: #f48c25; color: #221910; font-size: 13px; font-weight: 700; border: none; cursor: pointer; font-family: 'Manrope', sans-serif; box-shadow: 0 4px 16px rgba(244,140,37,.2); transition: filter .15s; }
+  .btn-update:hover { filter: brightness(1.1); }
+
+  /* ── SECURITY TAB ── */
+  .sec-content { display: flex; flex-direction: column; gap: 20px; max-width: 860px; }
+  .sec-card {
+    background: rgba(244,140,37,.03);
+    border: 1px solid rgba(74,58,42,.6);
+    border-radius: 16px; overflow: hidden;
   }
-  .logo-hover-overlay {
+  .sec-card-header { padding: 24px 24px 20px; border-bottom: 1px solid rgba(74,58,42,.4); }
+  .sec-section-title { font-size: 17px; font-weight: 800; color: #f9fafb; }
+
+  /* Avatar */
+  .avatar-row { display: flex; align-items: center; gap: 28px; padding: 24px; }
+  .avatar-wrap { position: relative; flex-shrink: 0; }
+  .avatar-circle {
+    width: 112px; height: 112px; border-radius: 50%;
+    border: 3px solid rgba(244,140,37,.25);
+    overflow: hidden; background: #2d2218;
+  }
+  .avatar-circle img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .avatar-cam-btn {
+    position: absolute; bottom: 2px; right: 2px;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: #f48c25; color: #221910;
+    border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: transform .15s;
+  }
+  .avatar-cam-btn:hover { transform: scale(1.1); }
+  .avatar-cam-btn .material-symbols-outlined { font-size: 14px; }
+  .avatar-info { flex: 1; }
+  .sec-label { font-size: 15px; font-weight: 700; color: #f9fafb; margin-bottom: 4px; }
+  .avatar-btns { display: flex; gap: 10px; margin-top: 14px; }
+  .btn-upload-img {
+    padding: 8px 16px; border-radius: 8px;
+    background: rgba(244,140,37,.1); color: #f48c25;
+    font-size: 12px; font-weight: 700; border: none; cursor: pointer;
+    font-family: 'Manrope', sans-serif; transition: background .15s;
+  }
+  .btn-upload-img:hover { background: rgba(244,140,37,.2); }
+  .btn-delete-img {
+    padding: 8px 16px; border-radius: 8px;
+    background: none; color: #94a3b8;
+    font-size: 12px; font-weight: 700; border: none; cursor: pointer;
+    font-family: 'Manrope', sans-serif; transition: color .15s;
+  }
+  .btn-delete-img:hover { color: #ef4444; }
+
+  /* Profile form inside sec-card */
+  .profile-form { padding: 24px; gap: 20px; }
+  .profile-actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding: 0 24px 24px; }
+
+  /* Auth list */
+  .auth-list { }
+  .auth-item {
+    display: flex; align-items: center; gap: 16px;
+    padding: 18px 24px; border-top: 1px solid rgba(74,58,42,.4);
+  }
+  .auth-item-hover { cursor: pointer; transition: background .15s; }
+  .auth-item-hover:hover { background: rgba(244,140,37,.04); }
+  .auth-icon { width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .orange-bg { background: rgba(244,140,37,.1); color: #f48c25; }
+  .auth-texts { flex: 1; }
+  .auth-name { font-size: 14px; font-weight: 600; color: #f9fafb; }
+  .auth-desc { font-size: 12px; color: #94a3b8; margin-top: 3px; }
+  .auth-arrow { color: #94a3b8; flex-shrink: 0; }
+
+  /* Toggle switches */
+  .toggle-label-wrap { display: flex; align-items: center; cursor: pointer; }
+  .toggle-chk { position: absolute; opacity: 0; width: 0; height: 0; }
+  .toggle-track { width: 44px; height: 24px; border-radius: 999px; background: #475569; position: relative; transition: background .2s; flex-shrink: 0; }
+  .toggle-chk:checked + .toggle-track { background: #f48c25; }
+  .toggle-thumb { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: left .2s; }
+  .toggle-chk:checked + .toggle-track .toggle-thumb { left: 22px; }
+
+  /* Sessions */
+  .session-list { }
+  .session-item { display: flex; align-items: flex-start; gap: 16px; padding: 18px 24px; }
+  .session-divider { border-top: 1px solid rgba(74,58,42,.4); }
+  .session-icon { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .green-bg { background: rgba(16,185,129,.15); color: #34d399; }
+  .grey-bg  { background: #2d2218; color: #94a3b8; }
+  .session-info { flex: 1; }
+  .session-name { font-size: 14px; font-weight: 700; color: #f9fafb; }
+  .session-ip   { font-size: 12px; color: #94a3b8; margin-top: 3px; }
+  .session-last { font-size: 11px; color: #64748b; margin-top: 6px; }
+  .session-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    margin-top: 6px; font-size: 11px; font-weight: 700;
+    padding: 2px 8px; border-radius: 999px;
+  }
+  .current-badge { background: rgba(16,185,129,.1); color: #34d399; }
+  .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: #34d399; flex-shrink: 0; }
+  .session-logout {
+    background: none; border: none; cursor: pointer;
+    color: #64748b; transition: color .15s; padding: 4px;
+  }
+  .session-logout:hover { color: #ef4444; }
+  .session-logout .material-symbols-outlined { font-size: 20px; }
+  .btn-logout-all {
+    width: 100%; padding: 10px 24px;
+    font-size: 13px; font-weight: 700; color: #ef4444;
+    background: none; border: none; cursor: pointer;
+    font-family: 'Manrope', sans-serif;
+    border-top: 1px solid rgba(74,58,42,.4);
+    transition: background .15s;
+  }
+  .btn-logout-all:hover { background: rgba(239,68,68,.06); }
+
+  /* Auto logout */
+  .auto-logout-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 24px; padding: 18px 24px; flex-wrap: wrap;
+  }
+  .auto-logout-ctrl { display: flex; align-items: center; gap: 10px; }
+  .timeout-select {
+    background: #2d2218; border: 1px solid #4a3a2a;
+    border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 600;
+    color: #f1f5f9; font-family: 'Manrope', sans-serif; outline: none;
+    cursor: pointer; transition: border .2s;
+  }
+  .timeout-select:focus { border-color: #f48c25; }
+  .btn-save-sm-orange {
+    padding: 8px 16px; border-radius: 8px;
+    background: #f48c25; color: #221910;
+    font-size: 13px; font-weight: 700; border: none; cursor: pointer;
+    font-family: 'Manrope', sans-serif; white-space: nowrap;
+    transition: filter .15s;
+  }
+  .btn-save-sm-orange:hover { filter: brightness(1.1); }
+
+  /* Tips */
+  .tip-card { display: flex; align-items: flex-start; gap: 16px; padding: 20px; border-radius: 12px; }
+  .orange-tip { background: rgba(244,140,37,.06); border: 1px solid rgba(244,140,37,.2); }
+  .amber-tip  { background: rgba(245,158,11,.06);  border: 1px solid rgba(245,158,11,.2); margin: 0 24px 24px; border-radius: 12px; }
+  .tip-icon { font-size: 28px; flex-shrink: 0; }
+  .orange-tip .tip-icon { color: #f48c25; }
+  .amber-tip  .tip-icon { color: #f59e0b; }
+  .tip-title { font-size: 13px; font-weight: 800; margin-bottom: 4px; }
+  .orange-title { color: #f48c25; }
+  .amber-title  { color: #f59e0b; }
+  .tip-text { font-size: 12px; color: #94a3b8; line-height: 1.6; }
+
+  /* Footer */
+  .sec-footer { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 20px; font-size: 12px; color: #64748b; border-top: 1px solid rgba(74,58,42,.4); }
+  .footer-note-icon { font-size: 16px; }
+
+  /* ── APPEARANCE TAB ── */
+  .app-content { display: flex; flex-direction: column; gap: 32px; max-width: 860px; }
+  .app-section { }
+  .app-sec-head { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+  .app-sec-icon { font-size: 22px; color: #f48c25; }
+  .app-sec-title { font-size: 17px; font-weight: 800; color: #f9fafb; }
+  .app-actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding: 8px 0 16px; }
+
+  /* Logo upload grid */
+  .logo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .logo-upload-card {
+    background: rgba(244,140,37,.03); border: 1px solid rgba(74,58,42,.5);
+    border-radius: 12px; padding: 20px;
+  }
+  .logo-upload-preview {
+    aspect-ratio: 16/6; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px dashed rgba(244,140,37,.25);
+    position: relative; overflow: hidden; cursor: pointer;
+    margin-bottom: 14px; transition: border-color .2s;
+  }
+  .logo-upload-preview:hover { border-color: #f48c25; }
+  .logo-upload-preview:hover .logo-upload-hover { opacity: 1; }
+  .logo-upload-preview:hover .logo-cam { display: none; }
+  .light-bg { background: #e8e8e8; }
+  .dark-bg  { background: #1a1a1a; }
+  .logo-cam { font-size: 36px; color: #94a3b8; }
+  .dark-cam { color: #475569; }
+  .logo-upload-hover {
     position: absolute; inset: 0;
-    background: rgba(244,140,37,.15);
+    background: rgba(244,140,37,.6);
     display: flex; align-items: center; justify-content: center;
     opacity: 0; transition: opacity .2s;
   }
-  .logo-hover-overlay .material-symbols-outlined { color: #f48c25; font-size: 28px; }
-  .btn-upload {
+  .logo-hover-text { color: #fff; font-size: 14px; font-weight: 700; }
+  .logo-card-title { font-size: 13px; font-weight: 700; color: #f9fafb; margin-bottom: 4px; }
+  .logo-card-desc  { font-size: 11px; color: #94a3b8; }
+
+  /* Color picker */
+  .color-card {
+    background: rgba(244,140,37,.03); border: 1px solid rgba(74,58,42,.5);
+    border-radius: 12px; padding: 28px;
+  }
+  .color-desc { font-size: 13px; color: #94a3b8; margin-bottom: 20px; }
+  .color-swatches { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 24px; }
+  .swatch {
+    width: 48px; height: 48px; border-radius: 50%;
+    border: 3px solid transparent; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform .15s; outline: none;
+  }
+  .swatch:hover { transform: scale(1.12); }
+  .swatch-active { box-shadow: 0 0 0 3px rgba(244,140,37,.4), 0 0 0 6px rgba(244,140,37,.15); }
+  .swatch-check { font-size: 22px; color: #fff; }
+  .swatch-add {
+    background: rgba(244,140,37,.08); border: 2px dashed rgba(244,140,37,.35);
+    color: #f48c25;
+  }
+  .hex-row { }
+  .hex-wrap { max-width: 240px; }
+  .hex-label { display: block; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; color: #94a3b8; margin-bottom: 8px; }
+  .hex-input {
+    width: 100%; background: #2d2218; border: 1px solid #4a3a2a;
+    border-radius: 8px; padding: 9px 14px; font-size: 13px; font-weight: 700;
+    color: #f48c25; font-family: 'Manrope', sans-serif; outline: none; transition: border .2s;
+  }
+  .hex-input:focus { border-color: #f48c25; }
+
+  /* Banner */
+  .banner-card {
+    background: rgba(244,140,37,.03); border: 1px solid rgba(74,58,42,.5);
+    border-radius: 12px; overflow: hidden;
+  }
+  .banner-preview { position: relative; aspect-ratio: 21/9; overflow: hidden; }
+  .banner-img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+    filter: grayscale(40%) brightness(0.7);
+  }
+  .banner-gradient {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, #221910 0%, transparent 60%);
+  }
+  .banner-overlay {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    display: flex; align-items: flex-end; justify-content: space-between;
+    padding: 20px 28px;
+  }
+  .banner-badge {
+    display: inline-block; background: #f48c25; color: #221910;
+    font-size: 9px; font-weight: 900; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 4px; margin-bottom: 8px;
+  }
+  .banner-tagline { font-size: 20px; font-weight: 900; color: #fff; }
+  .banner-sub { font-size: 12px; color: #cbd5e1; margin-top: 4px; }
+  .banner-change-btn {
+    display: flex; align-items: center; gap: 6px;
     padding: 8px 16px; border-radius: 8px;
-    background: none; border: 1px solid #4a3a2a;
-    color: #f1f5f9; font-size: 13px; font-weight: 600;
-    font-family: 'Manrope', sans-serif; cursor: pointer;
+    background: rgba(244,140,37,.85); color: #fff;
+    font-size: 13px; font-weight: 700; border: none; cursor: pointer;
+    font-family: 'Manrope', sans-serif; white-space: nowrap;
     transition: background .15s;
   }
-  .btn-upload:hover { background: #4a3a2a; }
+  .banner-change-btn:hover { background: #f48c25; }
+  .banner-change-btn .material-symbols-outlined { font-size: 16px; }
+  .banner-fields {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 20px; padding: 20px 24px;
+  }
 
-  /* Icon-input */
-  .icon-input-wrap { position: relative; display: flex; align-items: center; }
-  .inp-icon {
-    position: absolute; left: 14px;
-    font-size: 18px; color: #94a3b8;
-    pointer-events: none;
+  /* Font config */
+  .font-card {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 24px;
+    background: rgba(244,140,37,.03); border: 1px solid rgba(74,58,42,.5);
+    border-radius: 12px; padding: 24px;
   }
-  .inp-with-icon { padding-left: 44px; }
+  .font-col { display: flex; flex-direction: column; gap: 14px; }
+  .font-col-label { font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .08em; }
+  .font-preview-box {
+    padding: 16px; border: 1px solid rgba(74,58,42,.4); border-radius: 8px;
+    background: rgba(34,25,16,.5); flex: 1;
+  }
+  .font-preview-h { font-size: 18px; font-weight: 800; color: #f9fafb; margin-bottom: 4px; }
+  .font-preview-body { font-size: 13px; color: #cbd5e1; margin-bottom: 4px; }
+  .font-preview-sub { font-size: 10px; color: #64748b; }
+  .font-tip-col { display: flex; flex-direction: column; justify-content: flex-end; }
+  .font-tip {
+    background: rgba(244,140,37,.06); border: 1px solid rgba(244,140,37,.2);
+    border-radius: 10px; padding: 16px;
+  }
+  .font-tip-text { font-size: 11px; font-style: italic; color: rgba(244,140,37,.85); line-height: 1.6; margin-bottom: 12px; }
+  .font-tip-footer { display: flex; align-items: center; gap: 6px; }
+  .font-tip-icon { font-size: 14px; color: #f48c25; }
+  .font-tip-label { font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: .14em; color: #f48c25; }
 
-  /* Divider */
-  .stg-divider { border: none; border-top: 1px solid rgba(74,58,42,.5); margin: 0; }
+  /* ── NOTIFICATIONS TAB ── */
+  .ntf-content { display: flex; flex-direction: column; gap: 28px; max-width: 860px; }
+  .ntf-header { margin-bottom: 4px; }
+  .ntf-title { font-size: 24px; font-weight: 900; color: #f9fafb; margin-bottom: 6px; }
+  .ntf-desc { font-size: 13px; color: #94a3b8; line-height: 1.6; }
 
-  /* ── DANGER ZONE ── */
-  .danger-zone {
-    padding: 24px;
-    background: rgba(239,68,68,.06);
-    border: 1px solid rgba(239,68,68,.2);
-    border-radius: 16px;
-    margin-top: 32px;
-  }
-  .danger-content { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
-  .danger-title { font-size: 16px; font-weight: 800; color: #f87171; }
-  .btn-danger {
-    padding: 10px 24px; border-radius: 10px;
-    background: #dc2626; color: #fff;
-    font-size: 13px; font-weight: 700;
-    border: none; cursor: pointer;
-    font-family: 'Manrope', sans-serif;
-    white-space: nowrap;
-    transition: background .15s;
-  }
-  .btn-danger:hover { background: #b91c1c; }
+  .ntf-section { }
+  .ntf-sec-head { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .ntf-sec-icon { font-size: 22px; color: #f48c25; }
+  .ntf-sec-title { font-size: 17px; font-weight: 800; color: #f9fafb; }
 
-  /* ── BOTTOM ACTIONS ── */
-  .bottom-actions {
-    display: flex; align-items: center; justify-content: flex-end;
-    gap: 16px;
-    padding: 28px 0 8px;
-    max-width: 860px;
+  .ntf-list {
+    border: 1px solid rgba(74,58,42,.5); border-radius: 14px; overflow: hidden;
+    background: rgba(244,140,37,.03);
   }
-  .btn-cancel {
-    padding: 10px 24px; border-radius: 10px;
-    background: none; border: none; cursor: pointer;
-    font-size: 13px; font-weight: 700; color: #94a3b8;
-    font-family: 'Manrope', sans-serif;
-    transition: color .15s;
+  .ntf-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; padding: 18px 20px;
   }
-  .btn-cancel:hover { color: #f9fafb; }
-  .btn-update {
-    padding: 10px 28px; border-radius: 10px;
+  .ntf-list .ntf-row + .ntf-row { border-top: 1px solid rgba(74,58,42,.35); }
+  .ntf-row-text { display: flex; flex-direction: column; gap: 3px; flex: 1; }
+  .ntf-row-name { font-size: 14px; font-weight: 700; color: #f9fafb; }
+  .ntf-row-sub  { font-size: 12px; color: #94a3b8; line-height: 1.5; }
+
+  .ntf-card {
+    border: 1px solid rgba(74,58,42,.5); border-radius: 14px;
+    background: rgba(244,140,37,.03); padding: 20px;
+  }
+  .ntf-info-note {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 14px; border-radius: 10px;
+    background: rgba(244,140,37,.07); border: 1px solid rgba(244,140,37,.2);
+  }
+  .ntf-info-icon { font-size: 16px; color: #f48c25; flex-shrink: 0; margin-top: 1px; }
+  .ntf-info-text { font-size: 12px; color: #94a3b8; line-height: 1.5; }
+
+  .ntf-report-block { margin-bottom: 18px; }
+  .ntf-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .ntf-tag {
+    display: flex; align-items: center; gap: 6px;
+    padding: 5px 12px; border-radius: 999px;
+    background: rgba(244,140,37,.1); border: 1px solid rgba(244,140,37,.3);
+    font-size: 13px; font-weight: 600; color: #f1f5f9;
+  }
+  .ntf-tag-del {
+    font-size: 14px; background: none; border: none; cursor: pointer;
+    color: #94a3b8; padding: 0; line-height: 1; transition: color .15s;
+  }
+  .ntf-tag-del:hover { color: #ef4444; }
+  .ntf-add-row { display: flex; gap: 10px; }
+  .ntf-email-input {
+    flex: 1; background: #2d2218; border: 1px solid #4a3a2a;
+    border-radius: 10px; padding: 10px 16px; font-size: 13px; color: #f1f5f9;
+    font-family: 'Manrope', sans-serif; outline: none; transition: border .2s;
+  }
+  .ntf-email-input:focus { border-color: #f48c25; }
+  .ntf-email-input::placeholder { color: #64748b; }
+  .ntf-add-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 10px 20px; border-radius: 10px;
     background: #f48c25; color: #221910;
-    font-size: 13px; font-weight: 700;
-    border: none; cursor: pointer;
-    font-family: 'Manrope', sans-serif;
-    box-shadow: 0 4px 16px rgba(244,140,37,.2);
+    font-size: 13px; font-weight: 700; border: none; cursor: pointer;
+    font-family: 'Manrope', sans-serif; white-space: nowrap;
     transition: filter .15s;
   }
-  .btn-update:hover { filter: brightness(1.1); }
-
-  @media (max-width: 900px) {
-    .stg-two-col { grid-template-columns: 1fr; gap: 20px; }
-    .form-grid   { grid-template-columns: 1fr; }
-    .form-full   { grid-column: 1; }
-  }
+  .ntf-add-btn:hover { filter: brightness(1.1); }
+  .ntf-add-btn .material-symbols-outlined { font-size: 16px; }
+  .ntf-chart-row { border-top: 1px solid rgba(74,58,42,.4); padding-top: 16px; padding-bottom: 0; }
+  .ntf-actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding: 8px 0 16px; border-top: 1px solid rgba(74,58,42,.4); }
 </style>
+
+

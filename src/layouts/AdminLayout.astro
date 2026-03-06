@@ -233,6 +233,7 @@ const { title = 'Admin', subtitle = '', activeNav = 'dashboard' } = Astro.props;
       <div class="nav-group">
         <span class="nav-group-label">Chính</span>
         <a href="/admin"            class={`nav-link ${activeNav==='dashboard'     ? 'active' : ''}`}><span class="material-symbols-outlined">dashboard</span>Bảng điều khiển</a>
+        <a href="/admin/media"      class={`nav-link ${activeNav==='media'         ? 'active' : ''}`}><span class="material-symbols-outlined">perm_media</span>Thư viện Media</a>
         <a href="/admin/inventory"  class={`nav-link ${activeNav==='inventory'     ? 'active' : ''}`}><span class="material-symbols-outlined">inventory_2</span>Kho hàng</a>
         <a href="/admin/orders"     class={`nav-link ${activeNav==='orders'        ? 'active' : ''}`}><span class="material-symbols-outlined">shopping_cart</span>Đơn hàng</a>
       </div>
@@ -241,11 +242,14 @@ const { title = 'Admin', subtitle = '', activeNav = 'dashboard' } = Astro.props;
         <span class="nav-group-label">Quản lý</span>
         <a href="/admin/consultations" class={`nav-link ${activeNav==='consultations' ? 'active' : ''}`}><span class="material-symbols-outlined">group</span>Khách hàng</a>
         <a href="/admin/messages"      class={`nav-link ${activeNav==='messages'      ? 'active' : ''}`}><span class="material-symbols-outlined">bar_chart</span>Báo cáo</a>
+        <a href="/admin/seo"           class={`nav-link ${activeNav==='seo'           ? 'active' : ''}`}><span class="material-symbols-outlined">campaign</span>SEO &amp; Marketing</a>
       </div>
+
       <!-- Hệ thống -->
       <div class="nav-group">
         <span class="nav-group-label">Hệ thống</span>
         <a href="/admin/permissions" class={`nav-link ${activeNav==='permissions'   ? 'active' : ''}`}><span class="material-symbols-outlined">shield_person</span>Phân quyền</a>
+        <a href="/admin/activity-log" class={`nav-link ${activeNav==='activity-log'  ? 'active' : ''}`}><span class="material-symbols-outlined">history_edu</span>Nhật ký hoạt động</a>
         <a href="/admin/settings"   class={`nav-link ${activeNav==='settings'      ? 'active' : ''}`}><span class="material-symbols-outlined">settings</span>Cài đặt</a>
       </div>
     </nav>

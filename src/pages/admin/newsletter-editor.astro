@@ -1,0 +1,315 @@
+---
+title: "Trình chỉnh sửa bản tin | FlySky Admin"
+---
+
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trình chỉnh sửa bản tin | FlySky Admin</title>
+
+  <!-- Global styles (including Tailwind preflight and utilities) -->
+  <link rel="stylesheet" href="/src/styles/global.css" />
+
+  <!-- Google Fonts: Manrope -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Material Symbols -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+
+  <style>
+    /* 
+      We map specific colors from the target design to CSS variables,
+      using Tailwind's arbitrary values or existing variables where possible.
+    */
+    :root {
+      --color-primary-hex: #f48c25;
+      --color-bg-light: #f8f7f5;
+      --color-bg-dark: #221910;
+    }
+
+    body { 
+      font-family: 'Manrope', sans-serif; /* Aligning with the Admin standard */
+      background-color: var(--color-bg-dark);
+      color: #f1f5f9;
+      margin: 0; 
+      padding: 0;
+    }
+
+    /* Custom Scrollbar for the builder areas */
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #493622; border-radius: 10px; }
+    
+    .wood-gradient {
+      background: linear-gradient(135deg, #342618 0%, #221910 100%);
+    }
+
+    /* Utility mappings to cover some of the missing Tailwind arbitrary values if needed */
+    .text-primary-custom { color: #f48c25; }
+    .bg-primary-custom { background-color: #f48c25; }
+    .bg-primary-5 { background-color: rgba(244, 140, 37, 0.05); }
+    .bg-primary-10 { background-color: rgba(244, 140, 37, 0.1); }
+    .bg-primary-20 { background-color: rgba(244, 140, 37, 0.2); }
+    .bg-primary-30 { background-color: rgba(244, 140, 37, 0.3); }
+    
+    .border-primary-10 { border-color: rgba(244, 140, 37, 0.1); }
+    .border-primary-20 { border-color: rgba(244, 140, 37, 0.2); }
+    .border-primary-30 { border-color: rgba(244, 140, 37, 0.3); }
+
+    .hover\:bg-primary-10:hover { background-color: rgba(244, 140, 37, 0.1); }
+    
+    .text-background-dark { color: #221910; }
+    .bg-background-dark { background-color: #221910; }
+    
+    .ring-primary-40 { --tw-ring-color: rgba(244, 140, 37, 0.4); }
+  </style>
+</head>
+
+<body class="h-screen w-screen overflow-hidden flex flex-col font-sans">
+  <div class="flex h-screen overflow-hidden w-full">
+    <!-- SIDEBAR LEFT: Actions/Items -->
+    <aside class="w-64 flex-shrink-0 border-r border-primary-10 wood-gradient hidden lg:flex flex-col">
+      <div class="p-6 flex flex-col gap-6">
+        <div class="flex items-center gap-3">
+          <div class="size-10 rounded-full bg-primary-custom flex items-center justify-center">
+            <span class="material-symbols-outlined text-background-dark">music_note</span>
+          </div>
+          <div>
+            <h1 class="text-sm font-bold text-slate-100">FlySky Guitar</h1>
+            <p class="text-xs text-primary-custom/70" style="color: rgba(244,140,37,0.7);">Studio Admin</p>
+          </div>
+        </div>
+        
+        <nav class="flex flex-col gap-1">
+          <a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-primary-10 transition-colors text-slate-300 hover:text-white" href="/admin/orders">
+            <span class="material-symbols-outlined text-xl">shopping_cart</span>
+            <span class="text-sm font-medium">Đơn hàng</span>
+          </a>
+          <a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary-custom text-background-dark font-bold" href="/admin/seo">
+            <span class="material-symbols-outlined text-xl">mail</span>
+            <span class="text-sm">Bản tin</span>
+          </a>
+        </nav>
+        
+        <div class="mt-4 pt-4 border-t border-primary-10">
+          <p class="px-3 text-[10px] uppercase tracking-wider font-bold mb-3" style="color: rgba(244,140,37,0.5);">Khối nội dung</p>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="flex flex-col items-center justify-center p-3 rounded-lg border border-primary-20 bg-primary-5 hover:bg-primary-10 cursor-move gap-1 transition-colors">
+              <span class="material-symbols-outlined text-xl text-primary-custom">title</span>
+              <span class="text-[10px] font-medium text-slate-300">Văn bản</span>
+            </div>
+            <div class="flex flex-col items-center justify-center p-3 rounded-lg border border-primary-20 bg-primary-5 hover:bg-primary-10 cursor-move gap-1 transition-colors">
+              <span class="material-symbols-outlined text-xl text-primary-custom">image</span>
+              <span class="text-[10px] font-medium text-slate-300">Hình ảnh</span>
+            </div>
+            <div class="flex flex-col items-center justify-center p-3 rounded-lg border border-primary-20 bg-primary-5 hover:bg-primary-10 cursor-move gap-1 transition-colors">
+              <span class="material-symbols-outlined text-xl text-primary-custom">smart_button</span>
+              <span class="text-[10px] font-medium text-slate-300">Nút bấm</span>
+            </div>
+            <div class="flex flex-col items-center justify-center p-3 rounded-lg border border-primary-20 bg-primary-5 hover:bg-primary-10 cursor-move gap-1 transition-colors">
+              <span class="material-symbols-outlined text-xl text-primary-custom">horizontal_rule</span>
+              <span class="text-[10px] font-medium text-slate-300">Dải phân cấp</span>
+            </div>
+            <div class="flex flex-col items-center justify-center p-3 rounded-lg border border-primary-20 bg-primary-5 hover:bg-primary-10 cursor-move gap-1 transition-colors">
+              <span class="material-symbols-outlined text-xl text-primary-custom">share</span>
+              <span class="text-[10px] font-medium text-slate-300">MXH</span>
+            </div>
+            <div class="flex flex-col items-center justify-center p-3 rounded-lg border border-primary-20 bg-primary-5 hover:bg-primary-10 cursor-move gap-1 transition-colors">
+              <span class="material-symbols-outlined text-xl text-primary-custom">video_library</span>
+              <span class="text-[10px] font-medium text-slate-300">Video</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN EDITOR AREA -->
+    <main class="flex-1 flex flex-col bg-[#1a130c] overflow-hidden">
+      
+      <!-- Top header strip -->
+      <header class="h-16 border-b border-primary-10 flex items-center justify-between px-6 flex-shrink-0 bg-background-dark text-slate-100 shadow-sm">
+        <div class="flex items-center gap-4">
+          <span class="material-symbols-outlined text-primary-custom">edit_note</span>
+          <h2 class="text-sm font-bold">Trình chỉnh sửa bản tin</h2>
+        </div>
+        <div class="flex items-center gap-6">
+          <div class="flex items-center bg-primary-10 rounded-lg p-1">
+            <button class="px-2 py-1 rounded bg-primary-custom text-background-dark shadow-sm">
+              <span class="material-symbols-outlined text-sm leading-none block">desktop_windows</span>
+            </button>
+            <button class="px-2 py-1 rounded text-primary-custom hover:bg-primary-10 transition-colors">
+              <span class="material-symbols-outlined text-sm leading-none block">smartphone</span>
+            </button>
+          </div>
+          <div class="flex items-center gap-3">
+            <button class="text-xs font-bold text-primary-custom hover:underline">Xem trước</button>
+            <button class="text-xs font-bold text-slate-400 hover:text-slate-100 transition-colors">Lưu bản nháp</button>
+            <button class="bg-primary-custom text-background-dark text-xs font-bold px-4 py-2 rounded-lg hover:brightness-110 shadow-sm">Gửi ngay</button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Editor Canvas Layout -->
+      <div class="flex-1 flex overflow-hidden">
+        
+        <!-- Center Canvas -->
+        <div class="flex-1 overflow-y-auto p-12 custom-scrollbar bg-[#2c2218] shadow-inner">
+          
+          <div class="max-w-[600px] mx-auto bg-background-dark shadow-2xl rounded-xl min-h-[800px] flex flex-col overflow-hidden border border-[#3a2a1c]">
+            
+            <!-- Email Header -->
+            <div class="p-8 border-b border-[#3a2a1c] flex justify-center bg-[#1a130c]">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary-custom text-2xl">music_note</span>
+                <span class="font-bold text-slate-100 text-xl tracking-tight">FlySky <span class="text-primary-custom">Guitar</span></span>
+              </div>
+            </div>
+            
+            <!-- Hero Image -->
+            <div class="p-0">
+              <div class="relative group cursor-pointer">
+                <div class="h-64 bg-slate-800 flex items-center justify-center overflow-hidden">
+                  <img alt="Guitar in studio" class="w-full h-full object-cover" data-alt="Close up of a wooden acoustic guitar in a professional studio setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5h8KS_x3bYQZHsx1pqNaxmDv-gkogkYs-xaqu0jzLwVrUQSFNLl1Ay6t5pFJcqKjANXwfnW9gmGor2lOeo-4X2tq236n8KhnO5JuvlcoHUjCQNIyDKAkHJB7ZZgI2j_z9pTPtQWl-Qe70o2UwIgLVIZOGJRCoAWm-GT2oSuWYHGU-gZr74vx8YHdcS5h3WmP_whEAgwbSFdSUc8Zrd8THpND2xfHZSDHp6ozbBdj98nVb68by1CGITOeoTcKk7ACQbSySvB4nV6ZR" />
+                </div>
+                <div class="absolute inset-0 bg-primary-20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity border-2 border-dashed border-primary-custom">
+                  <span class="bg-primary-custom text-background-dark px-3 py-1 rounded text-xs font-bold shadow-sm">Thay đổi ảnh</span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Content Area -->
+            <div class="p-10 flex flex-col gap-6 text-slate-200">
+              
+              <div class="relative group p-2 -m-2 rounded hover:ring-2 hover:ring-primary-40 transition-shadow">
+                <h1 class="text-3xl font-extrabold leading-tight text-slate-100">Chào mừng bạn đến với Bản tin Guitar hàng tháng</h1>
+                <div class="absolute top-0 right-0 opacity-0 group-hover:opacity-100 flex gap-1 -translate-y-full pb-1 transition-opacity">
+                  <button class="bg-primary-custom p-1 rounded text-white text-[10px] shadow-sm"><span class="material-symbols-outlined text-sm">edit</span></button>
+                  <button class="bg-red-500 p-1 rounded text-white text-[10px] shadow-sm"><span class="material-symbols-outlined text-sm">delete</span></button>
+                </div>
+              </div>
+              
+              <div class="relative group p-2 -m-2 rounded hover:ring-2 hover:ring-primary-40 transition-shadow">
+                <p class="text-lg leading-relaxed opacity-90 text-slate-300">
+                  Trong số này, chúng tôi sẽ chia sẻ những bí quyết để làm chủ hợp âm chặn, cùng với danh sách các mẫu đàn mới nhất vừa cập bến Studio. Đừng bỏ lỡ cơ hội nhận ưu đãi 20% cho khóa học Guitar đệm hát nâng cao!
+                </p>
+              </div>
+              
+              <div class="flex justify-center py-4 relative group p-2 -m-2 rounded hover:ring-2 hover:ring-primary-40 transition-shadow">
+                <button class="bg-primary-custom text-background-dark font-bold px-8 py-3 rounded-lg text-lg shadow-md hover:brightness-110 transition-all transform hover:-translate-y-0.5">Khám phá ngay</button>
+              </div>
+              
+              <div class="h-px bg-primary-10 my-4 w-full"></div>
+              
+              <!-- 2 Column Grid -->
+              <div class="grid grid-cols-2 gap-8">
+                <div class="flex flex-col gap-3 group cursor-pointer">
+                  <div class="overflow-hidden rounded-lg">
+                     <img alt="Guitar Lesson" class="rounded-lg h-32 w-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Acoustic guitar neck and strings" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD_YhO8BWXBmZkaXHhZwyX4783BzwIetyYa33MVYc4ZLtfX3HZ7Jl_0NWMslI2THR_kUnUvPIuvg3tO71CkhPGGUEDMA8TO8FEWpKbqWFe6Sh2Ta35TZyY8xOc_P18H39nmYiUNjkd_-CNIatPILjRB3SIDn5NIhdUf4z-mofH76le7YPj1QxFdVfXGn_ZbZbkTL7OA09Xbnd6MWf4zUIye82sTRE3rE10v_jKDThH2-Yj0b1un0vxPbPfhuMfVQ3uOocoQQ5lufGB_" />
+                  </div>
+                  <h3 class="font-bold text-slate-100 group-hover:text-primary-custom transition-colors">Mẹo hợp âm chặn</h3>
+                  <p class="text-sm text-slate-400">Học cách bấm hợp âm F không đau tay chỉ trong 5 phút...</p>
+                </div>
+                <div class="flex flex-col gap-3 group cursor-pointer">
+                  <div class="overflow-hidden rounded-lg">
+                    <img alt="New Guitars" class="rounded-lg h-32 w-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Classic wood guitar texture" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDKgdqblOGDchpTMGOcWZ1om5Idh569zkm6rkgUexD2s39oVIrJNr-bJRc1sZU_845JhcEeYWgLXQGm5q7z2KjcCOwkBpffoWSz_vSWtdFN4RwXhM9xDnHCNpOd-mc2Pmva-nX958vMFO2Ml4i5x38TDNzEBEijDNe5zs2vhf_axZxEBQFdpldHxaEqi_euXSM-roSI6L7gC3OB2Mh8fUb2UXbWvRd3f4fjrm12pfpPsjPpYXl2LcmfbRiO1kSJmTW7mNoF6cg7x0IY" />
+                  </div>
+                  <h3 class="font-bold text-slate-100 group-hover:text-primary-custom transition-colors">Hàng mới về</h3>
+                  <p class="text-sm text-slate-400">Các dòng Taylor và Martin phiên bản giới hạn đã có mặt...</p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Email Footer -->
+            <div class="mt-auto p-10 bg-[#1a130c] border-t border-[#3a2a1c] text-center">
+              <div class="flex justify-center gap-4 mb-6 text-slate-400">
+                <span class="material-symbols-outlined cursor-pointer hover:text-primary-custom transition-colors">social_leaderboard</span>
+                <span class="material-symbols-outlined cursor-pointer hover:text-primary-custom transition-colors">photo_camera</span>
+                <span class="material-symbols-outlined cursor-pointer hover:text-primary-custom transition-colors">movie</span>
+              </div>
+              <p class="text-xs text-slate-400">© 2024 FlySky Guitar Studio. Tất cả quyền được bảo lưu.</p>
+              <p class="text-[10px] text-slate-500 mt-2">Nếu bạn không muốn nhận email này, <a class="underline hover:text-slate-300" href="#">Hủy đăng ký</a></p>
+            </div>
+          </div>
+          
+          <div class="flex justify-center mt-8 pb-12">
+            <button class="flex items-center gap-2 px-6 py-4 rounded-xl border-2 border-dashed border-primary-30 text-primary-custom hover:bg-primary-5 transition-all focus:outline-none focus:ring-2 focus:ring-primary-custom focus:ring-opacity-50">
+              <span class="material-symbols-outlined">add_circle</span>
+              <span class="text-sm font-bold uppercase tracking-widest">Thêm phần mới</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- SIDEBAR RIGHT: Properties Panel -->
+        <aside class="w-80 border-l border-[#3a2a1c] flex-shrink-0 bg-background-dark p-6 overflow-y-auto custom-scrollbar shadow-lg z-10">
+          <div class="flex flex-col gap-8">
+            
+            <!-- Email Config -->
+            <div>
+              <h3 class="text-primary-custom text-xs font-bold uppercase tracking-wider mb-4">Cấu hình email</h3>
+              <div class="flex flex-col gap-4">
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs font-medium text-slate-400">Tiêu đề email</label>
+                  <input class="bg-primary-5 border border-[#3a2a1c] rounded-lg px-3 py-2 text-sm text-slate-200 focus:border-primary-custom focus:ring-1 focus:ring-primary-custom outline-none transition-colors" type="text" value="🎸 Cập nhật mới từ FlySky Guitar Studio"/>
+                </div>
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs font-medium text-slate-400">Tên người gửi</label>
+                  <input class="bg-primary-5 border border-[#3a2a1c] rounded-lg px-3 py-2 text-sm text-slate-200 focus:border-primary-custom focus:ring-1 focus:ring-primary-custom outline-none transition-colors" type="text" value="FlySky Guitar"/>
+                </div>
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs font-medium text-slate-400">Email phản hồi</label>
+                  <input class="bg-primary-5 border border-[#3a2a1c] rounded-lg px-3 py-2 text-sm text-slate-200 focus:border-primary-custom focus:ring-1 focus:ring-primary-custom outline-none transition-colors" type="email" value="hello@flyskyguitar.com"/>
+                </div>
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs font-medium text-slate-400">Danh sách nhận tin</label>
+                  <div class="relative">
+                     <select class="w-full bg-primary-5 border border-[#3a2a1c] rounded-lg px-3 py-2 text-sm text-slate-200 focus:border-primary-custom focus:ring-1 focus:ring-primary-custom outline-none appearance-none transition-colors cursor-pointer">
+                        <option value="1">Học viên đang học (245)</option>
+                        <option value="2">Khách hàng tiềm năng (1,020)</option>
+                        <option value="3">Tất cả danh sách (1,265)</option>
+                     </select>
+                     <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">expand_more</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Global Colors -->
+            <div class="pt-6 border-t border-[#3a2a1c]">
+              <h3 class="text-primary-custom text-xs font-bold uppercase tracking-wider mb-4">Màu sắc chủ đạo</h3>
+              <div class="flex flex-wrap gap-2">
+                <button class="size-8 rounded-full bg-primary-custom ring-2 ring-white ring-offset-2 ring-offset-[#221910] cursor-pointer shadow-sm hover:scale-110 transition-transform"></button>
+                <button class="size-8 rounded-full bg-blue-500 cursor-pointer shadow-sm hover:scale-110 transition-transform"></button>
+                <button class="size-8 rounded-full bg-emerald-500 cursor-pointer shadow-sm hover:scale-110 transition-transform"></button>
+                <button class="size-8 rounded-full bg-rose-500 cursor-pointer shadow-sm hover:scale-110 transition-transform"></button>
+                <button class="size-8 rounded-full bg-indigo-500 cursor-pointer shadow-sm hover:scale-110 transition-transform"></button>
+                <button class="size-8 rounded-full border border-primary-20 flex items-center justify-center cursor-pointer text-slate-400 hover:text-primary-custom hover:border-primary-custom transition-colors">
+                  <span class="material-symbols-outlined text-xs">add</span>
+                </button>
+              </div>
+            </div>
+            
+            <!-- Test & Preview -->
+            <div class="pt-6 border-t border-[#3a2a1c]">
+              <h3 class="text-primary-custom text-xs font-bold uppercase tracking-wider mb-4">Thử nghiệm</h3>
+              <div class="flex flex-col gap-3">
+                <p class="text-[11px] text-slate-400 leading-relaxed">Gửi một bản xem trước đến email cá nhân của bạn để kiểm tra hiển thị trên thiết bị thật.</p>
+                <div class="flex gap-2 group focus-within:ring-1 focus-within:ring-primary-custom rounded-lg border border-[#3a2a1c] bg-primary-5 p-1 transition-all">
+                  <input class="flex-1 bg-transparent border-none px-2 py-1.5 text-sm outline-none text-slate-200 placeholder-slate-500" placeholder="Email nhận..." type="text"/>
+                  <button class="bg-primary-20 text-primary-custom px-3 rounded-md hover:bg-primary-custom hover:text-white transition-colors flex items-center justify-center">
+                    <span class="material-symbols-outlined text-sm block">send</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

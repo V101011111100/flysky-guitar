@@ -1,0 +1,890 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout title="Quản lý Nhật ký" activeNav="activity-log">
+  <div class="log-container">
+    <div class="log-content-wrapper">
+      
+      <!-- Title & Actions -->
+      <div class="log-header">
+        <div>
+          <h1 class="log-title">Nhật ký hoạt động hệ thống</h1>
+          <p class="log-subtitle">Giám sát và kiểm tra mọi thay đổi dữ liệu trong hệ thống FlySky Guitar.</p>
+        </div>
+        <div class="log-actions">
+          <div class="export-dropdown-wrapper">
+            <button class="export-btn" id="export-btn">
+              <span class="material-symbols-outlined">file_download</span>
+              Xuất báo cáo (CSV/PDF)
+              <span class="material-symbols-outlined icon-sm">expand_more</span>
+            </button>
+            <div class="export-dropdown">
+              <div class="export-dp-header">
+                <p class="export-dp-title">Chọn thời gian</p>
+                <div class="export-dp-grid">
+                  <button class="dp-btn dp-btn-active">Hôm nay</button>
+                  <button class="dp-btn">Tuần này</button>
+                  <button class="dp-btn">Tháng này</button>
+                  <button class="dp-btn dp-btn-icon" id="btn-open-datepicker">
+                    <span class="material-symbols-outlined icon-xs">calendar_today</span>Tùy chọn
+                  </button>
+                </div>
+              </div>
+              <div class="dp-divider"></div>
+              <button class="dp-action-btn">
+                <span class="material-symbols-outlined icon-lg">table_view</span>
+                Tải xuống CSV
+              </button>
+              <button class="dp-action-btn">
+                <span class="material-symbols-outlined icon-lg">picture_as_pdf</span>
+                Tải xuống PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="log-filters">
+        <div class="filter-group">
+          <label class="filter-label">Khoảng thời gian</label>
+          <select class="filter-select">
+            <option>Hôm nay</option>
+            <option>7 ngày qua</option>
+            <option>30 ngày qua</option>
+            <option selected>Tháng này</option>
+            <option>Tùy chọn...</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Vai trò người dùng</label>
+          <select class="filter-select">
+            <option value="">Tất cả vai trò</option>
+            <option>Quản trị viên</option>
+            <option>Nhân viên bán hàng</option>
+            <option>Quản lý kho</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Phân loại hành động</label>
+          <select class="filter-select">
+            <option value="">Tất cả hành động</option>
+            <option>Thêm mới</option>
+            <option>Cập nhật</option>
+            <option>Xóa</option>
+            <option>Bảo mật / Hệ thống</option>
+          </select>
+        </div>
+        <div class="filter-action">
+          <button class="filter-btn">
+            <span class="material-symbols-outlined">filter_list</span>
+            Lọc kết quả
+          </button>
+        </div>
+      </div>
+
+      <!-- Data Table -->
+      <div class="log-table-wrapper">
+        <table class="log-table">
+          <thead>
+            <tr>
+              <th>Thời gian</th>
+              <th>Người dùng</th>
+              <th>Hành động</th>
+              <th>Module</th>
+              <th>IP Address</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Row 1 -->
+            <tr>
+              <td>
+                <p class="time-main">14:23:45</p>
+                <p class="date-sub">12/10/2023</p>
+              </td>
+              <td>
+                <div class="user-cell">
+                  <div class="user-avatar" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCWIah485BYO-3k-JEuxYsFTumYBPmDbOpO17Z0ioTyr7pkDPIK-QpE_3skPSOyJ0kdOtCX0GkdMUVjbAl-rXItE_Fd-Y8-o3-wS7AR1EePoDVQz31LpJOHAsn97KxV7GaX4Dq3HQdOa_pEHPv45OozWABa7EWtyGUUDNESzEOMau8jOCC5lpKpPAd5WuCUapAnJVIu00BDmf6A_37Fj_vp2h05HoE1ZSR0wROqQHii4kjgCzBVIU2o3e26LyBaqbKNcHvsFReLVloH')"></div>
+                  <div>
+                    <p class="user-name">Trần Anh</p>
+                    <p class="user-role">Quản lý kho</p>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div class="action-cell">
+                  <span class="dot dot-blue"></span>
+                  <p class="action-text">Cập nhật số lượng sản phẩm: <span class="highlight">Fender Stratocaster</span></p>
+                </div>
+              </td>
+              <td>
+                <span class="module-badge">Inventory</span>
+              </td>
+              <td class="ip-address">192.168.1.104</td>
+              <td class="action-col">
+                <button class="view-btn"><span class="material-symbols-outlined icon-lg">visibility</span></button>
+              </td>
+            </tr>
+            <!-- Row 2 -->
+            <tr>
+              <td>
+                <p class="time-main">13:10:22</p>
+                <p class="date-sub">12/10/2023</p>
+              </td>
+              <td>
+                <div class="user-cell">
+                  <div class="user-avatar" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBw97Ysl3oRRlz3V-LpzCXLfcTHNxmooymM7N7Tztf6A4osRAP4t4HawumQDaYTpO_JSmvILJeyxlc7xtr0tpEaEUYg4bhchPAbsF6wGPuYqYgudoUtjGc4oklKQSg1Lgv2QMMVJyW1Wqmr-AvnLRJp7CCQTPz4qvdyfh7SWY_cGF6rV78A0XiQ-whr-aBMIdE2xWu477fGLGLijmAoUiB90mtpgJaWJIOK0ZeWJpq_wPflWHGClP6qS-l4ZHhux3ACMBBLHBlZK2QP')"></div>
+                  <div>
+                    <p class="user-name">Nguyễn Hoa</p>
+                    <p class="user-role">Admin</p>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div class="action-cell">
+                  <span class="dot dot-red"></span>
+                  <p class="action-text">Xóa đơn hàng <span class="highlight">#ORD-5521</span></p>
+                </div>
+              </td>
+              <td>
+                <span class="module-badge">Orders</span>
+              </td>
+              <td class="ip-address">27.65.112.4</td>
+              <td class="action-col">
+                <button class="view-btn"><span class="material-symbols-outlined icon-lg">visibility</span></button>
+              </td>
+            </tr>
+            <!-- Row 3 -->
+            <tr>
+              <td>
+                <p class="time-main">10:05:15</p>
+                <p class="date-sub">12/10/2023</p>
+              </td>
+              <td>
+                <div class="user-cell">
+                  <div class="user-avatar" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBU98jxe8S4NqIw_63p9oXHFujFdRAKQS9wdIUUXC6slXdpTk2gk9blkk9KCqBw5GMF6ej9woGEbsfRoeuxBQ4ifVY2K7Q-I5XsAc2V_F438nc-5y72PKM_BKVV_PZsH47ecRoYLbWmp7j2t1t1_tf_irLvKRzV0vT61y954G-HunyFuLeNMDcu0gaibYb90lC34-j6ciPfhQjwYBRhcZ3GthIIjobV4WLI7jboEv2hCdXVcaqPuWIAJodntFibp92hfUUThfQBQymA')"></div>
+                  <div>
+                    <p class="user-name">Lê Tú</p>
+                    <p class="user-role">Kỹ thuật</p>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div class="action-cell">
+                  <span class="dot dot-green"></span>
+                  <p class="action-text">Thay đổi phân quyền nhóm người dùng: <span class="highlight">Sales</span></p>
+                </div>
+              </td>
+              <td>
+                <span class="module-badge">System</span>
+              </td>
+              <td class="ip-address">101.12.33.10</td>
+              <td class="action-col">
+                <button class="view-btn"><span class="material-symbols-outlined icon-lg">visibility</span></button>
+              </td>
+            </tr>
+            <!-- Row 4 -->
+            <tr>
+              <td>
+                <p class="time-main">09:12:00</p>
+                <p class="date-sub">12/10/2023</p>
+              </td>
+              <td>
+                <div class="user-cell">
+                  <div class="user-avatar" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB4AvtqP-_BsI6UDCSMzrFtRIqdebLN_1hCt33h_6zb2JPCN6oIVxKLN76nHatI9iLfqyDJsWj5N6-4E9OMMDXIRW0H_PsSq5UDuBc92Hp-R1VaAxP5Yjj07V0rw0G5-bw0_wEh4BSCI48w5jJMivsYx5OjKcawxi6NM4QboFSLT0HPsEj0VQpHeP6JAgP9XJZ2MVTjoBxYA_3e3r22fo39r09Be1sC4g6r6MXrfdVGL7Y33FQED41FRi_w-KjQadHqGFt8syBj-YPM')"></div>
+                  <div>
+                    <p class="user-name">Nguyễn Hoa</p>
+                    <p class="user-role">Admin</p>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div class="action-cell">
+                  <span class="dot dot-primary"></span>
+                  <p class="action-text">Đăng nhập hệ thống thành công</p>
+                </div>
+              </td>
+              <td>
+                <span class="module-badge">Auth</span>
+              </td>
+              <td class="ip-address">27.65.112.4</td>
+              <td class="action-col">
+                <button class="view-btn"><span class="material-symbols-outlined icon-lg">visibility</span></button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <!-- Pagination -->
+        <div class="pagination">
+          <p class="page-info">Hiển thị 1 đến 10 của 1,245 kết quả</p>
+          <div class="page-controls">
+            <button class="page-btn page-disabled">Trước</button>
+            <button class="page-btn page-active">1</button>
+            <button class="page-btn">2</button>
+            <button class="page-btn">3</button>
+            <button class="page-btn">Tiếp</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats Summary -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon-wrap icon-blue">
+            <span class="material-symbols-outlined">edit_note</span>
+          </div>
+          <div>
+            <p class="stat-val">156</p>
+            <p class="stat-label">Cập nhật hôm nay</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon-wrap icon-red">
+            <span class="material-symbols-outlined">warning</span>
+          </div>
+          <div>
+            <p class="stat-val">3</p>
+            <p class="stat-label">Cảnh báo bảo mật</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon-wrap icon-green">
+            <span class="material-symbols-outlined">person_check</span>
+          </div>
+          <div>
+            <p class="stat-val">12</p>
+            <p class="stat-label">Người dùng hoạt động</p>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+    
+    <!-- Success Toast Positioned -->
+    <div class="toast-notification">
+      <div class="toast-content">
+        <div class="toast-icon">
+          <span class="material-symbols-outlined">check_circle</span>
+        </div>
+        <div>
+          <p class="toast-title">Yêu cầu đã được tiếp nhận</p>
+          <p class="toast-desc">Đang chuẩn bị tệp báo cáo của bạn...</p>
+        </div>
+        <div class="toast-progress-wrap">
+          <div class="toast-progress-track">
+            <div class="toast-progress-bar"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Datepicker Modal -->
+    <div id="datepicker-modal" class="dp-modal-overlay" style="display: none;">
+      <div class="dp-modal-content">
+        <!-- Sidebar -->
+        <div class="dp-sidebar">
+          <h3 class="dp-sidebar-title">Lựa chọn nhanh</h3>
+          <button class="dp-side-btn">Hôm nay</button>
+          <button class="dp-side-btn">Hôm qua</button>
+          <button class="dp-side-btn dp-side-btn-active">7 ngày qua</button>
+          <button class="dp-side-btn">30 ngày qua</button>
+          <button class="dp-side-btn">Tháng này</button>
+          <button class="dp-side-btn">Tháng trước</button>
+          <div class="dp-sidebar-bottom">
+            <div class="dp-date-input-group">
+              <div>
+                <p class="dp-date-label">Từ ngày</p>
+                <div class="dp-date-box">14 Th05, 2024</div>
+              </div>
+              <div>
+                <p class="dp-date-label">Đến ngày</p>
+                <div class="dp-date-box">21 Th05, 2024</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Main Area -->
+        <div class="dp-main">
+          <div class="dp-header">
+            <div class="dp-month-nav">
+              <button class="dp-nav-btn"><span class="material-symbols-outlined">chevron_left</span></button>
+              <h4 class="dp-month-title">Tháng 5, 2024</h4>
+            </div>
+            <div class="dp-month-nav">
+              <h4 class="dp-month-title">Tháng 6, 2024</h4>
+              <button class="dp-nav-btn"><span class="material-symbols-outlined">chevron_right</span></button>
+            </div>
+          </div>
+          <div class="dp-calendars">
+            <!-- Cal 1 -->
+            <div class="dp-cal">
+              <div class="dp-days-header">
+                <div class="dp-day-name">CN</div><div class="dp-day-name">T2</div><div class="dp-day-name">T3</div>
+                <div class="dp-day-name">T4</div><div class="dp-day-name">T5</div><div class="dp-day-name">T6</div><div class="dp-day-name">T7</div>
+              </div>
+              <div class="dp-days-grid">
+                <div class="dp-day dp-day-muted">28</div><div class="dp-day dp-day-muted">29</div><div class="dp-day dp-day-muted">30</div>
+                <div class="dp-day">1</div><div class="dp-day">2</div><div class="dp-day">3</div><div class="dp-day">4</div>
+                <div class="dp-day">5</div><div class="dp-day">6</div><div class="dp-day">7</div><div class="dp-day">8</div>
+                <div class="dp-day">9</div><div class="dp-day">10</div><div class="dp-day">11</div><div class="dp-day">12</div>
+                <div class="dp-day">13</div><div class="dp-day dp-day-start">14</div><div class="dp-day dp-day-in-range">15</div>
+                <div class="dp-day dp-day-in-range">16</div><div class="dp-day dp-day-in-range">17</div><div class="dp-day dp-day-in-range">18</div>
+                <div class="dp-day dp-day-in-range">19</div><div class="dp-day dp-day-in-range">20</div><div class="dp-day dp-day-end">21</div>
+                <div class="dp-day">22</div><div class="dp-day">23</div><div class="dp-day">24</div><div class="dp-day">25</div>
+                <div class="dp-day">26</div><div class="dp-day">27</div><div class="dp-day">28</div><div class="dp-day">29</div>
+                <div class="dp-day">30</div><div class="dp-day">31</div><div class="dp-day dp-day-muted">1</div>
+              </div>
+            </div>
+            <!-- Cal 2 -->
+            <div class="dp-cal">
+              <div class="dp-days-header">
+                <div class="dp-day-name">CN</div><div class="dp-day-name">T2</div><div class="dp-day-name">T3</div>
+                <div class="dp-day-name">T4</div><div class="dp-day-name">T5</div><div class="dp-day-name">T6</div><div class="dp-day-name">T7</div>
+              </div>
+              <div class="dp-days-grid">
+                <div class="dp-day dp-day-muted">26</div><div class="dp-day dp-day-muted">27</div><div class="dp-day dp-day-muted">28</div>
+                <div class="dp-day dp-day-muted">29</div><div class="dp-day dp-day-muted">30</div><div class="dp-day dp-day-muted">31</div>
+                <div class="dp-day">1</div><div class="dp-day">2</div><div class="dp-day">3</div><div class="dp-day">4</div>
+                <div class="dp-day">5</div><div class="dp-day">6</div><div class="dp-day">7</div><div class="dp-day">8</div>
+                <div class="dp-day">9</div><div class="dp-day">10</div><div class="dp-day">11</div><div class="dp-day">12</div>
+                <div class="dp-day">13</div><div class="dp-day">14</div><div class="dp-day">15</div><div class="dp-day">16</div>
+                <div class="dp-day">17</div><div class="dp-day">18</div><div class="dp-day">19</div><div class="dp-day">20</div>
+                <div class="dp-day">21</div><div class="dp-day">22</div><div class="dp-day">23</div><div class="dp-day">24</div>
+                <div class="dp-day">25</div><div class="dp-day">26</div><div class="dp-day">27</div><div class="dp-day">28</div>
+                <div class="dp-day">29</div>
+              </div>
+            </div>
+          </div>
+          <div class="dp-actions-wrap">
+            <button class="dp-btn-cancel" data-close-datepicker>Hủy bỏ</button>
+            <button class="dp-btn-apply" data-close-datepicker>Áp dụng</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  // Setup Datepicker logic
+  document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('datepicker-modal');
+    const btnOpen = document.getElementById('btn-open-datepicker');
+    const btnsClose = document.querySelectorAll('[data-close-datepicker]');
+
+    if (btnOpen && modal) {
+      btnOpen.addEventListener('click', () => {
+        modal.style.display = 'flex';
+      });
+    }
+
+    btnsClose.forEach(btn => {
+      btn.addEventListener('click', () => {
+        modal.style.display = 'none';
+      });
+    });
+
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.style.display = 'none';
+        }
+      });
+    }
+  });
+</script>
+
+<style>
+  .log-container {
+    padding: 0;
+  }
+  .log-content-wrapper {
+    max-width: 1280px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* Header */
+  .log-header {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  @media (min-width: 768px) {
+    .log-header {
+      flex-direction: row;
+      align-items: flex-end;
+      justify-content: space-between;
+    }
+  }
+  .log-title {
+    font-size: 30px;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+    color: #f1f5f9;
+  }
+  .log-subtitle {
+    color: #94a3b8;
+    font-size: 16px;
+  }
+
+  /* Export Button & Dropdown */
+  .export-dropdown-wrapper {
+    position: relative;
+    display: inline-block;
+  }
+  .export-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: rgba(244, 140, 37, 0.1);
+    color: #f48c25;
+    border: 1px solid rgba(244, 140, 37, 0.2);
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .export-btn:hover {
+    background: rgba(244, 140, 37, 0.2);
+  }
+  .icon-sm { font-size: 14px; }
+  .export-dropdown {
+    position: absolute;
+    right: 0;
+    margin-top: 8px;
+    width: 192px;
+    background: #221910;
+    border: 1px solid rgba(244, 140, 37, 0.2);
+    border-radius: 12px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    z-index: 50;
+    display: none; /* hidden by default, handle via JS if needed */
+  }
+  .export-dropdown-wrapper:hover .export-dropdown {
+    display: block; /* basic css hover implementation */
+  }
+  .export-dp-header {
+    padding: 16px;
+  }
+  .export-dp-title {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #64748b;
+    margin-bottom: 12px;
+  }
+  .export-dp-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .dp-btn {
+    padding: 6px 8px;
+    font-size: 12px;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid rgba(244, 140, 37, 0.1);
+    background: #221910;
+    color: #94a3b8;
+  }
+  .dp-btn:hover {
+    color: #e2e8f0;
+    border-color: rgba(244, 140, 37, 0.3);
+  }
+  .dp-btn-active {
+    background: rgba(244, 140, 37, 0.1);
+    color: #f48c25;
+    border-color: rgba(244, 140, 37, 0.2);
+  }
+  .dp-btn-active:hover {
+    background: rgba(244, 140, 37, 0.2);
+    color: #f48c25;
+  }
+  .dp-btn-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+  .icon-xs { font-size: 12px; }
+  .dp-divider {
+    height: 1px;
+    background: rgba(244, 140, 37, 0.1);
+    width: 100%;
+  }
+  .dp-action-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    font-size: 14px;
+    color: #cbd5e1;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+  }
+  .dp-action-btn:hover {
+    background: rgba(244, 140, 37, 0.1);
+    color: #f48c25;
+  }
+  .icon-lg { font-size: 18px; }
+
+  /* Filters */
+  .log-filters {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 16px;
+    border-radius: 12px;
+    background: rgba(244, 140, 37, 0.05);
+    border: 1px solid rgba(244, 140, 37, 0.1);
+  }
+  @media (min-width: 768px) {
+    .log-filters {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .filter-label {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    margin-left: 4px;
+  }
+  .filter-select {
+    width: 100%;
+    background: #221910;
+    border: 1px solid rgba(244, 140, 37, 0.2);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 14px;
+    color: #f1f5f9;
+    outline: none;
+    appearance: none;
+  }
+  .filter-select:focus {
+    box-shadow: 0 0 0 1px #f48c25;
+  }
+  .filter-action {
+    display: flex;
+    align-items: flex-end;
+  }
+  .filter-btn {
+    width: 100%;
+    padding: 8px 0;
+    background: #f48c25;
+    color: #221910;
+    font-weight: 700;
+    border-radius: 8px;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 4px 14px 0 rgba(244, 140, 37, 0.2);
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .filter-btn:hover {
+    opacity: 0.9;
+  }
+
+  /* Table */
+  .log-table-wrapper {
+    background: rgba(34, 25, 16, 0.5);
+    border: 1px solid rgba(244, 140, 37, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .log-table {
+    width: 100%;
+    text-align: left;
+    border-collapse: collapse;
+  }
+  .log-table th {
+    padding: 16px 24px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    background: rgba(244, 140, 37, 0.05);
+    border-bottom: 1px solid rgba(244, 140, 37, 0.1);
+  }
+  .log-table td {
+    padding: 16px 24px;
+    white-space: nowrap;
+  }
+  .log-table tbody tr {
+    transition: background-color 0.2s;
+    border-bottom: 1px solid rgba(244, 140, 37, 0.05);
+  }
+  .log-table tbody tr:hover {
+    background: rgba(244, 140, 37, 0.05);
+  }
+  
+  /* Table Cells */
+  .time-main { font-size: 14px; font-weight: 500; color: #f1f5f9; }
+  .date-sub { font-size: 12px; color: #64748b; margin-top: 2px; }
+  
+  .user-cell { display: flex; align-items: center; gap: 12px; }
+  .user-avatar { width: 32px; height: 32px; border-radius: 50%; background-color: #334155; background-size: cover; background-position: center; }
+  .user-name { font-size: 14px; font-weight: 600; color: #f1f5f9; }
+  .user-role { font-size: 12px; color: #64748b; margin-top: 2px; }
+
+  .action-cell { display: flex; align-items: center; gap: 8px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .dot-blue { background-color: #3b82f6; }
+  .dot-red { background-color: #ef4444; }
+  .dot-green { background-color: #22c55e; }
+  .dot-primary { background-color: #f48c25; }
+  .action-text { font-size: 14px; color: #cbd5e1; white-space: normal; }
+  .highlight { color: #f48c25; font-weight: 500; }
+
+  .module-badge {
+    padding: 4px 8px;
+    background: #1e293b;
+    color: #cbd5e1;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: 4px;
+    border: 1px solid #334155;
+  }
+  
+  .ip-address { font-family: monospace; font-size: 12px; color: #94a3b8; }
+  
+  .action-col { text-align: right; }
+  .view-btn {
+    opacity: 0;
+    padding: 6px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+    color: #f48c25;
+    transition: all 0.2s;
+  }
+  .log-table tbody tr:hover .view-btn {
+    opacity: 1;
+  }
+  .view-btn:hover { background: rgba(244, 140, 37, 0.2); }
+
+  /* Pagination */
+  .pagination {
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid rgba(244, 140, 37, 0.1);
+    background: rgba(244, 140, 37, 0.05);
+  }
+  .page-info { font-size: 12px; color: #64748b; }
+  .page-controls { display: flex; gap: 8px; }
+  .page-btn {
+    padding: 4px 12px;
+    background: #221910;
+    border: 1px solid rgba(244, 140, 37, 0.2);
+    border-radius: 4px;
+    color: #cbd5e1;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .page-btn:hover:not(.page-disabled):not(.page-active) {
+    background: rgba(244, 140, 37, 0.1);
+    color: #f1f5f9;
+  }
+  .page-disabled { opacity: 0.5; cursor: not-allowed; }
+  .page-active { background: #f48c25; color: #221910; font-weight: 700; box-shadow: 0 4px 14px 0 rgba(244, 140, 37, 0.2); border-color: transparent; }
+
+  /* Stats */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  @media (min-width: 768px) {
+    .stats-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  .stat-card {
+    padding: 24px;
+    border-radius: 12px;
+    background: #221910;
+    border: 1px solid rgba(244, 140, 37, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .stat-icon-wrap {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .icon-blue { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+  .icon-red { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+  .icon-green { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+  .stat-val { font-size: 24px; font-weight: 700; color: #f1f5f9; line-height: 1; }
+  .stat-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #64748b; margin-top: 4px; }
+
+  /* Toast Notification */
+  @keyframes bounceToast {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  @keyframes progressTrack {
+    0% { width: 0%; transform: translateX(-100%); }
+    50% { width: 100%; transform: translateX(0); }
+    100% { width: 0%; transform: translateX(100%); }
+  }
+
+  .toast-notification {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    z-index: 100;
+    animation: bounceToast 2s infinite ease-in-out;
+  }
+  .toast-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: #221910;
+    border: 1px solid rgba(244, 140, 37, 0.3);
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 25px 50px -12px rgba(244, 140, 37, 0.1);
+  }
+  .toast-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(244, 140, 37, 0.2);
+    color: #f48c25;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .toast-title { font-size: 14px; font-weight: 700; color: white; }
+  .toast-desc { font-size: 12px; color: #94a3b8; }
+  .toast-progress-wrap { margin-left: 16px; }
+  .toast-progress-track {
+    width: 48px;
+    height: 4px;
+    background: rgba(244, 140, 37, 0.1);
+    border-radius: 999px;
+    overflow: hidden;
+    position: relative;
+  }
+  .toast-progress-bar {
+    position: absolute;
+    height: 100%;
+    background: #f48c25;
+    animation: progressTrack 2s ease-in-out infinite;
+  }
+
+  /* Datepicker Modal */
+  .dp-modal-overlay {
+    position: fixed; inset: 0; 
+    background: rgba(34, 25, 16, 0.8); 
+    backdrop-filter: blur(4px); z-index: 50; 
+    display: flex; align-items: center; justify-content: center; padding: 16px;
+  }
+  .dp-modal-content {
+    background: #2a1f14; border: 1px solid #493622; border-radius: 16px; 
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); 
+    max-width: 1024px; width: 100%; display: flex; overflow: hidden;
+  }
+  .dp-sidebar {
+    width: 256px; border-right: 1px solid #493622; padding: 24px; 
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .dp-sidebar-title {
+    color: #cbad90; font-size: 12px; font-weight: 700; text-transform: uppercase; 
+    letter-spacing: 0.05em; margin-bottom: 16px;
+  }
+  .dp-side-btn {
+    text-align: left; padding: 8px 16px; border-radius: 8px; color: #cbd5e1; 
+    font-size: 14px; font-weight: 500; transition: all 0.2s; background: transparent; 
+    border: none; cursor: pointer;
+  }
+  .dp-side-btn:hover { background: rgba(244, 140, 37, 0.1); color: #f48c25; }
+  .dp-side-btn-active {
+    background: #f48c25; color: #fff; font-weight: 700; 
+    box-shadow: 0 10px 15px -3px rgba(244, 140, 37, 0.2);
+  }
+  .dp-side-btn-active:hover { background: #f48c25; color: #fff; }
+  .dp-sidebar-bottom { margin-top: auto; padding-top: 24px; border-top: 1px solid #493622; }
+  .dp-date-input-group { display: flex; flex-direction: column; gap: 16px; }
+  .dp-date-label {
+    color: #cbad90; font-size: 10px; font-weight: 700; text-transform: uppercase; margin-bottom: 4px;
+  }
+  .dp-date-box {
+    background: rgba(73, 54, 34, 0.4); padding: 8px; border-radius: 4px; 
+    border: 1px solid #493622; color: #fff; font-size: 14px;
+  }
+
+  .dp-main { flex: 1; padding: 32px; }
+  .dp-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+  .dp-month-nav { display: flex; align-items: center; gap: 16px; }
+  .dp-nav-btn {
+    width: 32px; height: 32px; border-radius: 50%; border: 1px solid #493622; 
+    display: flex; align-items: center; justify-content: center; color: #fff; 
+    background: transparent; cursor: pointer; transition: all 0.2s;
+  }
+  .dp-nav-btn:hover { border-color: #f48c25; color: #f48c25; }
+  .dp-month-title { color: #fff; font-weight: 700; font-size: 18px; min-width: 128px; text-align: center; }
+
+  .dp-calendars { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; }
+  .dp-days-header { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 16px; }
+  .dp-day-name { text-align: center; color: #cbad90; font-size: 10px; font-weight: 700; }
+  .dp-days-grid { display: grid; grid-template-columns: repeat(7, 1fr); row-gap: 4px; }
+  .dp-day {
+    height: 40px; display: flex; align-items: center; justify-content: center; 
+    color: #cbd5e1; font-size: 14px; cursor: pointer; position: relative;
+  }
+  .dp-day-muted { color: #493622; cursor: default; }
+  .dp-day-start { background: #f48c25; color: #fff; font-weight: 700; border-radius: 99px 0 0 99px; z-index: 10; }
+  .dp-day-end { background: #f48c25; color: #fff; font-weight: 700; border-radius: 0 99px 99px 0; z-index: 10; }
+  .dp-day-in-range { background: rgba(244, 140, 37, 0.2); color: #fff; }
+
+  .dp-actions-wrap {
+    display: flex; align-items: center; justify-content: flex-end; gap: 12px; 
+    margin-top: 48px; padding-top: 24px; border-top: 1px solid #493622;
+  }
+  .dp-btn-cancel {
+    padding: 8px 24px; border-radius: 8px; color: #cbd5e1; font-weight: 500; 
+    background: transparent; border: none; cursor: pointer; transition: color 0.2s;
+  }
+  .dp-btn-cancel:hover { color: #fff; }
+  .dp-btn-apply {
+    padding: 10px 32px; border-radius: 8px; background: #f48c25; color: #fff; 
+    font-weight: 700; box-shadow: 0 10px 15px -3px rgba(244, 140, 37, 0.2); 
+    border: none; cursor: pointer; transition: transform 0.1s;
+  }
+  .dp-btn-apply:active { transform: scale(0.95); }
+
+</style>

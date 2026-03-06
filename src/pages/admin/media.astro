@@ -1,0 +1,765 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout title="Thư viện Media" activeNav="media">
+  <div class="media-container">
+    <!-- Directory Sidebar -->
+    <aside class="dir-sidebar">
+      <div class="dir-header">
+        <h3 class="dir-title">Thư mục</h3>
+        <button class="icon-btn" title="Thêm thư mục mới">
+          <span class="material-symbols-outlined">create_new_folder</span>
+        </button>
+      </div>
+      <nav class="dir-nav">
+        <a class="nav-item nav-item-active" href="#">
+          <span class="material-symbols-outlined material-fill">folder_open</span>
+          <span class="nav-text">Tất cả tệp</span>
+        </a>
+        <div class="nav-group-wrapper">
+          <a class="nav-item" href="#">
+            <span class="material-symbols-outlined">folder</span>
+            <span class="nav-text">Guitar Acoustic</span>
+          </a>
+          <div class="sub-nav">
+            <a class="sub-item" href="#">Dáng Dreadnought</a>
+            <a class="sub-item" href="#">Dáng Grand Auditorium</a>
+          </div>
+        </div>
+        <a class="nav-item" href="#">
+          <span class="material-symbols-outlined">folder</span>
+          <span class="nav-text">Guitar Electric</span>
+        </a>
+        <a class="nav-item" href="#">
+          <span class="material-symbols-outlined">folder</span>
+          <span class="nav-text">Phụ kiện</span>
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="media-main">
+      <!-- Header Bar -->
+      <header class="media-header">
+        <div class="breadcrumb">
+          <div class="bc-flex">
+            <span class="material-symbols-outlined text-primary">perm_media</span>
+            <span class="bc-text-muted">Thư viện</span>
+            <span class="material-symbols-outlined bc-separator">chevron_right</span>
+            <span class="bc-text-active">Guitar Acoustic</span>
+          </div>
+          <div class="search-box">
+            <span class="material-symbols-outlined search-icon">search</span>
+            <input class="search-input" placeholder="Tìm kiếm tệp..." type="text"/>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="btn-upload">
+            <span class="material-symbols-outlined">cloud_upload</span>
+            Tải lên mới
+          </button>
+          <button class="icon-btn">
+            <span class="material-symbols-outlined">notifications</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Toolbar / Filters -->
+      <div class="toolbar">
+        <div class="filters-flex">
+          <button class="filter-chip chip-active">Tất cả</button>
+          <button class="filter-chip">Hình ảnh</button>
+          <button class="filter-chip">Videos</button>
+          <button class="filter-chip">Thư mục</button>
+          <div class="divider-y"></div>
+          <select class="sort-select">
+            <option>Mới nhất</option>
+            <option>Cũ nhất</option>
+            <option>Kích thước (Lớn nhất)</option>
+          </select>
+        </div>
+        <div class="actions-flex">
+          <button class="action-icon text-red" title="Xóa tệp"><span class="material-symbols-outlined">delete</span></button>
+          <button class="action-icon text-primary" title="Di chuyển"><span class="material-symbols-outlined">folder_shared</span></button>
+          <button class="action-icon text-primary" title="Tải xuống"><span class="material-symbols-outlined">download</span></button>
+        </div>
+      </div>
+
+      <!-- Media Grid -->
+      <div class="grid-scroll-area">
+        <div class="media-grid">
+          <!-- Folder Item -->
+          <div class="grid-folder">
+            <span class="material-symbols-outlined folder-icon material-fill">folder</span>
+            <p class="folder-name">Guitar Custom 2024</p>
+          </div>
+          <!-- Image Item Selected -->
+          <div class="grid-item item-selected">
+            <div class="item-badge-checked">
+              <span class="material-symbols-outlined material-fill">check</span>
+            </div>
+            <div class="item-img" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDiWmWorm0hEJME-NA3eGddllIvTkwRtzNVNf_sID5Hn-TSW6VrRDbac6zNgeVDDwUO0FnS41ZMplD1qPCnTwHpeUa2bsPa65uw8XShK31oWa7MYMvEVlBzogqQJ9xXcQ-ODCEfilYUNGIN9yInp799s30U-BA_YQDw35nDZF5DoFHPj67m2hmyyRem5fR-S3BW-3KVmaMMX4tpj2zCUUuUgmh8r78wGTnh5BNzVUTndd6-aAKl7KRyY5qQ4yU6NlCohm7bsHp9iZcS')"></div>
+            <div class="item-overlay item-overlay-visible">
+              <p class="item-title">acoustic-premium-01.jpg</p>
+            </div>
+          </div>
+          <!-- Other Images -->
+          <div class="grid-item">
+            <div class="item-badge-hover"></div>
+            <div class="item-img" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDPWxoeL8b_1sZgGsvZrU9T4g7tBUV5mcORmXg4s9SHHFMLnYUYR9MP74mKqjMlE4mddGyUzLk68hrbBcyPP53uGrPzrrAlQUKVjvwdDqgP-l6ilVt5qqVEmR4bQKaqh2Sjjh26NQi71rci3cNefGcsl4nti0qF6YRHZ5yo3N18uSi_JiV76oiZ1ehPA4n_ayqSC4i0k6oVTILYTh-LEUfNegOgwRWGny9ZXtSsR3eYSSa5RvxYokFvrxwO3U5SZ__NlvfXuUu9ay2o')"></div>
+            <div class="item-overlay">
+              <p class="item-title">wood-texture-dark.png</p>
+            </div>
+          </div>
+          <div class="grid-item">
+            <div class="item-img" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD8KiIFx7YP3OnpUu3YZD6hH9JOZ8nsiPyRKsvTnb8rf6N2VnTt7tmEuWjoek8Muua7BZIi0D7SzwI-61Eae8ws0HRW-GFDpvM5k4fmHVl2Qz-oV6KM-hxJDL3Gps_1iecluEV6MwiRenWNLa81QtK2PF388f32-dNmFnMA0-bLtfXbrCtS9x2UQxhNn90djJf-nyf9p8G2fuhrVWjcEjGg4qndNa0FI33kfj7_kZ_NZeAwrqmWSbi_IyXrfWvsj3TWLfL_HN6WWg63')"></div>
+            <div class="item-overlay">
+              <p class="item-title">workshop-vibes.webp</p>
+            </div>
+          </div>
+          <div class="grid-item">
+            <div class="item-img" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDNXAgsKh1vq1v6thn_f2A3ucMJQzsatTnirvjqcImgKHFrbAlyQeWmMpsf9lXgumdxE02wHnt3MHqJ74JyJstACLTIwY2Y4Gp-CPeU1GK7dF4MDfoIyVYeM0BFPeQBeIuE3cBBTRYke0tP788bavESPjX3h_gV5o8LGbLpIx_hfPegtbFG_fIOht4o0LfKORtxxhxN7YcG0rAhGFtsR561rggNBvLTtGQJ2sGHPh52-H0Fw2YTIFNM8dKFRIiMo5uYlG3ctGpMu5WX')"></div>
+            <div class="item-overlay">
+              <p class="item-title">strings-detail-02.avif</p>
+            </div>
+          </div>
+          <div class="grid-item">
+            <div class="item-img" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBesLE28U94wEn4ajidw7jYgyQbkk7GCRl4F-xVUbfbl-fK-0tBuNhDxt8A0gHcBe5oFnAw9x8SRWD0wdXxF3CPbaOl69NnY1gmvXTWgKKn5e_gN-idMvYSvcq-U8MwSpN6D31Z6KO_U1NnetdlsDfIyred0CqGshoFLa4mR28s49Kr5zZEzZ3u7-hi-tuCVEnys6uNW4PRd6YvLqrq_0kmZ3sAsam3nVV4_Hw3ho-kFi08wNdrYWLaZtYnunTp5BZdUBu3vTuQe6cU')"></div>
+            <div class="item-overlay">
+              <p class="item-title">electric-shadow.jpg</p>
+            </div>
+          </div>
+          <div class="grid-item">
+            <div class="item-img" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAKt3BcbClmjBYqmQjQmaap6ceRHF1oYMwsBID6MOZq4DN8u4GaNdaIKCbuhXmqcpY0TTvPlXcbuMbI93NFl2pATmhMHNDV7sKIXyJvMZMsB0cMl6L5q9AyP-87qWL0kqoZDOlwhwx8ZPCj0QTtwpT4BBdtIdUUF8yuqwF62PrIqBLD0Fl7ihq2vaDLLaCkT9u492xuWFkol_3UnuzM5OCnWFWIOkKib5pYIdGjAfEzKYtyyC5CTKV09nYU0bWLXkZgO00zpVOLzQ9x')"></div>
+            <div class="item-overlay">
+              <p class="item-title">tools-luthier.jpg</p>
+            </div>
+          </div>
+          <div class="grid-item">
+            <div class="item-img" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBTzi974ZN6oRWoKa1A5EhzDC3ZxUz-cPmGPAOQeVai3DZ_2jmLifjHeS0wETv5VGi6TKQtovHJ-ke2EwdVHdRZEwiWi3090BgmvtfD6B9p0r6xDeuYND0kE1_0xhfV9Oaqk9u8_6bliphj5k8JNaIlmA1gvMpLnU14QMe0p8Kg7RCAvLbEI5mxCfPRLZ9sHlGtav1y7soJwXA3YAUkkEyykynwqCJClk1G8Vrd5JYZWWWP7u2bmFw8tM2EA_9fqwAg95ErTS-y71zL')"></div>
+            <div class="item-overlay">
+              <p class="item-title">logo-monochrome.svg</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Details Sidebar -->
+    <aside class="details-sidebar">
+      <div class="details-header">
+        <h3 class="details-title">
+          <span class="material-symbols-outlined text-primary">info</span>
+          Chi tiết tệp
+        </h3>
+      </div>
+      <div class="details-scroll">
+        <!-- Preview -->
+        <div class="preview-box">
+          <div class="preview-img" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDkH_87x4XiikdNTgNjlg24BJWeTzQmG2lcRaalZJnN4xEhFmRD8O7T1wJo0QWEPg-EbrbAmu9Pso9Zb4-AqQSsqsrFcu0lRdZA6QBQhXrlpS8upPsm2eVXLT_6wJvj6SNHhYlvW6YXLdZG741H6i5JlVd7mJDLoMTs7KCTW5WLo-mNbYUd_nIyQzR4RIGaB3wr98jJBkuKckyLTPMpeiutOCIB-D40dCv2urrZqkaVmsbL3bbsziqyt2jwQy2yfwEmI28WnVr1geTa')"></div>
+        </div>
+        <!-- Info Grid -->
+        <div class="info-group">
+          <div>
+            <label class="info-label">Tên tệp</label>
+            <p class="info-val break-words">acoustic-premium-01.jpg</p>
+          </div>
+          <div class="info-grid-2">
+            <div>
+              <label class="info-label">Kích thước</label>
+              <p class="info-val">1.2 MB</p>
+            </div>
+            <div>
+              <label class="info-label">Kích thước ảnh</label>
+              <p class="info-val">2400 x 1600 px</p>
+            </div>
+          </div>
+          <div>
+            <label class="info-label">Tối ưu hóa</label>
+            <div class="tag-flex">
+              <span class="tag tag-green">WEBP</span>
+              <span class="tag tag-amber">AVIF READY</span>
+            </div>
+          </div>
+          <div>
+            <label class="info-label">Văn bản thay thế (Alt Text)</label>
+            <textarea class="info-textarea" placeholder="Mô tả cho công cụ tìm kiếm...">Ảnh đàn guitar acoustic gỗ cao cấp trưng bày tại showroom FlySky.</textarea>
+          </div>
+        </div>
+      </div>
+      <!-- Sidebar Actions -->
+      <div class="details-actions">
+        <button class="btn-block btn-primary-lg">
+          <span class="material-symbols-outlined icon-norm">check_circle</span>
+          Sử dụng ảnh này
+        </button>
+        <button class="btn-block btn-danger-out">
+          <span class="material-symbols-outlined icon-norm">delete_forever</span>
+          Xóa tệp
+        </button>
+      </div>
+    </aside>
+  </div>
+</AdminLayout>
+
+<style is:global>
+  /* Override the default padding and scrolling from AdminLayout's content-scroll to make this a full screen flex container */
+  .content-scroll:has(.media-container) {
+    padding: 0 !important;
+    overflow: hidden !important;
+    display: flex;
+    flex-direction: column;
+  }
+</style>
+
+<style>
+  /* ══ GENERAL & LAYOUT ══ */
+  .material-fill { font-variation-settings: 'FILL' 1; }
+  .text-primary { color: #f48c25; }
+  .text-red { color: #ef4444; }
+  .break-words { word-break: break-all; }
+  
+  .media-container {
+    display: flex;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    background: #221910;
+  }
+
+  /* ══ DIRECTORY SIDEBAR ══ */
+  .dir-sidebar {
+    width: 240px;
+    border-right: 1px solid rgba(244,140,37,0.1);
+    background: rgba(34,25,16,0.8);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .dir-header {
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .dir-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #94a3b8;
+  }
+  .icon-btn {
+    padding: 6px;
+    border-radius: 8px;
+    color: #f48c25;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .icon-btn:hover {
+    background: rgba(244,140,37,0.1);
+  }
+  .icon-btn .material-symbols-outlined { font-size: 20px; }
+
+  .dir-nav {
+    flex: 1;
+    padding: 0 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    color: #94a3b8;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .nav-item:hover {
+    background: rgba(244,140,37,0.05);
+    color: #f48c25;
+  }
+  .nav-item-active {
+    background: rgba(244,140,37,0.1);
+    color: #f48c25;
+  }
+  .nav-text {
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .nav-item .material-symbols-outlined { font-size: 18px; }
+
+  .nav-group-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .sub-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-left: 24px;
+    border-left: 1px solid rgba(244,140,37,0.1);
+    padding-left: 8px;
+  }
+  .sub-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    color: #64748b;
+    font-size: 12px;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .sub-item:hover {
+    color: #f48c25;
+  }
+
+  /* ══ MAIN CONTENT ══ */
+  .media-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: rgba(24,24,27,0.3); /* dark:bg-zinc-900/30 */
+  }
+
+  /* Header */
+  .media-header {
+    height: 64px;
+    border-bottom: 1px solid rgba(244,140,37,0.1);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(34,25,16,0.5);
+    backdrop-filter: blur(12px);
+  }
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex: 1;
+  }
+  .bc-flex {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .bc-text-muted { color: #94a3b8; font-weight: 500; }
+  .bc-separator { color: #64748b; font-size: 14px; }
+  .bc-text-active { color: #fff; }
+
+  .search-box {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+  }
+  .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 18px;
+  }
+  .search-input {
+    width: 100%;
+    padding: 8px 16px 8px 36px;
+    background: #27272a; /* dark:bg-zinc-800 */
+    border: none;
+    border-radius: 8px;
+    color: #f1f5f9;
+    font-size: 14px;
+    outline: none;
+    transition: box-shadow 0.2s;
+  }
+  .search-input:focus {
+    box-shadow: 0 0 0 2px #f48c25;
+  }
+  .search-input::placeholder { color: #64748b; }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .btn-upload {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f48c25;
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 14px;
+    border: none;
+    cursor: pointer;
+    transition: filter 0.2s;
+  }
+  .btn-upload:hover { filter: brightness(1.1); }
+  .btn-upload .material-symbols-outlined { font-size: 18px; }
+
+  /* Toolbar Filter */
+  .toolbar {
+    padding: 16px 24px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(244,140,37,0.1);
+    background: rgba(24,24,27,0.1);
+  }
+  .filters-flex {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+  }
+  .filter-chip {
+    padding: 6px 16px;
+    border-radius: 9999px;
+    background: #27272a;
+    color: #94a3b8;
+    font-size: 14px;
+    font-weight: 500;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .filter-chip:hover {
+    background: #3f3f46;
+  }
+  .chip-active {
+    background: rgba(244,140,37,0.2);
+    color: #f48c25;
+    border-color: rgba(244,140,37,0.2);
+    font-weight: 600;
+  }
+  .chip-active:hover { background: rgba(244,140,37,0.2); }
+  
+  .divider-y {
+    width: 1px;
+    height: 24px;
+    background: rgba(244,140,37,0.1);
+    margin: 0 8px;
+  }
+  .sort-select {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    font-weight: 500;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .actions-flex {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border-left: 1px solid rgba(244,140,37,0.1);
+    padding-left: 16px;
+    margin-left: 16px;
+  }
+  .action-icon {
+    padding: 8px;
+    border-radius: 8px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #94a3b8;
+    transition: all 0.2s;
+  }
+  .action-icon:hover {
+    background: rgba(244,140,37,0.1);
+  }
+  .action-icon.text-red:hover {
+    background: rgba(239,68,68,0.1);
+    color: #ef4444;
+  }
+  .action-icon.text-primary:hover {
+    color: #f48c25;
+  }
+
+  /* Grid Area */
+  .grid-scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    scroll-behavior: smooth;
+  }
+  .media-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+  @media (min-width: 768px) { .media-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (min-width: 1024px) { .media-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  @media (min-width: 1280px) { .media-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+
+  .grid-folder {
+    aspect-ratio: 1 / 1;
+    border-radius: 12px;
+    background: rgba(39,39,42,0.5); /* dark:bg-zinc-800/50 */
+    border: 2px solid transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .grid-folder:hover {
+    border-color: rgba(244,140,37,0.3);
+  }
+  .grid-folder:hover .folder-icon {
+    transform: scale(1.1);
+  }
+  .folder-icon {
+    font-size: 48px;
+    color: rgba(244,140,37,0.6);
+    transition: transform 0.2s;
+  }
+  .folder-name {
+    font-size: 12px;
+    font-weight: 500;
+    margin-top: 8px;
+    color: #94a3b8;
+  }
+
+  .grid-item {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #27272a;
+    cursor: pointer;
+    border: 1px solid rgba(244,140,37,0.05);
+    transition: all 0.2s;
+  }
+  .grid-item:hover {
+    border-color: rgba(244,140,37,0.4);
+  }
+  .item-selected {
+    box-shadow: 0 0 0 2px #f48c25;
+    border-color: transparent !important;
+    box-shadow: 0 10px 15px -3px rgba(244,140,37,0.1);
+  }
+  .item-img {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    opacity: 0.8;
+    transition: all 0.2s;
+  }
+  .grid-item:hover .item-img {
+    opacity: 1;
+  }
+  .item-selected .item-img {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  
+  .item-badge-checked {
+    position: absolute;
+    top: 8px; right: 8px;
+    z-index: 10;
+    width: 24px; height: 24px;
+    background: #f48c25;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+  }
+  .item-badge-checked .material-symbols-outlined { font-size: 14px; font-weight: 700; }
+  
+  .item-badge-hover {
+    position: absolute;
+    top: 8px; right: 8px;
+    z-index: 10;
+    width: 24px; height: 24px;
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(4px);
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.2);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .grid-item:hover .item-badge-hover { opacity: 1; }
+
+  .item-overlay {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+    padding: 12px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .grid-item:hover .item-overlay { opacity: 1; }
+  .item-overlay-visible { opacity: 1; }
+  .item-title {
+    font-size: 10px;
+    color: #fff;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ══ DETAILS SIDEBAR ══ */
+  .details-sidebar {
+    width: 320px;
+    border-left: 1px solid rgba(244,140,37,0.1);
+    background: rgba(34,25,16,0.95);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .details-header {
+    padding: 16px;
+    border-bottom: 1px solid rgba(244,140,37,0.1);
+    background: rgba(244,140,37,0.05);
+  }
+  .details-title {
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .details-title .material-symbols-outlined { font-size: 20px; }
+
+  .details-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  
+  .preview-box {
+    aspect-ratio: 16 / 9;
+    border-radius: 8px;
+    background: #27272a;
+    border: 1px solid rgba(244,140,37,0.1);
+    overflow: hidden;
+  }
+  .preview-img {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+  }
+
+  .info-group {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .info-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #64748b; /* dark:text-slate-400 */
+    display: block;
+    margin-bottom: 4px;
+  }
+  .info-val {
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .info-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  
+  .tag-flex {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .tag {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    border: 1px solid;
+  }
+  .tag-green { background: rgba(34,197,94,0.1); color: #22c55e; border-color: rgba(34,197,94,0.2); }
+  .tag-amber { background: rgba(245,158,11,0.1); color: #f59e0b; border-color: rgba(245,158,11,0.2); }
+
+  .info-textarea {
+    width: 100%;
+    font-size: 14px;
+    background: #27272a; /* dark:bg-zinc-800 */
+    border: 1px solid rgba(244,140,37,0.1);
+    border-radius: 8px;
+    padding: 8px;
+    height: 80px;
+    outline: none;
+    resize: none;
+    color: #f1f5f9;
+  }
+  .info-textarea:focus { box-shadow: 0 0 0 1px #f48c25; }
+
+  .details-actions {
+    padding: 20px;
+    border-top: 1px solid rgba(244,140,37,0.1);
+    background: rgba(34,25,16,0.5);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .btn-block {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 0;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .icon-norm { font-size: 18px; }
+  .btn-primary-lg {
+    background: #f48c25;
+    color: #fff;
+    border: none;
+    box-shadow: 0 10px 15px -3px rgba(244,140,37,0.2);
+  }
+  .btn-primary-lg:hover { filter: brightness(1.1); }
+  .btn-danger-out {
+    background: transparent;
+    border: 1px solid rgba(239,68,68,0.3);
+    color: #ef4444;
+  }
+  .btn-danger-out:hover {
+    background: #ef4444;
+    color: #fff;
+  }
+</style>
