@@ -363,7 +363,7 @@
     <!-- Top navigation bar -->
     <nav class="topbar">
       <a class="brand" href="/">
-        <img src="/logo.svg" alt="FlySky Guitar" />
+        <img src="/logo.svg" alt="FlySky Guitar" class="flysky-global-logo" />
         <span class="brand-name">FlySky Guitar</span>
       </a>
       <div class="topbar-tag">
@@ -497,6 +497,14 @@
           showError('Tên đăng nhập hoặc mật khẩu không đúng. Vui lòng thử lại.');
         }
       }, 800);
+    }
+    
+    // Custom logo check
+    const savedLogo = localStorage.getItem('flysky_custom_logo');
+    if (savedLogo) {
+      document.querySelectorAll('.flysky-global-logo').forEach((img) => {
+        (img as HTMLImageElement).src = savedLogo;
+      });
     }
 
     function showError(msg) {

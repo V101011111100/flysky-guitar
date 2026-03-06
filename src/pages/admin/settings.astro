@@ -62,8 +62,9 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
         </div>
         <div class="stg-two-col-right">
           <div class="logo-area">
-            <div class="logo-preview">
-              <span class="material-symbols-outlined logo-icon">image</span>
+            <input type="file" id="logo-upload-input" accept="image/png, image/svg+xml, image/jpeg" style="display: none;" />
+            <div class="logo-preview" id="logo-preview-box" onclick="document.getElementById('logo-upload-input').click()">
+              <img src="/logo.svg" alt="Preview" id="logo-preview-img" style="width:100%; height:100%; object-fit:contain; padding:10px;" class="flysky-global-logo" />
               <div class="logo-label">Logo Hiện Tại</div>
               <div class="logo-hover-overlay">
                 <span class="material-symbols-outlined">upload</span>
@@ -72,7 +73,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
             <div class="logo-info">
               <p class="form-label" style="margin-bottom:8px;">Thay đổi Logo</p>
               <p class="section-desc" style="margin-bottom:16px;">Khuyên dùng định dạng PNG hoặc SVG. Kích thước tối ưu 512x512px.</p>
-              <button class="btn-upload">Tải lên ảnh mới</button>
+              <button class="btn-upload" onclick="document.getElementById('logo-upload-input').click()">Tải lên ảnh mới</button>
             </div>
           </div>
         </div>
@@ -588,6 +589,31 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
     btn.classList.add('stg-tab-active');
   }
   (window as any).switchTab = switchTab;
+
+  // Header Logo Upload Handlers
+  const logoInput = document.getElementById('logo-upload-input');
+  const previewImg = document.getElementById('logo-preview-img');
+  
+  if (logoInput && previewImg) {
+    logoInput.addEventListener('change', (e: Event) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const dataUrl = ev.target?.result as string;
+          // Update preview
+          (previewImg as HTMLImageElement).src = dataUrl;
+          // Save to localStorage
+          localStorage.setItem('flysky_custom_logo', dataUrl);
+          // Also update any other logos on the page immediately
+          document.querySelectorAll('.flysky-global-logo').forEach((img) => {
+            (img as HTMLImageElement).src = dataUrl;
+          });
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  }
 </script>
 
 <style>

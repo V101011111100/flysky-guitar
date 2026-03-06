@@ -56,15 +56,6 @@ const { title = 'Admin', subtitle = '', activeNav = 'dashboard' } = Astro.props;
       align-items: center;
       gap: 12px;
     }
-    .logo-icon {
-      width: 40px; height: 40px;
-      border-radius: 12px;
-      background: #f48c25;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 8px 20px rgba(244,140,37,.3);
-      flex-shrink: 0;
-    }
-    .logo-icon .material-symbols-outlined { font-size: 20px; color: #221910; font-variation-settings:'FILL' 1; }
     .logo-name { font-size: 18px; font-weight: 800; color: #f9fafb; line-height: 1.2; }
     .logo-sub  { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .14em; color: rgba(244,140,37,.7); }
 
@@ -219,9 +210,7 @@ const { title = 'Admin', subtitle = '', activeNav = 'dashboard' } = Astro.props;
   <!-- ══ SIDEBAR ══ -->
   <aside class="sidebar">
     <div class="sidebar-logo">
-      <div class="logo-icon">
-        <span class="material-symbols-outlined">music_note</span>
-      </div>
+      <img src="/logo.svg" alt="FlySky Logo" class="flysky-global-logo" style="width: 40px; height: auto;" />
       <div>
         <div class="logo-name">FlySky Guitar</div>
         <div class="logo-sub">Hệ thống quản trị</div>
@@ -306,6 +295,14 @@ const { title = 'Admin', subtitle = '', activeNav = 'dashboard' } = Astro.props;
     window.location.href = '/admin/login';
   }
   (window as any).logout = logout;
+
+  // Custom logo check
+  const savedLogo = localStorage.getItem('flysky_custom_logo');
+  if (savedLogo) {
+    document.querySelectorAll('.flysky-global-logo').forEach((img) => {
+      (img as HTMLImageElement).src = savedLogo;
+    });
+  }
 </script>
 </body>
 </html>

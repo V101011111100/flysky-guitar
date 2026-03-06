@@ -28,6 +28,14 @@ const { title = 'FlySky Guitar - Đàn Guitar Thủ Công Cao Cấp', descriptio
   <body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display overflow-x-hidden">
     <slot />
     <FloatingWidgets />
+    <script>
+      const savedLogo = localStorage.getItem('flysky_custom_logo');
+      if (savedLogo) {
+        document.querySelectorAll('.flysky-global-logo').forEach((img) => {
+          (img as HTMLImageElement).src = savedLogo;
+        });
+      }
+    </script>
   </body>
 </html>
 
