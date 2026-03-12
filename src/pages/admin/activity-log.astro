@@ -380,9 +380,9 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
       });
     }
 
-    btnsClose.forEach(btn => {
+    btnsClose.forEach((btn) => {
       btn.addEventListener('click', () => {
-        modal.style.display = 'none';
+        if (modal) modal.style.display = 'none';
       });
     });
 

@@ -526,7 +526,7 @@ if (Astro.request.method === "POST") {
 
   <script>
     document.getElementById('login-form')?.addEventListener('submit', function() {
-      const btn = document.getElementById('login-btn');
+      const btn = document.getElementById('login-btn') as HTMLButtonElement | null;
       if (btn) {
         btn.disabled = true;
         btn.innerHTML = '<span class="material-symbols-outlined btn-spinner" style="font-size:20px;">autorenew</span> Đang xác thực...';
@@ -544,18 +544,20 @@ if (Astro.request.method === "POST") {
 
 
     function togglePw() {
-      const pw = document.getElementById('password');
+      const pw = document.getElementById('password') as HTMLInputElement | null;
       const eye = document.getElementById('pw-eye');
-      if (pw.type === 'password') {
-        pw.type = 'text';
-        eye.textContent = 'visibility_off';
-      } else {
-        pw.type = 'password';
-        eye.textContent = 'visibility';
+      if (pw && eye) {
+        if (pw.type === 'password') {
+          pw.type = 'text';
+          eye.textContent = 'visibility_off';
+        } else {
+          pw.type = 'password';
+          eye.textContent = 'visibility';
+        }
       }
     }
 
-    window.togglePw = togglePw;
+    (window as any).togglePw = togglePw;
   </script>
 </body>
 </html>

@@ -108,7 +108,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
   <div id="toast-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px;"></div>
 </AdminLayout>
 
-<script>
+<script is:inline>
   let filesData = [];
   let selectedFile = null;
 
@@ -236,7 +236,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
                 Ảnh đang được sử dụng
               </div>
               <ul style="margin:0; padding-left:16px; color:#fca5a5; font-size:11px;">
-                ${selectedFile.linkedProducts.map((p: string) => `<li>${p}</li>`).join('')}
+                ${selectedFile.linkedProducts.map((p) => `<li>${p}</li>`).join('')}
               </ul>
               <p style="margin-top: 6px; font-size: 10px; color: #f87171;">Xóa tệp này sẽ làm mất ảnh của (các) sản phẩm trên.</p>
             </div>

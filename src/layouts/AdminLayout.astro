@@ -325,7 +325,7 @@ if (!accessToken || !refreshToken) {
 
 <script>
   function logout() {
-    document.getElementById('logout-form')?.submit();
+    (document.getElementById('logout-form') as HTMLFormElement)?.submit();
   }
   (window as any).logout = logout;
 

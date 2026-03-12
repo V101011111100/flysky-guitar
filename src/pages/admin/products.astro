@@ -29,9 +29,9 @@ const { data: allProdsArray } = await supabase
   `)
   .order('name', { ascending: true });
 
-const topWoodProducts = (allProdsArray || []).filter(p => p.categories?.is_top_wood === true);
-const bodyWoodProducts = (allProdsArray || []).filter(p => p.categories?.is_body_wood === true);
-const neckWoodProducts = (allProdsArray || []).filter(p => p.categories?.is_neck_wood === true);
+const topWoodProducts = (allProdsArray || []).filter(p => (p.categories as any)?.is_top_wood === true);
+const bodyWoodProducts = (allProdsArray || []).filter(p => (p.categories as any)?.is_body_wood === true);
+const neckWoodProducts = (allProdsArray || []).filter(p => (p.categories as any)?.is_neck_wood === true);
 
 // Fetch all categories for the main category dropdown
 const { data: categoriesArray } = await supabase
@@ -116,7 +116,7 @@ const { data: categoriesArray } = await supabase
             <img src={isEdit ? product?.main_image_url : ''} id="main-thumb-img" alt="preview" style="width:100%;height:100%;object-fit:cover;mix-blend-mode:luminosity;opacity:0.8"/>
             <div class="thumb-overlay">
               <span class="material-symbols-outlined thumb-action" onclick="document.getElementById('crop-modal').style.display='flex'" title="Cắt ảnh">crop</span>
-              <span class="material-symbols-outlined thumb-action thumb-del" onclick="document.getElementById('main-thumb-preview').style.display='none'; (document.getElementById('prod-image') as HTMLInputElement).value='';" title="Xóa ảnh">delete</span>
+              <span class="material-symbols-outlined thumb-action thumb-del" onclick="document.getElementById('main-thumb-preview').style.display='none'; var el = document.getElementById('prod-image'); if(el) el.setAttribute('value', '');" title="Xóa ảnh">delete</span>
             </div>
             <div class="thumb-badge" id="thumb-opt-badge" style="display:none;">-Optimized</div>
           </div>

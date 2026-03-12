@@ -1,0 +1,345 @@
+﻿[2m18:35:29[22m [34m[content][39m Syncing content
+[2m18:35:29[22m [34m[content][39m Synced content
+[2m18:35:29[22m [34m[types][39m Generated [2m36ms[22m
+[2m18:35:29[22m [34m[check][39m Getting diagnostics for Astro files in C:\Users\RD\Desktop\flysky...
+[96mgenerate_demo_excel.cjs[0m:[93m2[0m:[93m7[0m - [93mwarning[0m[90m ts(6133): [0m'fs' is declared but its value is never read.
+
+[7m2[0m const fs = require('fs');
+[7m [0m [93m      ~~[0m
+
+[96mgenerate_large_demo.cjs[0m:[93m2[0m:[93m7[0m - [93mwarning[0m[90m ts(6133): [0m'fs' is declared but its value is never read.
+
+[7m2[0m const fs = require('fs');
+[7m [0m [93m      ~~[0m
+
+[96msrc/components/Footer.astro[0m:[93m38[0m:[93m44[0m - [93mwarning[0m[90m ts(6385): [0m'event' is deprecated.
+
+[7m38[0m         <form class="flex gap-2" onsubmit="event.preventDefault(); alert('Cảm ơn bạn đã đăng ký nhận bản tin!'); this.reset();">
+[7m  [0m [93m                                           ~~~~~[0m
+
+[96msrc/layouts/AdminLayout.astro[0m:[93m328[0m:[93m45[0m - [91merror[0m[90m ts(2551): [0mProperty 'submit' does not exist on type 'HTMLElement'. Did you mean 'onsubmit'?
+
+[7m328[0m     document.getElementById('logout-form')?.submit();
+[7m   [0m [91m                                            ~~~~~~[0m
+
+[96msrc/lib/r2.ts[0m:[93m28[0m:[93m23[0m - [93mwarning[0m[90m ts(80004): [0mJSDoc types may be moved to TypeScript types.
+
+[7m28[0m export async function uploadToR2(
+[7m  [0m [93m                      ~~~~~~~~~~[0m
+
+[96msrc/pages/cart.astro[0m:[93m288[0m:[93m68[0m - [93mwarning[0m[90m ts(6133): [0m'i' is declared but its value is never read.
+
+[7m288[0m       document.querySelectorAll('.payment-method').forEach((label, i) => {
+[7m   [0m [93m                                                                   ~[0m
+
+[96msrc/pages/admin/activity-log.astro[0m:[93m385[0m:[93m9[0m - [91merror[0m[90m ts(18047): [0m'modal' is possibly 'null'.
+
+[7m385[0m         modal.style.display = 'none';
+[7m   [0m [91m        ~~~~~[0m
+
+[96msrc/pages/admin/inventory.astro[0m:[93m6[0m:[93m25[0m - [93mwarning[0m[90m ts(6133): [0m'error' is declared but its value is never read.
+
+[7m6[0m const { data: products, error } = await supabase
+[7m [0m [93m                        ~~~~~[0m
+[96msrc/pages/admin/inventory.astro[0m:[93m160[0m:[93m175[0m - [93mwarning[0m[90m ts(6133): [0m'src' is declared but its value is never read.
+
+[7m160[0m                     <img src={item.img} alt={item.name} loading="lazy" decoding="async" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1541689592655-f5f52825a3b8?auto=format&fit=crop&w=200&q=70';" />
+[7m   [0m [93m                                                                                                                                                                              ~~~[0m
+[96msrc/pages/admin/inventory.astro[0m:[93m160[0m:[93m157[0m - [93mwarning[0m[90m ts(6133): [0m'onerror' is declared but its value is never read.
+
+[7m160[0m                     <img src={item.img} alt={item.name} loading="lazy" decoding="async" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1541689592655-f5f52825a3b8?auto=format&fit=crop&w=200&q=70';" />
+[7m   [0m [93m                                                                                                                                                            ~~~~~~~[0m
+[96msrc/pages/admin/inventory.astro[0m:[93m303[0m:[93m33[0m - [91merror[0m[90m ts(7006): [0mParameter 'id' implicitly has an 'any' type.
+
+[7m303[0m   window.deleteProduct = async (id) => {
+[7m   [0m [91m                                ~~[0m
+[96msrc/pages/admin/inventory.astro[0m:[93m303[0m:[93m10[0m - [91merror[0m[90m ts(2339): [0mProperty 'deleteProduct' does not exist on type 'Window & typeof globalThis'.
+
+[7m303[0m   window.deleteProduct = async (id) => {
+[7m   [0m [91m         ~~~~~~~~~~~~~[0m
+
+[96msrc/pages/admin/login.astro[0m:[93m481[0m:[93m86[0m - [93mwarning[0m[90m ts(7027): [0mUnreachable code detected.
+
+[7m481[0m               <span class="material-symbols-outlined input-eye" id="pw-eye" onclick="togglePw()">visibility</span>
+[7m   [0m [93m                                                                                     ~~~~~~~~~~~[0m
+[96msrc/pages/admin/login.astro[0m:[93m558[0m:[93m12[0m - [91merror[0m[90m ts(2339): [0mProperty 'togglePw' does not exist on type 'Window & typeof globalThis'.
+
+[7m558[0m     window.togglePw = togglePw;
+[7m   [0m [91m           ~~~~~~~~[0m
+[96msrc/pages/admin/login.astro[0m:[93m554[0m:[93m9[0m - [91merror[0m[90m ts(18047): [0m'eye' is possibly 'null'.
+
+[7m554[0m         eye.textContent = 'visibility';
+[7m   [0m [91m        ~~~[0m
+[96msrc/pages/admin/login.astro[0m:[93m553[0m:[93m12[0m - [91merror[0m[90m ts(2339): [0mProperty 'type' does not exist on type 'HTMLElement'.
+
+[7m553[0m         pw.type = 'password';
+[7m   [0m [91m           ~~~~[0m
+[96msrc/pages/admin/login.astro[0m:[93m553[0m:[93m9[0m - [91merror[0m[90m ts(18047): [0m'pw' is possibly 'null'.
+
+[7m553[0m         pw.type = 'password';
+[7m   [0m [91m        ~~[0m
+[96msrc/pages/admin/login.astro[0m:[93m551[0m:[93m9[0m - [91merror[0m[90m ts(18047): [0m'eye' is possibly 'null'.
+
+[7m551[0m         eye.textContent = 'visibility_off';
+[7m   [0m [91m        ~~~[0m
+[96msrc/pages/admin/login.astro[0m:[93m550[0m:[93m12[0m - [91merror[0m[90m ts(2339): [0mProperty 'type' does not exist on type 'HTMLElement'.
+
+[7m550[0m         pw.type = 'text';
+[7m   [0m [91m           ~~~~[0m
+[96msrc/pages/admin/login.astro[0m:[93m550[0m:[93m9[0m - [91merror[0m[90m ts(18047): [0m'pw' is possibly 'null'.
+
+[7m550[0m         pw.type = 'text';
+[7m   [0m [91m        ~~[0m
+[96msrc/pages/admin/login.astro[0m:[93m549[0m:[93m14[0m - [91merror[0m[90m ts(2339): [0mProperty 'type' does not exist on type 'HTMLElement'.
+
+[7m549[0m       if (pw.type === 'password') {
+[7m   [0m [91m             ~~~~[0m
+[96msrc/pages/admin/login.astro[0m:[93m549[0m:[93m11[0m - [91merror[0m[90m ts(18047): [0m'pw' is possibly 'null'.
+
+[7m549[0m       if (pw.type === 'password') {
+[7m   [0m [91m          ~~[0m
+[96msrc/pages/admin/login.astro[0m:[93m531[0m:[93m13[0m - [91merror[0m[90m ts(2339): [0mProperty 'disabled' does not exist on type 'HTMLElement'.
+
+[7m531[0m         btn.disabled = true;
+[7m   [0m [91m            ~~~~~~~~[0m
+
+[96msrc/pages/admin/media.astro[0m:[93m416[0m:[93m75[0m - [91merror[0m[90m ts(2339): [0mProperty 'id' does not exist on type 'EventTarget'.
+
+[7m416[0m           if (e.target.classList.contains('grid-scroll-area') || e.target.id === 'media-grid') {
+[7m   [0m [91m                                                                          ~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m416[0m:[93m66[0m - [91merror[0m[90m ts(18047): [0m'e.target' is possibly 'null'.
+
+[7m416[0m           if (e.target.classList.contains('grid-scroll-area') || e.target.id === 'media-grid') {
+[7m   [0m [91m                                                                 ~~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m416[0m:[93m24[0m - [91merror[0m[90m ts(2339): [0mProperty 'classList' does not exist on type 'EventTarget'.
+
+[7m416[0m           if (e.target.classList.contains('grid-scroll-area') || e.target.id === 'media-grid') {
+[7m   [0m [91m                       ~~~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m416[0m:[93m15[0m - [91merror[0m[90m ts(18047): [0m'e.target' is possibly 'null'.
+
+[7m416[0m           if (e.target.classList.contains('grid-scroll-area') || e.target.id === 'media-grid') {
+[7m   [0m [91m              ~~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m407[0m:[93m15[0m - [91merror[0m[90m ts(18047): [0m'btnCopy' is possibly 'null'.
+
+[7m407[0m               btnCopy.style.background = '';
+[7m   [0m [91m              ~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m406[0m:[93m15[0m - [91merror[0m[90m ts(18047): [0m'btnCopy' is possibly 'null'.
+
+[7m406[0m               btnCopy.innerHTML = originalText;
+[7m   [0m [91m              ~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m402[0m:[93m11[0m - [91merror[0m[90m ts(18047): [0m'btnCopy' is possibly 'null'.
+
+[7m402[0m           btnCopy.style.background = '#10b981';
+[7m   [0m [91m          ~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m401[0m:[93m11[0m - [91merror[0m[90m ts(18047): [0m'btnCopy' is possibly 'null'.
+
+[7m401[0m           btnCopy.innerHTML = '<span class="material-symbols-outlined icon-norm">check</span> Đã sao chép!';
+[7m   [0m [91m          ~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m400[0m:[93m32[0m - [91merror[0m[90m ts(18047): [0m'btnCopy' is possibly 'null'.
+
+[7m400[0m           const originalText = btnCopy.innerHTML;
+[7m   [0m [91m                               ~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m398[0m:[93m12[0m - [91merror[0m[90m ts(7005): [0mVariable 'selectedFile' implicitly has an 'any' type.
+
+[7m398[0m       if (!selectedFile) return;
+[7m   [0m [91m           ~~~~~~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m393[0m:[93m21[0m - [91merror[0m[90m ts(2339): [0mProperty 'disabled' does not exist on type 'HTMLElement'.
+
+[7m393[0m           btnDelete.disabled = false;
+[7m   [0m [91m                    ~~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m393[0m:[93m11[0m - [91merror[0m[90m ts(18047): [0m'btnDelete' is possibly 'null'.
+
+[7m393[0m           btnDelete.disabled = false;
+[7m   [0m [91m          ~~~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m392[0m:[93m11[0m - [91merror[0m[90m ts(18047): [0m'btnDelete' is possibly 'null'.
+
+[7m392[0m           btnDelete.innerHTML = originalBtnText;
+[7m   [0m [91m          ~~~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m381[0m:[93m59[0m - [91merror[0m[90m ts(7005): [0mVariable 'selectedFile' implicitly has an 'any' type.
+
+[7m381[0m               filesData = filesData.filter(f => f.key !== selectedFile.key);
+[7m   [0m [91m                                                          ~~~~~~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m381[0m:[93m27[0m - [91merror[0m[90m ts(7005): [0mVariable 'filesData' implicitly has an 'any[]' type.
+
+[7m381[0m               filesData = filesData.filter(f => f.key !== selectedFile.key);
+[7m   [0m [91m                          ~~~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m370[0m:[93m17[0m - [91merror[0m[90m ts(2339): [0mProperty 'disabled' does not exist on type 'HTMLElement'.
+
+[7m370[0m       btnDelete.disabled = true;
+[7m   [0m [91m                ~~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m370[0m:[93m7[0m - [91merror[0m[90m ts(18047): [0m'btnDelete' is possibly 'null'.
+
+[7m370[0m       btnDelete.disabled = true;
+[7m   [0m [91m      ~~~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m369[0m:[93m7[0m - [91merror[0m[90m ts(18047): [0m'btnDelete' is possibly 'null'.
+
+[7m369[0m       btnDelete.innerHTML = '<span class="material-symbols-outlined icon-norm" style="animation: spin 1s linear infinite;">autorenew</span> Đang xóa...';
+[7m   [0m [91m      ~~~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m368[0m:[93m31[0m - [91merror[0m[90m ts(18047): [0m'btnDelete' is possibly 'null'.
+
+[7m368[0m       const originalBtnText = btnDelete.innerHTML;
+[7m   [0m [91m                              ~~~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m358[0m:[93m12[0m - [91merror[0m[90m ts(7005): [0mVariable 'selectedFile' implicitly has an 'any' type.
+
+[7m358[0m       if (!selectedFile) return;
+[7m   [0m [91m           ~~~~~~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m349[0m:[93m22[0m - [91merror[0m[90m ts(7005): [0mVariable 'filesData' implicitly has an 'any[]' type.
+
+[7m349[0m       selectedFile = filesData[0]; // Select the most recently uploaded
+[7m   [0m [91m                     ~~~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m316[0m:[93m35[0m - [91merror[0m[90m ts(7006): [0mParameter 'e' implicitly has an 'any' type.
+
+[7m316[0m   async function handleFileUpload(e) {
+[7m   [0m [91m                                  ~[0m
+[96msrc/pages/admin/media.astro[0m:[93m307[0m:[93m15[0m - [91merror[0m[90m ts(18047): [0m'mediaGrid' is possibly 'null'.
+
+[7m307[0m               mediaGrid.style.display = 'grid';
+[7m   [0m [91m              ~~~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m306[0m:[93m15[0m - [91merror[0m[90m ts(18047): [0m'mediaLoading' is possibly 'null'.
+
+[7m306[0m               mediaLoading.style.display = 'none';
+[7m   [0m [91m              ~~~~~~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m297[0m:[93m11[0m - [91merror[0m[90m ts(18047): [0m'mediaGrid' is possibly 'null'.
+
+[7m297[0m           mediaGrid.style.display = 'none';
+[7m   [0m [91m          ~~~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m296[0m:[93m11[0m - [91merror[0m[90m ts(18047): [0m'mediaLoading' is possibly 'null'.
+
+[7m296[0m           mediaLoading.style.display = 'flex';
+[7m   [0m [91m          ~~~~~~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m265[0m:[93m7[0m - [91merror[0m[90m ts(7005): [0mVariable 'filesData' implicitly has an 'any[]' type.
+
+[7m265[0m       filesData.forEach(file => {
+[7m   [0m [91m      ~~~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m250[0m:[93m11[0m - [91merror[0m[90m ts(7005): [0mVariable 'selectedFile' implicitly has an 'any' type.
+
+[7m250[0m       if (selectedFile && selectedFile.key === file.key) {
+[7m   [0m [91m          ~~~~~~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m249[0m:[93m23[0m - [91merror[0m[90m ts(7006): [0mParameter 'file' implicitly has an 'any' type.
+
+[7m249[0m   function selectFile(file) {
+[7m   [0m [91m                      ~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m246[0m:[93m7[0m - [91merror[0m[90m ts(18047): [0m'detailsSidebar' is possibly 'null'.
+
+[7m246[0m       detailsSidebar.style.display = 'flex';
+[7m   [0m [91m      ~~~~~~~~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m206[0m:[93m7[0m - [91merror[0m[90m ts(18047): [0m'detailsContent' is possibly 'null'.
+
+[7m206[0m       detailsContent.innerHTML = `
+[7m   [0m [91m      ~~~~~~~~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m199[0m:[93m11[0m - [91merror[0m[90m ts(18047): [0m'detailsSidebar' is possibly 'null'.
+
+[7m199[0m           detailsSidebar.style.display = 'none';
+[7m   [0m [91m          ~~~~~~~~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m198[0m:[93m12[0m - [91merror[0m[90m ts(7005): [0mVariable 'selectedFile' implicitly has an 'any' type.
+
+[7m198[0m       if (!selectedFile) {
+[7m   [0m [91m           ~~~~~~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m165[0m:[93m30[0m - [91merror[0m[90m ts(7005): [0mVariable 'selectedFile' implicitly has an 'any' type.
+
+[7m165[0m           const isSelected = selectedFile && selectedFile.key === file.key;
+[7m   [0m [91m                             ~~~~~~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m164[0m:[93m7[0m - [91merror[0m[90m ts(7005): [0mVariable 'filesData' implicitly has an 'any[]' type.
+
+[7m164[0m       filesData.forEach(file => {
+[7m   [0m [91m      ~~~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m155[0m:[93m24[0m - [91merror[0m[90m ts(7006): [0mParameter 'key' implicitly has an 'any' type.
+
+[7m155[0m   function getFileName(key) {
+[7m   [0m [91m                       ~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m152[0m:[93m63[0m - [91merror[0m[90m ts(2769): [0mNo overload matches this call.
+  Overload 1 of 3, '(locales?: LocalesArgument, options?: DateTimeFormatOptions | undefined): string', gave the following error.
+    Argument of type '{ year: string; month: string; day: string; hour: string; minute: string; }' is not assignable to parameter of type 'DateTimeFormatOptions'.
+      Types of property 'year' are incompatible.
+        Type 'string' is not assignable to type '"numeric" | "2-digit" | undefined'.
+  Overload 2 of 3, '(locales?: string | string[] | undefined, options?: DateTimeFormatOptions | undefined): string', gave the following error.
+    Argument of type '{ year: string; month: string; day: string; hour: string; minute: string; }' is not assignable to parameter of type 'DateTimeFormatOptions'.
+      Types of property 'year' are incompatible.
+        Type 'string' is not assignable to type '"numeric" | "2-digit" | undefined'.
+
+[7m152[0m       return new Date(dateString).toLocaleDateString('vi-VN', options);
+[7m   [0m [91m                                                              ~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m150[0m:[93m23[0m - [91merror[0m[90m ts(7006): [0mParameter 'dateString' implicitly has an 'any' type.
+
+[7m150[0m   function formatDate(dateString) {
+[7m   [0m [91m                      ~~~~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m141[0m:[93m24[0m - [91merror[0m[90m ts(7006): [0mParameter 'bytes' implicitly has an 'any' type.
+
+[7m141[0m   function formatBytes(bytes, decimals = 2) {
+[7m   [0m [91m                       ~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m128[0m:[93m5[0m - [91merror[0m[90m ts(18047): [0m'container' is possibly 'null'.
+
+[7m128[0m     container.appendChild(toast);
+[7m   [0m [91m    ~~~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m123[0m:[93m22[0m - [91merror[0m[90m ts(7006): [0mParameter 'message' implicitly has an 'any' type.
+
+[7m123[0m   function showToast(message, type = 'success') {
+[7m   [0m [91m                     ~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m113[0m:[93m7[0m - [91merror[0m[90m ts(7034): [0mVariable 'selectedFile' implicitly has type 'any' in some locations where its type cannot be determined.
+
+[7m113[0m   let selectedFile = null;
+[7m   [0m [91m      ~~~~~~~~~~~~[0m
+[96msrc/pages/admin/media.astro[0m:[93m112[0m:[93m7[0m - [91merror[0m[90m ts(7034): [0mVariable 'filesData' implicitly has type 'any[]' in some locations where its type cannot be determined.
+
+[7m112[0m   let filesData = [];
+[7m   [0m [91m      ~~~~~~~~~[0m
+
+[96msrc/pages/admin/newsletter-editor.astro[0m:[93m2[0m:[93m1[0m - [93mwarning[0m[90m ts(7028): [0mUnused label.
+
+[7m2[0m title: "Trình chỉnh sửa bản tin | FlySky Admin"
+[7m [0m [93m~~~~~[0m
+
+[96msrc/pages/admin/orders.astro[0m:[93m106[0m:[93m19[0m - [93mwarning[0m[90m ts(6133): [0m'statusInfo' is declared but its value is never read.
+
+[7m106[0m             const statusInfo = statusMap[o.status] || { label: o.status, cls: 'badge-amber' };
+[7m   [0m [93m                  ~~~~~~~~~~[0m
+
+[96msrc/pages/admin/products.astro[0m:[93m34[0m:[93m74[0m - [91merror[0m[90m ts(2339): [0mProperty 'is_neck_wood' does not exist on type '{ name: any; is_top_wood: any; is_body_wood: any; is_neck_wood: any; }[]'.
+
+[7m34[0m const neckWoodProducts = (allProdsArray || []).filter(p => p.categories?.is_neck_wood === true);
+[7m  [0m [91m                                                                         ~~~~~~~~~~~~[0m
+[96msrc/pages/admin/products.astro[0m:[93m33[0m:[93m74[0m - [91merror[0m[90m ts(2339): [0mProperty 'is_body_wood' does not exist on type '{ name: any; is_top_wood: any; is_body_wood: any; is_neck_wood: any; }[]'.
+
+[7m33[0m const bodyWoodProducts = (allProdsArray || []).filter(p => p.categories?.is_body_wood === true);
+[7m  [0m [91m                                                                         ~~~~~~~~~~~~[0m
+[96msrc/pages/admin/products.astro[0m:[93m32[0m:[93m73[0m - [91merror[0m[90m ts(2339): [0mProperty 'is_top_wood' does not exist on type '{ name: any; is_top_wood: any; is_body_wood: any; is_neck_wood: any; }[]'.
+
+[7m32[0m const topWoodProducts = (allProdsArray || []).filter(p => p.categories?.is_top_wood === true);
+[7m  [0m [91m                                                                        ~~~~~~~~~~~[0m
+[96msrc/pages/admin/products.astro[0m:[93m261[0m:[93m75[0m - [93mwarning[0m[90m ts(6385): [0m'event' is deprecated.
+
+[7m261[0m <div class="crop-modal" id="crop-modal" style="display:none;" onclick="if(event.target===this) this.style.display='none'">
+[7m   [0m [93m                                                                          ~~~~~[0m
+[96msrc/pages/admin/products.astro[0m:[93m119[0m:[93m197[0m - [91merror[0m[90m ts(8016): [0mType assertion expressions can only be used in TypeScript files.
+
+[7m119[0m               <span class="material-symbols-outlined thumb-action thumb-del" onclick="document.getElementById('main-thumb-preview').style.display='none'; (document.getElementById('prod-image') as HTMLInputElement).value='';" title="Xóa ảnh">delete</span>
+[7m   [0m [91m                                                                                                                                                                                                    ~~~~~~~~~~~~~~~~[0m
+
+[96msrc/pages/admin/settings.astro[0m:[93m614[0m:[93m42[0m - [91merror[0m[90m ts(7005): [0mVariable 'settingsToSave' implicitly has an 'any[]' type.
+
+[7m614[0m         body: JSON.stringify({ settings: settingsToSave })
+[7m   [0m [91m                                         ~~~~~~~~~~~~~~[0m
+[96msrc/pages/admin/settings.astro[0m:[93m602[0m:[93m11[0m - [91merror[0m[90m ts(7034): [0mVariable 'settingsToSave' implicitly has type 'any[]' in some locations where its type cannot be determined.
+
+[7m602[0m     const settingsToSave = [];
+[7m   [0m [91m          ~~~~~~~~~~~~~~[0m
+[96msrc/pages/admin/settings.astro[0m:[93m638[0m:[93m15[0m - [93mwarning[0m[90m ts(6133): [0m'originalText' is declared but its value is never read.
+
+[7m638[0m         const originalText = document.querySelector('.logo-info .form-label')?.textContent;
+[7m   [0m [93m              ~~~~~~~~~~~~[0m
+
+[96msrc/pages/api/products/export.ts[0m:[93m5[0m:[93m39[0m - [93mwarning[0m[90m ts(6133): [0m'request' is declared but its value is never read.
+
+[7m5[0m export const GET: APIRoute = async ({ request, cookies }) => {
+[7m [0m [93m                                      ~~~~~~~[0m
+
+[96msrc/pages/products/[id].astro[0m:[93m281[0m:[93m50[0m - [93mwarning[0m[90m ts(6133): [0m'i' is declared but its value is never read.
+
+[7m281[0m               {Array.from({ length: 5 }).map((_, i) => (
+[7m   [0m [93m                                                 ~[0m
+
+Result (56 files): 
+- 63 errors
+- 0 warnings
+- 15 hints
+

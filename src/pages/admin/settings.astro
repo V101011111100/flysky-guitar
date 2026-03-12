@@ -599,7 +599,7 @@ const heroSub = getSetting('flysky_heroSub', 'Khám phá bộ sưu tập nhạc 
       { id: 'stg-hero-sub', key: 'flysky_heroSub' }
     ];
 
-    const settingsToSave = [];
+    const settingsToSave: any[] = [];
     fields.forEach(field => {
       const el = document.getElementById(field.id) as HTMLInputElement;
       if (el) {
