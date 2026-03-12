@@ -33,7 +33,10 @@ const product = {
   categoryLabel: dbProduct.categories?.name || 'Sản phẩm',
   price: dbProduct.price,
   priceFormatted: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(dbProduct.price),
-  images: [dbProduct.main_image_url || 'https://images.unsplash.com/photo-1541689592655-f5f52825a3b8?w=800&q=80'],
+  images: [
+    dbProduct.main_image_url || 'https://images.unsplash.com/photo-1541689592655-f5f52825a3b8?w=800&q=80',
+    ...(Array.isArray(dbProduct.gallery_images) ? dbProduct.gallery_images : [])
+  ],
   rating: 5,
   reviews: Math.floor(Math.random() * 50) + 10,
   badge: dbProduct.is_featured ? 'Nổi bật' : (dbProduct.status === 'out_of_stock' ? 'Hết hàng' : null),

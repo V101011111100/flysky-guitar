@@ -35,15 +35,23 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const stockQuantity = parseInt(payload['prod-stock'] || '0');
     const status = payload['prod-status'] || 'active';
 
+    // Parse gallery images (array of additional image URLs)
+    let galleryImages: string[] = [];
+    try {
+      const galleryRaw = payload['prod-gallery'];
+      if (galleryRaw) galleryImages = JSON.parse(galleryRaw);
+    } catch {}
+
     if (!name || !slug || !imageUrl) {
       return new Response(JSON.stringify({ success: false, error: "Missing required fields" }), { status: 400 });
     }
 
-    // Auto-migrate tables if not exists 
+    // Auto-migrate tables if not exists
     try { await supabase.rpc('exec_sql', { sql_string: 'ALTER TABLE IF EXISTS public.products ADD COLUMN IF NOT EXISTS spec_body text;' }); } catch(err){}
     try { await supabase.rpc('exec_sql', { sql_string: 'ALTER TABLE IF EXISTS public.products ADD COLUMN IF NOT EXISTS spec_top text;' }); } catch(err){}
     try { await supabase.rpc('exec_sql', { sql_string: 'ALTER TABLE IF EXISTS public.products ADD COLUMN IF NOT EXISTS spec_neck text;' }); } catch(err){}
     try { await supabase.rpc('exec_sql', { sql_string: 'ALTER TABLE IF EXISTS public.products ADD COLUMN IF NOT EXISTS stock_quantity integer not null default 0;' }); } catch(err){}
+    try { await supabase.rpc('exec_sql', { sql_string: "ALTER TABLE IF EXISTS public.products ADD COLUMN IF NOT EXISTS gallery_images text[];" }); } catch(err){}
 
     const dbPayload = {
       name: name,
@@ -56,7 +64,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       spec_top: specTop,
       spec_neck: specNeck,
       stock_quantity: stockQuantity,
-      status: status
+      status: status,
+      gallery_images: galleryImages.length > 0 ? galleryImages : null
     };
 
     if (productId) {

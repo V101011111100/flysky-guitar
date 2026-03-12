@@ -91,13 +91,15 @@ const { data: categoriesArray } = await supabase
 
         <!-- Drag & Drop zone -->
         <div class="upload-zone" id="uploadZone" onclick="document.getElementById('img-upload-input').click()">
-          <input type="file" id="img-upload-input" accept="image/*" style="display:none;" />
+          <input type="file" id="img-upload-input" accept="image/*" multiple style="display:none;" />
+          <!-- Hidden inputs to store URLs -->
+          <input type="hidden" id="gallery-images-json" value={isEdit && product?.gallery_images ? JSON.stringify(product.gallery_images) : '[]'} />
           <div class="upload-icons">
             <span class="material-symbols-outlined upload-icon">image</span>
             <span class="material-symbols-outlined upload-icon">cloud_upload</span>
           </div>
-          <p class="upload-text">Kéo và thả ảnh tại đây hoặc click để chọn tệp</p>
-          <p class="upload-hint">Hỗ trợ JPG, PNG, WEBP (Tối đa 15MB)</p>
+          <p class="upload-text">Kéo và thả ảnh tại đây hoặc click để chọn nhiều tệp</p>
+          <p class="upload-hint">Hỗ trợ JPG, PNG, WEBP (Tối đa 15MB). Có thể chọn nhiều ảnh cùng lúc</p>
           
           <!-- Upload overlay / simple progress -->
           <div id="upload-progress-overlay" style="display:none; position:absolute; inset:0; background:rgba(34,25,16,0.8); border-radius:14px; flex-direction:column; align-items:center; justify-content:center; gap:10px;">
@@ -107,20 +109,22 @@ const { data: categoriesArray } = await supabase
         </div>
 
         <!-- Thumbnail Grid -->
-        <div class="thumb-grid">
+        <div class="thumb-grid" id="thumb-grid">
           <div class="thumb-add" onclick="document.getElementById('img-upload-input').click()">
             <span class="material-symbols-outlined">add</span>
             <span class="thumb-add-label">Thêm ảnh</span>
           </div>
-          <div class="thumb-item bg-default-guitar" id="main-thumb-preview" style={!isEdit && !product?.main_image_url ? 'display:none;' : ''}>
+          <!-- Main image thumbnail -->
+          <div class="thumb-item bg-default-guitar" id="main-thumb-preview" style={!isEdit || !product?.main_image_url ? 'display:none;' : ''}>
             <img src={isEdit ? product?.main_image_url : ''} id="main-thumb-img" alt="preview" style="width:100%;height:100%;object-fit:cover;mix-blend-mode:luminosity;opacity:0.8"/>
             <div class="thumb-overlay">
-              <span class="material-symbols-outlined thumb-action" onclick="document.getElementById('crop-modal').style.display='flex'" title="Cắt ảnh">crop</span>
-              <span class="material-symbols-outlined thumb-action thumb-del" onclick="document.getElementById('main-thumb-preview').style.display='none'; var el = document.getElementById('prod-image'); if(el) el.setAttribute('value', '');" title="Xóa ảnh">delete</span>
+              <span class="material-symbols-outlined thumb-action" title="Ảnh chính">star</span>
+              <span class="material-symbols-outlined thumb-action thumb-del" onclick="removeMainImage()" title="Xóa ảnh chính">delete</span>
             </div>
-            <div class="thumb-badge" id="thumb-opt-badge" style="display:none;">-Optimized</div>
+            <div class="thumb-badge" id="thumb-opt-badge" style="display:none;">Ảnh chính</div>
           </div>
-
+          <!-- Extra gallery thumbnails will be injected by JS -->
+        </div>
 
         <!-- Video Link -->
         <div class="video-field">
@@ -687,7 +691,8 @@ const { data: categoriesArray } = await supabase
           'prod-neck': (document.getElementById('prod-neck') as HTMLSelectElement)?.value || '',
           'prod-category': (document.getElementById('prod-category') as HTMLSelectElement)?.value || '',
           'prod-stock': (document.getElementById('prod-stock') as HTMLInputElement)?.value || '0',
-          'prod-status': (document.getElementById('prod-status') as HTMLSelectElement)?.value || 'active'
+          'prod-status': (document.getElementById('prod-status') as HTMLSelectElement)?.value || 'active',
+          'prod-gallery': (document.getElementById('gallery-images-json') as HTMLInputElement)?.value || '[]'
         };
 
         try {
@@ -714,122 +719,187 @@ const { data: categoriesArray } = await supabase
       });
     }
 
-    // TỐI ƯU VÀ UPLOAD ẢNH BẰNG CANVAS (Client-side)
+    // === HELPER: Remove main image ===
+    (window as any).removeMainImage = () => {
+      const previewContainer = document.getElementById('main-thumb-preview');
+      const urlInput = document.getElementById('prod-image') as HTMLInputElement;
+      if (previewContainer) previewContainer.style.display = 'none';
+      if (urlInput) urlInput.value = '';
+    };
+
+    // === HELPER: Remove a gallery image by index ===
+    (window as any).removeGalleryImage = (index: number) => {
+      const galleryInput = document.getElementById('gallery-images-json') as HTMLInputElement;
+      let gallery: string[] = [];
+      try { gallery = JSON.parse(galleryInput.value || '[]'); } catch {}
+      gallery.splice(index, 1);
+      galleryInput.value = JSON.stringify(gallery);
+      // Re-render gallery thumbnails
+      renderGalleryThumbnails(gallery);
+    };
+
+    // === RENDER GALLERY THUMBNAILS ===
+    function renderGalleryThumbnails(gallery: string[]) {
+      // Remove existing extra thumbnails (keep thumb-add and main-thumb-preview)
+      const grid = document.getElementById('thumb-grid');
+      if (!grid) return;
+      grid.querySelectorAll('.thumb-gallery-item').forEach(el => el.remove());
+
+      // Re-insert after main-thumb-preview
+      gallery.forEach((url, idx) => {
+        const div = document.createElement('div');
+        div.className = 'thumb-item bg-default-guitar thumb-gallery-item';
+        div.innerHTML = `
+          <img src="${url}" alt="Gallery ${idx + 1}" style="width:100%;height:100%;object-fit:cover;mix-blend-mode:luminosity;opacity:0.8"/>
+          <div class="thumb-overlay">
+            <span class="material-symbols-outlined thumb-action" style="font-size:14px;" title="Đặt làm ảnh chính" onclick="setAsMainImage(${idx})">star_outline</span>
+            <span class="material-symbols-outlined thumb-action thumb-del" onclick="removeGalleryImage(${idx})" title="Xóa ảnh">delete</span>
+          </div>
+          <div class="thumb-badge" style="display:block;">#${idx + 2}</div>
+        `;
+        grid.appendChild(div);
+      });
+    }
+
+    // === HELPER: Set gallery image as main image ===
+    (window as any).setAsMainImage = (galleryIndex: number) => {
+      const galleryInput = document.getElementById('gallery-images-json') as HTMLInputElement;
+      const prodImageInput = document.getElementById('prod-image') as HTMLInputElement;
+      const mainThumbImg = document.getElementById('main-thumb-img') as HTMLImageElement;
+      const previewContainer = document.getElementById('main-thumb-preview');
+
+      let gallery: string[] = [];
+      try { gallery = JSON.parse(galleryInput.value || '[]'); } catch {}
+
+      const newMain = gallery[galleryIndex];
+      const oldMain = prodImageInput?.value;
+
+      // Swap: new main becomes main_image_url, old main moves to gallery
+      if (oldMain) {
+        gallery[galleryIndex] = oldMain;
+      } else {
+        gallery.splice(galleryIndex, 1);
+      }
+
+      if (prodImageInput) prodImageInput.value = newMain;
+      if (mainThumbImg) mainThumbImg.src = newMain;
+      if (previewContainer) previewContainer.style.display = 'block';
+      galleryInput.value = JSON.stringify(gallery);
+      renderGalleryThumbnails(gallery);
+    };
+
+    // === LOAD EXISTING GALLERY ON EDIT ===
+    const existingGalleryInput = document.getElementById('gallery-images-json') as HTMLInputElement;
+    if (existingGalleryInput) {
+      let existingGallery: string[] = [];
+      try { existingGallery = JSON.parse(existingGalleryInput.value || '[]'); } catch {}
+      if (existingGallery.length > 0) renderGalleryThumbnails(existingGallery);
+    }
+
+    // === MULTI-IMAGE UPLOAD HANDLER ===
     const fileInput = document.getElementById('img-upload-input') as HTMLInputElement;
     const progressOverlay = document.getElementById('upload-progress-overlay');
     const progressText = document.getElementById('upload-progress-text');
     
     if (fileInput) {
       fileInput.addEventListener('change', async (e) => {
-        const file = (e.target as HTMLInputElement).files?.[0];
-        if (!file) return;
+        const files = Array.from((e.target as HTMLInputElement).files || []);
+        if (!files.length) return;
 
-        // Bật trạng thái loading
         if (progressOverlay) progressOverlay.style.display = 'flex';
-        if (progressText) progressText.textContent = 'Đang xử lý ảnh độ phân giải cao...';
 
-        try {
-          // 1. Đọc file ảnh dưới dạng Image object
-          const img = new Image();
-          const objectUrl = URL.createObjectURL(file);
-          
-          await new Promise((resolve, reject) => {
-            img.onload = resolve;
-            img.onerror = reject;
-            img.src = objectUrl;
-          });
+        for (let fi = 0; fi < files.length; fi++) {
+          const file = files[fi];
+          if (progressText) progressText.textContent = `Đang xử lý ảnh ${fi + 1}/${files.length}...`;
 
-          // 2. Thiết lập Canvas với Kích Thước Lớn (Full HD / 4K)
-          // Đã tăng lên 2048x2048 để cho độ nét trên màn hình lớn.
-          const CANVAS_SIZE = 2048; 
-          const canvas = document.createElement('canvas');
-          canvas.width = CANVAS_SIZE;
-          canvas.height = CANVAS_SIZE;
-          const ctx = canvas.getContext('2d');
-          
-          if (!ctx) throw new Error("Không thể khởi tạo Canvas");
+          try {
+            // 1. Read image
+            const img = new Image();
+            const objectUrl = URL.createObjectURL(file);
+            await new Promise((resolve, reject) => {
+              img.onload = resolve;
+              img.onerror = reject;
+              img.src = objectUrl;
+            });
 
-          // 3. Đổ nền mặc định (nếu là ảnh PNG/trong suốt thì nền này sẽ lót phía dưới)
-          // Màu lấy từ CSS biến `.bg-default-guitar` (tương đương radial gradient #352a20 -> #15110c)
-          // Canvas không hỗ trợ vẽ Radial gradient CSS dễ dàng 1 dòng, nên ta sẽ tự cấu hình Gradient
-          const gradient = ctx.createRadialGradient(
-            CANVAS_SIZE/2, CANVAS_SIZE/2, 0,
-            CANVAS_SIZE/2, CANVAS_SIZE/2, CANVAS_SIZE/1.2
-          );
-          gradient.addColorStop(0, '#352a20');
-          gradient.addColorStop(1, '#15110c');
-          
-          ctx.fillStyle = gradient;
-          ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+            // 2. Canvas resize + optimize
+            const CANVAS_SIZE = 2048; 
+            const canvas = document.createElement('canvas');
+            canvas.width = CANVAS_SIZE;
+            canvas.height = CANVAS_SIZE;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) throw new Error("Không thể khởi tạo Canvas");
 
-          // 4. Tính toán Fit Ảnh (Object-fit: Contain) mà không bị méo (Aspect Ratio)
-          const scale = Math.min(CANVAS_SIZE / img.width, CANVAS_SIZE / img.height);
-          const drawWidth = img.width * scale;
-          const drawHeight = img.height * scale;
-          
-          // Căn giữa tấm ảnh
-          const dx = (CANVAS_SIZE - drawWidth) / 2;
-          const dy = (CANVAS_SIZE - drawHeight) / 2;
+            const gradient = ctx.createRadialGradient(
+              CANVAS_SIZE/2, CANVAS_SIZE/2, 0,
+              CANVAS_SIZE/2, CANVAS_SIZE/2, CANVAS_SIZE/1.2
+            );
+            gradient.addColorStop(0, '#352a20');
+            gradient.addColorStop(1, '#15110c');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
-          // Vẽ ảnh gốc lên Canvas
-          ctx.drawImage(img, dx, dy, drawWidth, drawHeight);
-          URL.revokeObjectURL(objectUrl);
+            const scale = Math.min(CANVAS_SIZE / img.width, CANVAS_SIZE / img.height);
+            const drawWidth = img.width * scale;
+            const drawHeight = img.height * scale;
+            const dx = (CANVAS_SIZE - drawWidth) / 2;
+            const dy = (CANVAS_SIZE - drawHeight) / 2;
+            ctx.drawImage(img, dx, dy, drawWidth, drawHeight);
+            URL.revokeObjectURL(objectUrl);
 
-          // 5. Xuất Canvas ra file WebP siêu nhẹ với chất lượng 85%
-          if (progressText) progressText.textContent = 'Đang tối ưu dung lượng WebP...';
-          const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/webp', 0.85));
-          
-          if (!blob) throw new Error("Lỗi khi xuất định dạng WebP");
+            // 3. Export as WebP
+            if (progressText) progressText.textContent = `Đang tối ưu WebP (${fi + 1}/${files.length})...`;
+            const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/webp', 0.85));
+            if (!blob) throw new Error('Lỗi khi xuất WebP');
 
-          // Tạo File từ Blob để gửi lên server
-          const optimizedFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".webp", { type: 'image/webp' });
+            const optimizedFile = new File([blob], file.name.replace(/\.[^/.]+$/, '') + '.webp', { type: 'image/webp' });
 
-          // 6. Upload file WebP lên API của chúng ta (local file system saving)
-          if (progressText) progressText.textContent = 'Đang tải lên hệ thống...';
-          const formData = new FormData();
-          formData.append('file', optimizedFile);
+            // 4. Upload
+            if (progressText) progressText.textContent = `Đang tải lên (${fi + 1}/${files.length})...`;
+            const formData = new FormData();
+            formData.append('file', optimizedFile);
 
-          const uploadRes = await fetch('/api/products/upload', {
-            method: 'POST',
-            body: formData
-          });
+            const uploadRes = await fetch('/api/products/upload', { method: 'POST', body: formData });
+            const uploadData = await uploadRes.json();
 
-          const uploadData = await uploadRes.json();
-          if (uploadData.success && uploadData.url) {
-            // Thành công: Đưa URL trả về vào Input và update thumbnail preview
-            const urlInput = document.getElementById('prod-image') as HTMLInputElement;
-            if (urlInput) {
-               urlInput.value = uploadData.url;
-               // Trigger in case we want to listen to changes later
-               urlInput.dispatchEvent(new Event('input'));
+            if (uploadData.success && uploadData.url) {
+              const url = uploadData.url;
+              const urlInput = document.getElementById('prod-image') as HTMLInputElement;
+              const mainThumbImg = document.getElementById('main-thumb-img') as HTMLImageElement;
+              const previewContainer = document.getElementById('main-thumb-preview');
+              const optBadge = document.getElementById('thumb-opt-badge');
+              const galleryInput = document.getElementById('gallery-images-json') as HTMLInputElement;
+
+              const isFirstImage = !urlInput?.value;
+
+              if (isFirstImage) {
+                // First image becomes the main image
+                if (urlInput) urlInput.value = url;
+                if (mainThumbImg) mainThumbImg.src = url;
+                if (previewContainer) previewContainer.style.display = 'block';
+                if (optBadge) { optBadge.style.display = 'block'; optBadge.textContent = 'Ảnh chính'; }
+              } else {
+                // Additional images go into gallery
+                let gallery: string[] = [];
+                try { gallery = JSON.parse(galleryInput?.value || '[]'); } catch {}
+                gallery.push(url);
+                if (galleryInput) galleryInput.value = JSON.stringify(gallery);
+                renderGalleryThumbnails(gallery);
+              }
+            } else {
+              throw new Error(uploadData.error || 'Upload thất bại');
             }
 
-            // Update UI 
-            const imgPreviewEl = document.getElementById('main-thumb-img') as HTMLImageElement;
-            const previewContainer = document.getElementById('main-thumb-preview');
-            const optBadge = document.getElementById('thumb-opt-badge');
-
-            if (imgPreviewEl) imgPreviewEl.src = uploadData.url;
-            if (previewContainer) previewContainer.style.display = 'block';
-            if (optBadge) {
-               optBadge.style.display = 'block';
-               // Calculate savings roughly 
-               const savings = Math.max(10, Math.floor(100 - (optimizedFile.size / file.size * 100)));
-               optBadge.textContent = '-' + (savings > 0 ? savings : 10) + '% WebP';
-            }
-          } else {
-             throw new Error(uploadData.error || "Upload thất bại");
+          } catch (error: any) {
+            alert(`Lỗi xử lý ảnh "${file.name}": ` + error.message);
           }
-
-        } catch (error: any) {
-          alert('Lỗi xử lý ảnh: ' + error.message);
-        } finally {
-          // Tắt trạng thái loading
-          if (progressOverlay) progressOverlay.style.display = 'none';
-          fileInput.value = ''; // xóa file sau khi xong để có thể up lại cùng 1 file
         }
+
+        if (progressOverlay) progressOverlay.style.display = 'none';
+        fileInput.value = '';
       });
     }
 
   });
 </script>
+
