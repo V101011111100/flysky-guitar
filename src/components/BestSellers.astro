@@ -1,10 +1,21 @@
 ---
-import { products as allProducts } from '../data/products';
+import { supabase } from '../lib/supabase';
 
-// Lấy 4 sản phẩm bán chạy nhất (theo reviews)
-const bestSellers = [...allProducts]
-  .sort((a, b) => b.reviews - a.reviews)
-  .slice(0, 4);
+// Lấy 4 sản phẩm
+const { data: dbData } = await supabase
+  .from('products')
+  .select(`*, categories(name)`)
+  .eq('status', 'active')
+  .limit(4);
+
+const bestSellers = (dbData || []).map(p => ({
+  id: p.slug,
+  categoryLabel: p.categories?.name || 'Sản phẩm',
+  name: p.name,
+  priceFormatted: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p.price),
+  image: p.main_image_url || 'https://images.unsplash.com/photo-1541689592655-f5f52825a3b8?auto=format&fit=crop&q=80',
+  badge: p.is_featured ? 'Nổi bật' : null
+}));
 ---
 
 <section class="py-16 bg-[#1a120b]">

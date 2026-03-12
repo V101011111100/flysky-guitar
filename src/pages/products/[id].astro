@@ -2,21 +2,66 @@
 import Layout from '../../layouts/Layout.astro';
 import Navbar from '../../components/Navbar.astro';
 import Footer from '../../components/Footer.astro';
-import { products, getRelatedProducts, type Product } from '../../data/products';
+import { supabase } from '../../lib/supabase';
 
-export function getStaticPaths() {
-  return products.map((product) => ({
-    params: { id: product.id },
-    props: { product },
-  }));
+const { id } = Astro.params;
+
+// Lấy sản phẩm hiện tại
+const { data: dbProduct, error } = await supabase
+  .from('products')
+  .select(`*, categories(id, name, slug)`)
+  .eq('slug', id)
+  .single();
+
+if (!dbProduct || error) {
+  return Astro.redirect('/shop'); // Fallback redirect if not found
 }
 
-interface Props {
-  product: Product;
-}
+// Lấy sản phẩm liên quan
+const { data: dbRelated } = await supabase
+  .from('products')
+  .select(`*, categories(name, slug)`)
+  .eq('category_id', dbProduct.category_id)
+  .neq('id', dbProduct.id)
+  .limit(3);
 
-const { product } = Astro.props;
-const related = getRelatedProducts(product.relatedIds);
+const product = {
+  id: dbProduct.slug,
+  name: dbProduct.name,
+  subtitle: dbProduct.description ? dbProduct.description.substring(0, 100) + '...' : 'Thiết kế đẹp mắt, âm thanh đỉnh cao.',
+  longDescription: dbProduct.description || 'Chưa có mô tả chi tiết.',
+  categoryLabel: dbProduct.categories?.name || 'Sản phẩm',
+  price: dbProduct.price,
+  priceFormatted: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(dbProduct.price),
+  images: [dbProduct.main_image_url || 'https://images.unsplash.com/photo-1541689592655-f5f52825a3b8?w=800&q=80'],
+  rating: 5,
+  reviews: Math.floor(Math.random() * 50) + 10,
+  badge: dbProduct.is_featured ? 'Nổi bật' : (dbProduct.status === 'out_of_stock' ? 'Hết hàng' : null),
+  features: [
+    'Chất liệu được chọn lọc kỹ càng',
+    'Hoàn thiện thủ công tỉ mỉ',
+    'Âm thanh vượt trội trong phân khúc',
+    'Bền bỉ với thời gian'
+  ],
+  specs: [
+    { label: 'Thương hiệu', value: 'FlySky' },
+    { label: 'Tình trạng', value: dbProduct.status === 'out_of_stock' ? 'Hết hàng' : 'Mới 100%' },
+    ...(dbProduct.spec_body ? [{ label: 'Lưng Hông', value: dbProduct.spec_body }] : []),
+    ...(dbProduct.spec_top ? [{ label: 'Mặt Top', value: dbProduct.spec_top }] : []),
+    ...(dbProduct.spec_neck ? [{ label: 'Cần Đàn', value: dbProduct.spec_neck }] : [])
+  ]
+};
+
+const related = (dbRelated || []).map(rp => ({
+  id: rp.slug,
+  categoryLabel: rp.categories?.name || 'Khác',
+  name: rp.name,
+  description: (rp.description || '').substring(0, 50) + '...',
+  price: rp.price,
+  priceFormatted: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(rp.price),
+  image: rp.main_image_url || 'https://images.unsplash.com/photo-1541689592655-f5f52825a3b8?auto=format&fit=crop&q=80',
+  badge: rp.is_featured ? 'Nổi bật' : null
+}));
 ---
 
 <Layout

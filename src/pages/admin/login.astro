@@ -1,5 +1,61 @@
 ---
-// Admin Login page - no auth check needed
+import { supabase } from '../../lib/supabase';
+
+const accessToken = Astro.cookies.get("sb-access-token");
+const refreshToken = Astro.cookies.get("sb-refresh-token");
+
+if (accessToken && refreshToken) {
+  const { data, error } = await supabase.auth.setSession({
+    access_token: accessToken.value,
+    refresh_token: refreshToken.value,
+  });
+
+  if (!error && data.user) {
+    // If already logged in and valid, redirect to admin Dashboard
+    return Astro.redirect("/admin");
+  } else {
+    // If tokens exist but are invalid, clear them
+    Astro.cookies.delete("sb-access-token", { path: "/" });
+    Astro.cookies.delete("sb-refresh-token", { path: "/" });
+  }
+}
+
+let errorMessage = "";
+
+if (Astro.request.method === "POST") {
+  try {
+    const data = await Astro.request.formData();
+    const email = data.get("email")?.toString();
+    const password = data.get("password")?.toString();
+
+    if (email && password) {
+      const { data: authData, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        errorMessage = error.message;
+      } else if (authData.session) {
+        Astro.cookies.set("sb-access-token", authData.session.access_token, {
+          path: "/",
+          httpOnly: true,
+          secure: true,
+        });
+        Astro.cookies.set("sb-refresh-token", authData.session.refresh_token, {
+          path: "/",
+          httpOnly: true,
+          secure: true,
+        });
+        return Astro.redirect("/admin");
+      }
+    } else {
+      errorMessage = "Vui lòng nhập Email và Mật khẩu.";
+    }
+  } catch (err) {
+    if (err instanceof Error) errorMessage = err.message;
+  }
+}
 ---
 
 <!doctype html>
@@ -385,20 +441,22 @@
         <h2 class="form-title">Đăng nhập Quản trị viên</h2>
         <p class="form-sub">Vui lòng nhập thông tin để truy cập hệ thống.</p>
 
-        <form id="login-form" onsubmit="handleLogin(event)" novalidate>
-          <!-- Username -->
+        <form method="POST" id="login-form">
+          <!-- Username (Email) -->
           <div class="field">
             <div class="field-header">
-              <label class="field-label" for="username">Tên đăng nhập hoặc Email</label>
+              <label class="field-label" for="email">Tên đăng nhập hoặc Email</label>
             </div>
             <div class="input-wrap">
               <span class="material-symbols-outlined input-icon">person</span>
               <input
-                id="username"
+                id="email"
+                name="email"
                 class="form-input"
-                type="text"
+                type="email"
                 placeholder="Nhập tên đăng nhập hoặc email"
                 autocomplete="username"
+                required
               />
             </div>
           </div>
@@ -413,10 +471,12 @@
               <span class="material-symbols-outlined input-icon">lock</span>
               <input
                 id="password"
+                name="password"
                 class="form-input"
                 type="password"
                 placeholder="Nhập mật khẩu"
                 autocomplete="current-password"
+                required
               />
               <span class="material-symbols-outlined input-eye" id="pw-eye" onclick="togglePw()">visibility</span>
             </div>
@@ -434,9 +494,11 @@
             Đăng nhập Quản trị viên
           </button>
 
-          <div class="error-box" id="error-box">
-            ❌ Tên đăng nhập hoặc mật khẩu không đúng. Vui lòng thử lại.
-          </div>
+          {errorMessage && (
+            <div class="error-box" style="display: block; animation: shake 0.4s ease;">
+              ❌ {errorMessage === 'Invalid login credentials' ? 'Tên đăng nhập hoặc mật khẩu không đúng' : errorMessage}
+            </div>
+          )}
         </form>
 
         <!-- Footer -->
@@ -463,41 +525,13 @@
   </div>
 
   <script>
-    // Redirect if already logged in
-    if (sessionStorage.getItem('flysky_admin_token')) {
-      window.location.href = '/admin';
-    }
-
-    function handleLogin(e) {
-      e.preventDefault();
-      const username = document.getElementById('username').value.trim();
-      const password = document.getElementById('password').value;
-      const errorBox = document.getElementById('error-box');
+    document.getElementById('login-form')?.addEventListener('submit', function() {
       const btn = document.getElementById('login-btn');
-
-      if (!username || !password) {
-        showError('Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.');
-        return;
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="material-symbols-outlined btn-spinner" style="font-size:20px;">autorenew</span> Đang xác thực...';
       }
-
-      // Loading state
-      btn.disabled = true;
-      btn.innerHTML = '<span class="material-symbols-outlined btn-spinner" style="font-size:20px;">autorenew</span> Đang xác thực...';
-
-      setTimeout(() => {
-        if ((username === 'admin' || username === 'admin@flyskyguitar.vn') && password === 'flysky2024') {
-          btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:20px;">check_circle</span> Đăng nhập thành công!';
-          btn.style.background = '#10b981';
-          sessionStorage.setItem('flysky_admin_token', 'flysky_admin_authenticated');
-          sessionStorage.setItem('flysky_admin_user', JSON.stringify({ name: 'Admin FlySky', email: 'admin@flyskyguitar.vn' }));
-          setTimeout(() => { window.location.href = '/admin'; }, 700);
-        } else {
-          btn.disabled = false;
-          btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:20px;">login</span> Đăng nhập Quản trị viên';
-          showError('Tên đăng nhập hoặc mật khẩu không đúng. Vui lòng thử lại.');
-        }
-      }, 800);
-    }
+    });
     
     // Custom logo check
     const savedLogo = localStorage.getItem('flysky_custom_logo');
@@ -507,21 +541,7 @@
       });
     }
 
-    function showError(msg) {
-      const errorBox = document.getElementById('error-box');
-      errorBox.textContent = '❌ ' + msg;
-      errorBox.style.display = 'block';
-      const card = document.querySelector('.form-card');
-      card.classList.add('shake');
-      card.addEventListener('animationend', () => card.classList.remove('shake'), { once: true });
-      document.querySelectorAll('.form-input').forEach(el => {
-        el.style.borderColor = 'rgba(239,68,68,0.5)';
-      });
-      setTimeout(() => {
-        errorBox.style.display = 'none';
-        document.querySelectorAll('.form-input').forEach(el => el.style.borderColor = '');
-      }, 3500);
-    }
+
 
     function togglePw() {
       const pw = document.getElementById('password');
@@ -535,7 +555,6 @@
       }
     }
 
-    window.handleLogin = handleLogin;
     window.togglePw = togglePw;
   </script>
 </body>

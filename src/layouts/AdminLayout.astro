@@ -1,15 +1,43 @@
 ---
+import { supabase } from '../lib/supabase';
+
 interface Props {
   title?: string;
   subtitle?: string;
   activeNav?: string;
 }
 const { title = 'Admin', subtitle = '', activeNav = 'dashboard' } = Astro.props;
+
+let userEmail = '';
+let shouldRedirect = false;
+
+// --- SSR AUTH CHECK --- //
+const accessToken = Astro.cookies.get("sb-access-token");
+const refreshToken = Astro.cookies.get("sb-refresh-token");
+
+if (!accessToken || !refreshToken) {
+  shouldRedirect = true;
+} else {
+  const { data, error } = await supabase.auth.setSession({
+    access_token: accessToken.value,
+    refresh_token: refreshToken.value,
+  });
+
+  if (error || !data.user) {
+    Astro.cookies.delete("sb-access-token", { path: "/" });
+    Astro.cookies.delete("sb-refresh-token", { path: "/" });
+    shouldRedirect = true;
+  } else {
+    userEmail = data.user.email || 'Admin';
+  }
+}
+// --- END SSR AUTH CHECK --- //
 ---
 
 <!doctype html>
 <html lang="vi">
 <head>
+  {shouldRedirect && <meta http-equiv="refresh" content="0;url=/admin/login" />}
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{title} | FlySky Admin</title>
@@ -205,6 +233,11 @@ const { title = 'Admin', subtitle = '', activeNav = 'dashboard' } = Astro.props;
   </style>
 </head>
 <body>
+{shouldRedirect ? (
+  <div style="display:flex; height:100vh; align-items:center; justify-content:center; background:#221910; color:#f48c25; font-family:sans-serif;">
+    Đang chuyển hướng đến trang đăng nhập...
+  </div>
+) : (
 <div class="app-shell">
 
   <!-- ══ SIDEBAR ══ -->
@@ -266,14 +299,18 @@ const { title = 'Admin', subtitle = '', activeNav = 'dashboard' } = Astro.props;
         <div class="topbar-divider"></div>
         <div class="topbar-user">
           <div class="user-info-text">
-            <div class="user-name">Admin FlySky</div>
+            <div class="user-name">{userEmail}</div>
             <div class="user-role">Quản trị viên</div>
           </div>
-          <div class="user-avatar-wrap">
+          <div class="user-avatar-wrap relative group cursor-pointer" onclick="document.getElementById('logout-form').submit();" title="Nhấp để Đăng xuất">
             <img
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCiM9_T4CXFsjLqj0B8D2uUUGv81xQE90W-3c5L24-iHB3gTOuLm7Fq-yVB4rTXOMs7zwaCdm8df4ADioVuIPUMXCd_OqsGJ679GME24mZXAhHJAz6sj-VDY8EkXqZac9Jre2mAF88bf05gDfNKdB7wkR_shaB-Kebj43ewjUr_nLpjkg0mi-mcwIw4zdTQNtxSan2HHdlOwtLs-FdOXq1kPGGKkO8T6QnbJnsY02SRhLEp-NbIEjuA2FmqQo54y7y9LsY1KEKSWtWo"
+              src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=f48c25"
               alt="Admin avatar"
             />
+            <div class="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+               <span class="material-symbols-outlined text-white text-sm">logout</span>
+            </div>
+            <form id="logout-form" action="/api/auth/signout" method="POST" class="hidden"></form>
           </div>
         </div>
       </div>
@@ -287,12 +324,8 @@ const { title = 'Admin', subtitle = '', activeNav = 'dashboard' } = Astro.props;
 </div>
 
 <script>
-  if (!sessionStorage.getItem('flysky_admin_token')) {
-    window.location.href = '/admin/login';
-  }
   function logout() {
-    sessionStorage.removeItem('flysky_admin_token');
-    window.location.href = '/admin/login';
+    document.getElementById('logout-form')?.submit();
   }
   (window as any).logout = logout;
 
@@ -304,5 +337,6 @@ const { title = 'Admin', subtitle = '', activeNav = 'dashboard' } = Astro.props;
     });
   }
 </script>
+)}
 </body>
 </html>

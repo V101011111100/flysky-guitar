@@ -1,36 +1,39 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
+import { supabase } from '../../lib/supabase';
 
-const items = [
-  {
-    sku: 'FS-G001',
-    name: 'Classic Studio Wood A+',
-    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuARF7Hz_VbgAMgHUmozowd2ldnCFltYaOAP8il3pjr1xP3yqqdYYxtgbfPM0TPPQcpTqod1miuXgQgBIDHEDD8rjLfp8KkFzyTiVxoqSHNrcJu9RZ3V1u0QNT9BC-lCwUeUDm0BJRlKMntvf6rG_s-PYK5KPtXIDv9m5FiKlkJzyKgFoYQheq8CpyyxE3gSmHOeorrPLCNlBSMRu2uypG_ysgXtCMtu4N47kWzK7Fls3_hlienxHHwE4jKlHojopMhL3PTaieTebKOG',
-    cat: 'Đàn Guitar', price: '15.000.000đ',
-    qty: 85, pct: 85, status: 'in',
-  },
-  {
-    sku: 'FS-W042',
-    name: 'Gỗ Tuyết Tùng Cedar A+',
-    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDHITn6ZoRi66nuewRoh_P2iWh90HzxMsdK6Z29wPOhBR5DefZGrYyX4zQGUNkNFjSYbx9X2dUV5QTeyAirAA0zv0NzagJTTJ32i1CQScbJzXnhA9U-P9BVHWx48NFvUPn93NWVDU075Jk9IJQFXFku4C4iM55oreE6cx-b7n8hqhAMzbE_vYd16Oka_KwlIOfCct5fBQI9IhRfEPaCk_VpdAzAqGxqy9rThKHubVoqR6fKm5kho2TPNL1ruKqlMv-HQP-XOkLpo-a7',
-    cat: 'Vật liệu', price: '2.500.000đ',
-    qty: 5, pct: 12, status: 'low',
-  },
-  {
-    sku: 'FS-A102',
-    name: 'Bộ dây Elixir Acoustic Nanoweb',
-    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAiQgoiAoTzLE72T6yQzNNBO8f7NsHPMO9D9LBTz2K5bKLTITvn7zkOsHPGTDMi3dA1ep3a0BpLv6wr_huQO-8A9S-xDosSc-Pkjxgv5-us_l7Kt9B0AONpmd17MyJrcVCdWUE629wunWalhvtUDciimWXt1N2tKLgVbnzITwT3tzgmScXFjUqrjFXb16Ylu31wBHhqoRVw0uYiWIj45RCWUd5UAsW50o-pRBiV-qiE0i2tPITM4zmXjKWxvbb3NqtwaSQ5TulnWnzS',
-    cat: 'Phụ kiện', price: '450.000đ',
-    qty: 120, pct: 100, status: 'in',
-  },
-  {
-    sku: 'FS-G009',
-    name: 'Acoustic Custom Dark Limited',
-    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAFbhbNCcMkMuxVX4d8LdISaehQlTcCJNwDClfmxYbI1ntXjFSWrtvk0t2ZeNOZ3CpvPvY9eQlGD-xwu5PmKU2-PeCEJmjnqDFdqo4QMqvtJBFL3lipAqSfZ07riDcJ9DMFwsLgerbBybTg9DlgC9Q8K1rvOtMJ1KLEsLbRax_7DgqOQ8NkCkXQhOTQ-3wUWQBAz49X7fiNxtJ64qK-ITCLqG67GgInAiIgy89HMRMk5B6RKtGsOv6TQAfpD0m3JMick7whC5858W4U',
-    cat: 'Đàn Guitar', price: '22.000.000đ',
-    qty: 0, pct: 0, status: 'out',
-  },
-];
+// Lấy sản phẩm từ CSDL để hiển thị
+const { data: products, error } = await supabase
+  .from('products')
+  .select(`
+    *,
+    categories ( name )
+  `)
+  .order('created_at', { ascending: false });
+
+const items = products?.map(p => ({
+  id: p.id,
+  catId: p.category_id,
+  sku: p.slug?.toUpperCase() || 'NO-SKU',
+  name: p.name,
+  img: p.main_image_url || 'https://images.unsplash.com/photo-1541689592655-f5f52825a3b8?w=200&q=70',
+  cat: p.categories?.name || 'Khác',
+  rawPrice: p.price || 0,
+  price: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p.price || 0),
+  qty: p.stock_quantity ?? 0,
+  pct: Math.min(100, (p.stock_quantity ?? 0) * 2), // visually scale max 50 for the bar
+  status: p.status === 'out_of_stock' || (p.stock_quantity ?? 0) <= 0 ? 'out' : (p.stock_quantity < 10 ? 'low' : 'in'),
+  dbStatus: p.status,
+  desc: p.description || '',
+  spec_body: p.spec_body || '',
+  spec_top: p.spec_top || '',
+  spec_neck: p.spec_neck || ''
+})) || [];
+
+const totalItems = items.length;
+const lowStock = items.filter(i => i.status === 'low').length;
+const inStock = items.filter(i => i.status === 'in').length;
+const outOfStock = items.filter(i => i.status === 'out').length;
 ---
 
 <AdminLayout
@@ -44,10 +47,21 @@ const items = [
       <span class="material-symbols-outlined search-icon">search</span>
       <input type="text" placeholder="Tìm kiếm sản phẩm..." class="search-input" />
     </div>
-    <button class="btn-add-inv">
-      <span class="material-symbols-outlined">add</span>
-      Thêm sản phẩm
-    </button>
+    <div class="header-btns-group">
+      <input type="file" id="excel-import-input" accept=".xlsx, .xls, .csv" style="display: none;" />
+      <button class="btn-ghost" onclick="document.getElementById('excel-import-input').click()">
+        <span class="material-symbols-outlined">upload_file</span>
+        Nhập Excel
+      </button>
+      <button class="btn-ghost" id="btn-export-excel">
+        <span class="material-symbols-outlined">download</span>
+        Xuất Excel
+      </button>
+      <a href="/admin/products" class="btn-add-inv" style="text-decoration: none;">
+        <span class="material-symbols-outlined">add_circle</span>
+        Thêm sản phẩm mới
+      </a>
+    </div>
   </div>
 
   <!-- ── STAT CARDS ── -->
@@ -61,8 +75,7 @@ const items = [
         </div>
       </div>
       <div class="inv-card-val-row">
-        <span class="inv-card-val">1,250</span>
-        <span class="inv-tag green">+5% <span class="material-symbols-outlined" style="font-size:12px;">trending_up</span></span>
+        <span class="inv-card-val">{totalItems}</span>
       </div>
     </div>
 
@@ -74,7 +87,7 @@ const items = [
         </div>
       </div>
       <div class="inv-card-val-row">
-        <span class="inv-card-val orange-val">12</span>
+        <span class="inv-card-val orange-val">{lowStock}</span>
         <span class="inv-tag muted">Cần nhập sớm</span>
       </div>
     </div>
@@ -87,8 +100,7 @@ const items = [
         </div>
       </div>
       <div class="inv-card-val-row">
-        <span class="inv-card-val">1,180</span>
-        <span class="inv-tag green">94%</span>
+        <span class="inv-card-val">{inStock}</span>
       </div>
     </div>
 
@@ -100,8 +112,7 @@ const items = [
         </div>
       </div>
       <div class="inv-card-val-row">
-        <span class="inv-card-val red-val">58</span>
-        <span class="inv-tag red">-1% <span class="material-symbols-outlined" style="font-size:12px;">trending_down</span></span>
+        <span class="inv-card-val red-val">{outOfStock}</span>
       </div>
     </div>
 
@@ -134,12 +145,19 @@ const items = [
         </thead>
         <tbody>
           {items.map(item => (
-            <tr class={item.status === 'out' ? 'row-faded' : ''}>
-              <td class="sku-col">{item.sku}</td>
+            <tr class={`inv-row ${item.status === 'out' || item.dbStatus === 'draft' ? 'row-faded' : ''}`} data-category={item.cat}>
+              <td class="sku-col">
+                {item.sku}
+                {item.dbStatus === 'draft' && (
+                  <>
+                    <br/><span class="cat-chip" style="margin-top:4px;font-size:9px;">BẢN NHÁP</span>
+                  </>
+                )}
+              </td>
               <td>
                 <div class="prod-cell">
                   <div class="prod-img">
-                    <img src={item.img} alt={item.name} />
+                    <img src={item.img} alt={item.name} loading="lazy" decoding="async" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1541689592655-f5f52825a3b8?auto=format&fit=crop&w=200&q=70';" />
                   </div>
                   <span class="prod-name">{item.name}</span>
                 </div>
@@ -179,18 +197,14 @@ const items = [
                 )}
               </td>
               <td class="actions-center">
-                {(item.status === 'in') && (
-                  <div class="act-row">
-                    <button class="act-ico"><span class="material-symbols-outlined">edit</span></button>
-                    <button class="act-ico"><span class="material-symbols-outlined">history</span></button>
-                  </div>
-                )}
-                {item.status === 'low' && (
-                  <button class="btn-restock">Nhập kho</button>
-                )}
-                {item.status === 'out' && (
-                  <button class="btn-urgent">Nhập gấp</button>
-                )}
+                <div class="act-row">
+                  <a href={`/admin/products?id=${item.id}`} class="act-ico" title="Sửa">
+                    <span class="material-symbols-outlined">edit</span>
+                  </a>
+                  <button class="act-ico text-red-400 hover:text-red-500 hover:bg-red-500/10" title="Xóa" onclick={`deleteProduct('${item.id}')`}>
+                    <span class="material-symbols-outlined">delete</span>
+                  </button>
+                </div>
               </td>
             </tr>
           ))}
@@ -200,14 +214,10 @@ const items = [
 
     <!-- Pagination -->
     <div class="inv-pagination">
-      <span class="page-info">Hiển thị 1-10 trên 1,250 sản phẩm</span>
+      <span class="page-info">Hiển thị {totalItems > 0 ? 1 : 0}-{Math.min(10, totalItems)} trên {totalItems} sản phẩm</span>
       <div class="page-btns">
         <button class="page-nav"><span class="material-symbols-outlined">chevron_left</span></button>
         <button class="pnum pnum-active">1</button>
-        <button class="pnum">2</button>
-        <button class="pnum">3</button>
-        <span class="pellipsis">...</span>
-        <button class="pnum">125</button>
         <button class="page-nav"><span class="material-symbols-outlined">chevron_right</span></button>
       </div>
     </div>
@@ -215,8 +225,104 @@ const items = [
 
 </AdminLayout>
 
+<script>
+  const fileInput = document.getElementById('excel-import-input') as HTMLInputElement;
+  if(fileInput) {
+    fileInput.addEventListener('change', async () => {
+      const file = fileInput.files?.[0];
+      if(!file) return;
+
+      alert('Đang xử lý dữ liệu Excel, vui lòng đợi...');
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const res = await fetch('/api/products/import', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        if(data.success) {
+          alert(`Nhập thành công ${data.count} sản phẩm!`);
+          window.location.reload();
+        } else {
+          alert('Lỗi nhập dữ liệu: ' + data.error);
+        }
+      } catch (err) {
+        alert('Lỗi kết nối máy chủ khi nhập Excel.');
+      }
+      fileInput.value = ''; // Reset input
+    });
+  }
+
+  const btnExport = document.getElementById('btn-export-excel');
+  if(btnExport) {
+    btnExport.addEventListener('click', () => {
+      window.location.href = '/api/products/export';
+    });
+  }
+
+  // --- Filter Tabs Logic ---
+  const tabs = document.querySelectorAll('.inv-tab');
+  const rows = document.querySelectorAll('.inv-row');
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      // Update active tab styling
+      tabs.forEach(t => t.classList.remove('inv-tab-active'));
+      tab.classList.add('inv-tab-active');
+
+      const selectedCat = tab.textContent?.trim();
+
+      // Show/hide rows
+      rows.forEach(row => {
+        const rowCat = (row as HTMLElement).dataset.category;
+        
+        // Flexible matching
+        let match = false;
+        if (selectedCat === 'Tất cả') {
+          match = true;
+        } else if (selectedCat === 'Đàn Guitar') {
+          // match Đàn Guitar Điện, Đàn Guitar Acoustic
+          match = rowCat?.includes('Guitar') || false;
+        } else {
+          match = rowCat?.includes(selectedCat) || false;
+        }
+
+        if (match) {
+          (row as HTMLElement).style.display = '';
+        } else {
+          (row as HTMLElement).style.display = 'none';
+        }
+      });
+    });
+  });
+
+  // Delete product function
+  window.deleteProduct = async (id) => {
+    if(confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) {
+      try {
+        const res = await fetch('/api/products/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        const data = await res.json();
+        if(data.success) {
+          window.location.reload();
+        } else {
+          alert('Lỗi: ' + data.error);
+        }
+      } catch(err) {
+        alert('Lỗi khi xóa!');
+      }
+    }
+  };
+
+</script>
+
 <style>
-  /* ── HEADER ── */
   .inv-actions {
     display: flex; gap: 12px; align-items: center;
     justify-content: flex-end;
@@ -243,6 +349,17 @@ const items = [
   }
   .search-input::placeholder { color: rgba(244,140,37,.35); }
   .search-input:focus { border-color: #f48c25; }
+  .header-btns-group { display: flex; gap: 8px; align-items: center; }
+  .btn-ghost {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: 8px;
+    border: 1px solid rgba(244,140,37,.3); background: rgba(244,140,37,.05); color: #f48c25;
+    font-size: 13px; font-weight: 700; cursor: pointer; font-family: 'Manrope', sans-serif;
+    transition: all .15s;
+  }
+  .btn-ghost:hover { background: rgba(244,140,37,.15); }
+  .btn-ghost .material-symbols-outlined { font-size: 18px; }
+
   .btn-add-inv {
     display: flex; align-items: center; gap: 8px;
     padding: 9px 18px; border-radius: 8px;

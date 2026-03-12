@@ -1,40 +1,43 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
+import { supabase } from '../../lib/supabase';
 
-const orders = [
-  {
-    id: '#FS-1024',
-    customer: 'Nguyễn Văn An',
-    email: 'vanan@email.com',
-    product: 'Classic Guitar C-40',
-    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAI90GL-uDW-HCXdAIZMKfxKPWHfgV-0RhT2yCnc9AbjCSfT0HPGptYtTqFyNVcrQUcf0QyDHrWY03MAy3oIX8rkt4237uW6g5n18kZJvD6_p8TBxOpCXPaieRbT2bLsv4pF8b_nIVWhLbJLvz069iMffueKCqbz3D50OHorOYoR-yY__yfNg-Y3w3_Aa7X5q43r9dYK5L2iyA-J-KZGN3RukjFgh8uGnpeoYAORuHC7YEDSXNGoIqo3eZbrQjDqlNFonrW1YiRO-2E',
-    total: '4.500.000₫', status: 'pending', date: '12/10/2023',
-  },
-  {
-    id: '#FS-1025',
-    customer: 'Trần Thị Bích',
-    email: 'bich.tran@email.com',
-    product: 'Electric Guitar E-1',
-    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDf2HaH0DA08JsPTR5_9Jh64iJXJPtlrALQJRhMuMZiyBz7jtvs7H3zcgYbapUDdB7ttKDQ0q_W5IRvMV_XBiVmDhCrzBlfFO2Rwp8vlmNNtR1r8Xf34YnkZJvDLkflkU8TO6FPOdBjhbBRd9xmfV42oObkE9g1HT_C8mODaxk_Wrbd41e1K4s5iP1QLjs9_nCm9tlYlB5u2AamdErw3smrTYoEsyKgpDBQi5q_4O-AR8laFtXxc59ltqPMuPN5zW_ce078I_Rf7O56',
-    total: '12.000.000₫', status: 'shipping', date: '11/10/2023',
-  },
-  {
-    id: '#FS-1026',
-    customer: 'Lê Hoàng Nam',
-    email: 'namle@email.com',
-    product: 'Acoustic Wood W-2',
-    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD-5SP_EitEAGNjsO1vCP13_Trp0_I_pTty7Fvr_9YuBlYikDdypk7RxzXpQRCW6jRR-PWgNBMsZhAkp0w3OEWH7rqPih6dqXOiXNin8G2RAHTLaIa9DWIdIp1rX3oMivzKPUIaIsdBnLWEEsd7KwiQ97DWzEGNbKDUqbrZ6Hfbzmpr_t1Lo9OUl-ixhBX2nxHR3bBiEL89kxwDiHWKqNuxBfSxulLFsi4x4sz-k8iTb1waPCPfQZqsKf6EFCel0PbvIS1bdeO5R2_l',
-    total: '7.200.000₫', status: 'done', date: '10/10/2023',
-  },
-  {
-    id: '#FS-1027',
-    customer: 'Phạm Minh Đạo',
-    email: 'daopm@email.com',
-    product: 'Phụ kiện dây đàn Ernie Ball',
-    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAnIv42ti-JOB-wy6_C6SIih3X6KwCjl9g3FwJp9UpbD5QwuM7BYPcsuoHEWkBDK8jVoPra_sb26Bq77lU1GaQjleEs4ZljnSU9E9Co4AffhMEqxBIq7uJpYaimr5j5stjeyJU62c-iVKGll_D5EAI0N04WQvy3W45skoEE9pqYuFnjgLHi7-uFa1nhziGM63Yq_sTz8S87fqVluZWZ0M8KWw5qe3YCTbrEH0ZatGJwa4Gu1c8LUpsRPdJEi77m-DXZYACNxDO2qIs8',
-    total: '250.000₫', status: 'done', date: '09/10/2023',
-  },
-];
+// Lấy filter từ URL param
+const statusFilter = Astro.url.searchParams.get('status') || 'all';
+const page = parseInt(Astro.url.searchParams.get('page') || '1');
+const PAGE_SIZE = 15;
+
+// Build query
+let query = supabase
+  .from('orders')
+  .select('*', { count: 'exact' })
+  .order('created_at', { ascending: false })
+  .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
+
+if (statusFilter !== 'all') {
+  query = query.eq('status', statusFilter);
+}
+
+const { data: ordersData, count, error } = await query;
+
+// Nếu bảng orders chưa tồn tại, error sẽ xuất hiện → hiện empty state
+const orders = ordersData || [];
+const totalOrders = count || 0;
+const totalPages = Math.ceil(totalOrders / PAGE_SIZE);
+
+const statusMap: Record<string, { label: string; cls: string }> = {
+  pending:    { label: 'Chờ xử lý',   cls: 'badge-amber' },
+  processing: { label: 'Đang xử lý',  cls: 'badge-blue'  },
+  completed:  { label: 'Hoàn thành',  cls: 'badge-green' },
+  cancelled:  { label: 'Đã hủy',      cls: 'badge-red'   },
+};
+
+function fmt(n: number) {
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n);
+}
+function fmtDate(d: string) {
+  return new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
 ---
 
 <AdminLayout
@@ -45,24 +48,29 @@ const orders = [
   <!-- ── HEADER ACTIONS ── -->
   <div class="orders-header">
     <div class="orders-header-actions">
-      <button class="btn-export">
+      <button class="btn-export" id="btn-export">
         <span class="material-symbols-outlined">download</span>
-        Xuất file Excel
-      </button>
-      <button class="btn-create">
-        <span class="material-symbols-outlined">add</span>
-        Tạo đơn mới
+        Xuất Excel
       </button>
     </div>
   </div>
 
   <!-- ── FILTER TABS ── -->
   <div class="filter-tabs">
-    <button class="tab-btn tab-active">Tất cả</button>
-    <button class="tab-btn">Chờ xử lý</button>
-    <button class="tab-btn">Đang giao</button>
-    <button class="tab-btn">Hoàn thành</button>
-    <button class="tab-btn">Đã hủy</button>
+    {[
+      { val: 'all',        label: 'Tất cả' },
+      { val: 'pending',    label: 'Chờ xử lý' },
+      { val: 'processing', label: 'Đang xử lý' },
+      { val: 'completed',  label: 'Hoàn thành' },
+      { val: 'cancelled',  label: 'Đã hủy' },
+    ].map(tab => (
+      <a
+        href={`/admin/orders?status=${tab.val}`}
+        class={`tab-btn ${statusFilter === tab.val ? 'tab-active' : ''}`}
+      >
+        {tab.label}
+      </a>
+    ))}
   </div>
 
   <!-- ── TABLE ── -->
@@ -77,70 +85,220 @@ const orders = [
             <th style="text-align:right;">Tổng tiền</th>
             <th style="text-align:center;">Trạng thái</th>
             <th>Ngày đặt</th>
-            <th style="text-align:right;">Thao tác</th>
+            <th style="text-align:center;">Thao tác</th>
           </tr>
         </thead>
         <tbody>
-          {orders.map(o => (
+          {orders.length === 0 && (
             <tr>
-              <td class="order-id">{o.id}</td>
-              <td>
-                <div class="cus-name">{o.customer}</div>
-                <div class="cus-email">{o.email}</div>
-              </td>
-              <td>
-                <div class="prod-cell">
-                  <div class="prod-thumb" style={`background-image:url('${o.img}')`}></div>
-                  <span class="prod-name">{o.product}</span>
-                </div>
-              </td>
-              <td class="total-col">{o.total}</td>
-              <td class="status-col">
-                {o.status === 'pending'  && <span class="badge badge-amber">Chờ xử lý</span>}
-                {o.status === 'shipping' && <span class="badge badge-blue">Đang giao</span>}
-                {o.status === 'done'     && <span class="badge badge-green">Hoàn thành</span>}
-                {o.status === 'cancelled'&& <span class="badge badge-red">Đã hủy</span>}
-              </td>
-              <td class="date-col">{o.date}</td>
-              <td class="action-col">
-                <button class="act-btn" title="Xem chi tiết">
-                  <span class="material-symbols-outlined">visibility</span>
-                </button>
-                <button class="act-btn" title="Chỉnh sửa">
-                  <span class="material-symbols-outlined">edit</span>
-                </button>
+              <td colspan="7" class="empty-row">
+                <span class="material-symbols-outlined" style="font-size:36px; opacity:0.3;">inbox</span>
+                <p style="margin-top:8px; color:#64748b;">
+                  {error ? 'Bảng orders chưa được tạo. Hãy đặt đơn hàng đầu tiên từ trang cửa hàng!' : 'Chưa có đơn hàng nào.'}
+                </p>
               </td>
             </tr>
-          ))}
+          )}
+          {orders.map(o => {
+            const items: any[] = o.items || [];
+            const firstItem = items[0];
+            const moreCount = items.length - 1;
+            const statusInfo = statusMap[o.status] || { label: o.status, cls: 'badge-amber' };
+            return (
+              <tr data-order-id={o.id}>
+                <td class="order-id">{o.order_number}</td>
+                <td>
+                  <div class="cus-name">{o.customer_name}</div>
+                  <div class="cus-email">{o.customer_phone}</div>
+                  {o.customer_email && <div class="cus-email">{o.customer_email}</div>}
+                  {o.shipping_address && <div class="cus-email" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;">{o.shipping_address}</div>}
+                </td>
+                <td>
+                  {firstItem ? (
+                    <div class="prod-cell">
+                      <div class="prod-thumb" style={firstItem.image ? `background-image:url('${firstItem.image}')` : ''}></div>
+                      <div>
+                        <span class="prod-name">{firstItem.name}</span>
+                        {moreCount > 0 && <div class="prod-more">+{moreCount} sản phẩm khác</div>}
+                      </div>
+                    </div>
+                  ) : (
+                    <span class="prod-name" style="color:#64748b;">—</span>
+                  )}
+                </td>
+                <td class="total-col">{fmt(o.total_amount || 0)}</td>
+                <td class="status-col">
+                  <select
+                    class={`status-select status-${o.status}`}
+                    data-order-id={o.id}
+                    data-current={o.status}
+                  >
+                    <option value="pending"    selected={o.status === 'pending'}>Chờ xử lý</option>
+                    <option value="processing" selected={o.status === 'processing'}>Đang xử lý</option>
+                    <option value="completed"  selected={o.status === 'completed'}>Hoàn thành</option>
+                    <option value="cancelled"  selected={o.status === 'cancelled'}>Đã hủy</option>
+                  </select>
+                </td>
+                <td class="date-col">{fmtDate(o.created_at)}</td>
+                <td class="action-col">
+                  <button class="act-btn btn-detail" data-order-id={o.id} title="Xem chi tiết">
+                    <span class="material-symbols-outlined">visibility</span>
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
 
     <!-- Pagination -->
     <div class="pagination">
-      <span class="page-info">Hiển thị 1 đến 4 trong số 102 đơn hàng</span>
-      <div class="page-btns">
-        <button class="page-nav"><span class="material-symbols-outlined">chevron_left</span></button>
-        <button class="page-num page-active">1</button>
-        <button class="page-num">2</button>
-        <button class="page-num">3</button>
-        <span class="page-ellipsis">...</span>
-        <button class="page-num">26</button>
-        <button class="page-nav"><span class="material-symbols-outlined">chevron_right</span></button>
-      </div>
+      <span class="page-info">
+        Tổng {totalOrders} đơn hàng
+        {totalOrders > 0 && ` — Trang ${page}/${totalPages}`}
+      </span>
+      {totalPages > 1 && (
+        <div class="page-btns">
+          {page > 1 && (
+            <a href={`/admin/orders?status=${statusFilter}&page=${page - 1}`} class="page-nav">
+              <span class="material-symbols-outlined">chevron_left</span>
+            </a>
+          )}
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+            <a
+              href={`/admin/orders?status=${statusFilter}&page=${p}`}
+              class={`page-num ${p === page ? 'page-active' : ''}`}
+            >{p}</a>
+          ))}
+          {page < totalPages && (
+            <a href={`/admin/orders?status=${statusFilter}&page=${page + 1}`} class="page-nav">
+              <span class="material-symbols-outlined">chevron_right</span>
+            </a>
+          )}
+        </div>
+      )}
     </div>
   </div>
 
-  <!-- Footer -->
-  <footer class="orders-footer">
-    <span class="footer-version">FlySky Guitar Admin System v2.4.0</span>
-    <div class="footer-links">
-      <a href="#">Hỗ trợ</a>
-      <a href="#">Chính sách bảo mật</a>
+  <!-- ── ORDER DETAIL MODAL ── -->
+  <div id="order-modal" class="modal-backdrop hidden">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title">Chi tiết đơn hàng</h3>
+        <button id="modal-close" class="modal-close-btn">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div id="modal-body" class="modal-body"></div>
     </div>
-  </footer>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast-wrap" style="position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;"></div>
 
 </AdminLayout>
+
+<script>
+  // ── Toast helper ──
+  function showToast(msg: string, type: 'success' | 'error' = 'success') {
+    const wrap = document.getElementById('toast-wrap')!;
+    const t = document.createElement('div');
+    t.className = `ord-toast ord-toast-${type}`;
+    t.innerHTML = `<span class="material-symbols-outlined">${type === 'success' ? 'check_circle' : 'error'}</span>${msg}`;
+    wrap.appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3000);
+  }
+
+  // ── Status dropdown change ──
+  document.querySelectorAll<HTMLSelectElement>('.status-select').forEach(sel => {
+    sel.addEventListener('change', async () => {
+      const orderId = sel.dataset.orderId!;
+      const newStatus = sel.value;
+      const prev = sel.dataset.current!;
+
+      sel.disabled = true;
+
+      try {
+        const res = await fetch('/api/orders/update-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: orderId, status: newStatus }),
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          sel.dataset.current = newStatus;
+          // Reset class hoàn toàn để tránh regex match sai status-select
+          sel.className = `status-select status-${newStatus}`;
+          showToast('Cập nhật trạng thái thành công!');
+        } else {
+          throw new Error(data.error);
+        }
+      } catch (e: any) {
+        sel.value = prev; // revert
+        showToast('Lỗi: ' + (e.message || 'Không thể cập nhật'), 'error');
+      } finally {
+        sel.disabled = false;
+      }
+    });
+  });
+
+  // ── Order detail modal ──
+  const modal = document.getElementById('order-modal')!;
+  const modalBody = document.getElementById('modal-body')!;
+
+  function openModal(orderId: string) {
+    // Find row data from DOM
+    const row = document.querySelector<HTMLElement>(`tr[data-order-id="${orderId}"]`);
+    if (!row) return;
+    
+    const orderNum = row.querySelector('.order-id')?.textContent || '';
+    const name = row.querySelector('.cus-name')?.textContent || '';
+    const phone = row.querySelectorAll('.cus-email')[0]?.textContent || '';
+    const email = row.querySelectorAll('.cus-email')[1]?.textContent || '';
+    const total = row.querySelector('.total-col')?.textContent || '';
+    const date = row.querySelector('.date-col')?.textContent || '';
+    const status = row.querySelector<HTMLSelectElement>('.status-select')?.value || '';
+
+    const statusLabels: Record<string, string> = {
+      pending: 'Chờ xử lý', confirmed: 'Đã xác nhận',
+      shipping: 'Đang giao', done: 'Hoàn thành', cancelled: 'Đã hủy'
+    };
+
+    modalBody.innerHTML = `
+      <div class="detail-grid">
+        <div class="detail-section">
+          <h4 class="detail-section-title">Thông tin đơn hàng</h4>
+          <div class="detail-row"><span>Mã đơn</span><strong>${orderNum}</strong></div>
+          <div class="detail-row"><span>Ngày đặt</span><strong>${date}</strong></div>
+          <div class="detail-row"><span>Tổng tiền</span><strong style="color:#f48c25;">${total}</strong></div>
+          <div class="detail-row"><span>Trạng thái</span><strong>${statusLabels[status] || status}</strong></div>
+        </div>
+        <div class="detail-section">
+          <h4 class="detail-section-title">Thông tin khách hàng</h4>
+          <div class="detail-row"><span>Họ tên</span><strong>${name}</strong></div>
+          <div class="detail-row"><span>Điện thoại</span><strong>${phone}</strong></div>
+          ${email ? `<div class="detail-row"><span>Email</span><strong>${email}</strong></div>` : ''}
+        </div>
+      </div>
+    `;
+
+    modal.classList.remove('hidden');
+  }
+
+  document.querySelectorAll<HTMLButtonElement>('.btn-detail').forEach(btn => {
+    btn.addEventListener('click', () => openModal(btn.dataset.orderId!));
+  });
+
+  document.getElementById('modal-close')?.addEventListener('click', () => modal.classList.add('hidden'));
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
+
+  // ── Export Excel ──
+  document.getElementById('btn-export')?.addEventListener('click', () => {
+    window.location.href = '/api/orders/export';
+  });
+</script>
 
 <style>
   /* ── HEADER ── */
@@ -163,25 +321,13 @@ const orders = [
   .btn-export:hover { background: #4a3a2a; }
   .btn-export .material-symbols-outlined { font-size: 18px; }
 
-  .btn-create {
-    display: flex; align-items: center; gap: 8px;
-    padding: 10px 20px; border-radius: 12px;
-    font-size: 13px; font-weight: 700;
-    background: #f48c25; color: #221910;
-    border: none; cursor: pointer;
-    font-family: 'Manrope', sans-serif;
-    box-shadow: 0 4px 16px rgba(244,140,37,.2);
-    transition: filter .15s;
-  }
-  .btn-create:hover { filter: brightness(1.1); }
-  .btn-create .material-symbols-outlined { font-size: 18px; }
-
   /* ── FILTER TABS ── */
   .filter-tabs {
     display: flex;
     gap: 0;
     border-bottom: 1px solid rgba(74,58,42,.5);
     margin-bottom: 20px;
+    overflow-x: auto;
   }
   .tab-btn {
     padding: 12px 20px;
@@ -192,13 +338,11 @@ const orders = [
     border-bottom: 2px solid transparent;
     margin-bottom: -1px;
     transition: all .15s;
+    text-decoration: none;
+    white-space: nowrap;
   }
   .tab-btn:hover { color: #cbd5e1; }
-  .tab-active {
-    color: #f48c25;
-    border-bottom-color: #f48c25;
-    font-weight: 700;
-  }
+  .tab-active { color: #f48c25; border-bottom-color: #f48c25; font-weight: 700; }
 
   /* ── TABLE ── */
   .table-wrap {
@@ -207,70 +351,62 @@ const orders = [
     border-radius: 16px;
     overflow: hidden;
   }
-
-  .orders-table {
-    width: 100%;
-    border-collapse: collapse;
-    text-align: left;
-  }
-  .orders-table thead tr {
-    background: rgba(45,34,24,.7);
-  }
+  .orders-table { width: 100%; border-collapse: collapse; text-align: left; }
+  .orders-table thead tr { background: rgba(45,34,24,.7); }
   .orders-table th {
     padding: 16px 24px;
     font-size: 11px; font-weight: 700;
     text-transform: uppercase; letter-spacing: .1em;
-    color: #94a3b8;
-    white-space: nowrap;
+    color: #94a3b8; white-space: nowrap;
   }
   .orders-table tbody tr {
     border-top: 1px solid #4a3a2a;
     transition: background .15s;
   }
   .orders-table tbody tr:hover { background: rgba(74,58,42,.25); }
-  .orders-table td {
-    padding: 20px 24px;
-    vertical-align: middle;
-  }
+  .orders-table td { padding: 18px 24px; vertical-align: middle; }
+
+  .empty-row { text-align: center; padding: 60px 24px; color: #64748b; }
 
   .order-id {
     font-family: 'Courier New', monospace;
     font-size: 13px; font-weight: 700;
-    color: #f48c25;
-    white-space: nowrap;
+    color: #f48c25; white-space: nowrap;
   }
 
   .cus-name  { font-size: 13.5px; font-weight: 700; color: #f9fafb; }
   .cus-email { font-size: 11px; color: #64748b; margin-top: 2px; }
 
-  .prod-cell {
-    display: flex; align-items: center; gap: 12px;
-  }
+  .prod-cell { display: flex; align-items: center; gap: 12px; }
   .prod-thumb {
-    width: 32px; height: 32px;
-    border-radius: 6px;
-    background: #4a3a2a center/cover no-repeat;
-    flex-shrink: 0;
+    width: 36px; height: 36px; border-radius: 6px;
+    background: #4a3a2a center/cover no-repeat; flex-shrink: 0;
   }
   .prod-name { font-size: 13px; color: #e2e8f0; }
+  .prod-more { font-size: 11px; color: #64748b; margin-top: 2px; }
 
-  .total-col { text-align: right; font-size: 13px; font-weight: 600; color: #f9fafb; white-space: nowrap; }
+  .total-col { text-align: right; font-size: 13px; font-weight: 700; color: #f9fafb; white-space: nowrap; }
   .status-col { text-align: center; }
-  .date-col  { font-size: 13px; color: #94a3b8; white-space: nowrap; }
-  .action-col { text-align: right; }
+  .date-col  { font-size: 12px; color: #94a3b8; white-space: nowrap; }
+  .action-col { text-align: center; }
 
-  /* Badges */
-  .badge {
-    display: inline-block;
-    padding: 4px 12px; border-radius: 999px;
+  /* Status dropdown */
+  .status-select {
+    padding: 5px 10px;
+    border-radius: 8px;
     font-size: 11px; font-weight: 700;
+    font-family: 'Manrope', sans-serif;
+    cursor: pointer;
     border: 1px solid;
-    white-space: nowrap;
+    outline: none;
+    transition: all .15s;
   }
-  .badge-amber { background: rgba(245,158,11,.15); color: #f59e0b; border-color: rgba(245,158,11,.3); }
-  .badge-blue  { background: rgba(59,130,246,.15);  color: #60a5fa; border-color: rgba(59,130,246,.3); }
-  .badge-green { background: rgba(16,185,129,.15);  color: #34d399; border-color: rgba(16,185,129,.3); }
-  .badge-red   { background: rgba(239,68,68,.15);   color: #f87171; border-color: rgba(239,68,68,.3); }
+  .status-select:disabled { opacity: 0.5; cursor: wait; }
+  .status-pending    { background: rgba(245,158,11,.15);  color: #f59e0b; border-color: rgba(245,158,11,.3); }
+  .status-processing { background: rgba(59,130,246,.15);  color: #60a5fa; border-color: rgba(59,130,246,.3); }
+  .status-completed  { background: rgba(16,185,129,.15);  color: #34d399; border-color: rgba(16,185,129,.3); }
+  .status-cancelled  { background: rgba(239,68,68,.15);   color: #f87171; border-color: rgba(239,68,68,.3); }
+  .status-select option { background: #2d2218; color: #f1f5f9; }
 
   /* Action buttons */
   .act-btn {
@@ -284,9 +420,7 @@ const orders = [
 
   /* ── PAGINATION ── */
   .pagination {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    display: flex; align-items: center; justify-content: space-between;
     padding: 14px 24px;
     background: rgba(45,34,24,.4);
     border-top: 1px solid #4a3a2a;
@@ -297,6 +431,7 @@ const orders = [
     width: 30px; height: 30px; border-radius: 8px;
     background: none; border: none; cursor: pointer;
     color: #94a3b8; display: flex; align-items: center; justify-content: center;
+    text-decoration: none;
     transition: background .15s;
   }
   .page-nav:hover { background: #4a3a2a; }
@@ -306,30 +441,66 @@ const orders = [
     background: none; border: none; cursor: pointer;
     font-size: 12px; font-weight: 700;
     color: #94a3b8; font-family: 'Manrope', sans-serif;
+    display: flex; align-items: center; justify-content: center;
+    text-decoration: none;
     transition: background .15s;
   }
   .page-num:hover { background: #4a3a2a; }
-  .page-active { background: #f48c25 !important; color: #221910 !important; }
-  .page-ellipsis { color: #64748b; font-size: 13px; padding: 0 4px; }
+  .page-active { background: #f48c25 !important; color: #221910 !important; border-radius: 8px; }
 
-  /* ── FOOTER ── */
-  .orders-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: 24px;
-    padding-top: 16px;
-    border-top: 1px solid rgba(74,58,42,.4);
+  /* ── MODAL ── */
+  .modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+    z-index: 900; display: flex; align-items: center; justify-content: center;
   }
-  .footer-version {
-    font-size: 10px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: .12em;
-    color: #374151;
+  .modal-backdrop.hidden { display: none; }
+  .modal-box {
+    background: #2d2218; border: 1px solid #4a3a2a;
+    border-radius: 16px; width: 100%; max-width: 560px;
+    max-height: 80vh; overflow-y: auto;
+    box-shadow: 0 24px 48px rgba(0,0,0,.5);
   }
-  .footer-links { display: flex; align-items: center; gap: 20px; }
-  .footer-links a {
-    font-size: 12px; color: #64748b; text-decoration: none;
-    transition: color .15s;
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 24px; border-bottom: 1px solid #4a3a2a;
   }
-  .footer-links a:hover { color: #f48c25; }
+  .modal-title { font-size: 16px; font-weight: 700; color: #f9fafb; }
+  .modal-close-btn {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: none; border: none; cursor: pointer;
+    color: #64748b; display: flex; align-items: center; justify-content: center;
+    transition: all .15s;
+  }
+  .modal-close-btn:hover { background: rgba(244,140,37,.1); color: #f48c25; }
+  .modal-body { padding: 24px; }
+
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 480px) { .detail-grid { grid-template-columns: 1fr; } }
+  .detail-section-title {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .1em; color: rgba(244,140,37,.6); margin-bottom: 12px;
+  }
+  .detail-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0; border-bottom: 1px solid rgba(74,58,42,.4);
+    font-size: 13px;
+  }
+  .detail-row span { color: #64748b; }
+  .detail-row strong { color: #f1f5f9; font-weight: 600; }
+
+  /* ── TOAST ── */
+  .ord-toast {
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 16px; border-radius: 10px;
+    font-size: 13px; font-weight: 600; color: #fff;
+    background: #2d2218; border: 1px solid #4a3a2a;
+    box-shadow: 0 4px 16px rgba(0,0,0,.4);
+    transition: opacity .3s;
+    font-family: 'Manrope', sans-serif;
+  }
+  .ord-toast-success { border-left: 4px solid #10b981; }
+  .ord-toast-success .material-symbols-outlined { color: #10b981; }
+  .ord-toast-error { border-left: 4px solid #ef4444; }
+  .ord-toast-error .material-symbols-outlined { color: #ef4444; }
 </style>

@@ -1,5 +1,26 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+// Fetch settings from Database
+const { data: settingsData } = await supabase
+  .from('site_settings')
+  .select('*');
+
+// Helper to get value
+const getSetting = (key: string, _default: string) => {
+  const item = settingsData?.find((s: any) => s.key === key);
+  return item ? item.value : _default;
+};
+
+const storeName = getSetting('flysky_storeName', 'FlySky Guitar');
+const contactEmail = getSetting('flysky_contactEmail', 'hello@flyskyguitar.com');
+const storeAddress = getSetting('flysky_storeAddress', '37 Lê Thiện Trị, Phường Ngũ Hành Sơn, Thành phố Đà Nẵng');
+const contactPhone = getSetting('flysky_contactPhone', '0987 654 321');
+const socialUrl = getSetting('flysky_socialUrl', 'https://facebook.com/flyskyguitar');
+const brandColor = getSetting('flysky_brandColor', '#F48C25');
+const heroH1 = getSetting('flysky_heroH1', 'Đánh Thức Đam Mê Âm Nhạc Của Bạn');
+const heroSub = getSetting('flysky_heroSub', 'Khám phá bộ sưu tập nhạc cụ cao cấp, được tinh chỉnh hoàn hảo để mang lại cảm hứng sáng tạo bất tận cho mọi nghệ sĩ.');
 ---
 
 <AdminLayout
@@ -32,7 +53,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
             <h3 class="section-title">Thông tin cửa hàng</h3>
             <p class="section-desc">Thông tin cơ bản hiển thị trên website và hóa đơn.</p>
           </div>
-          <button class="btn-save">
+          <button class="btn-save" onclick="saveSettings()">
             <span class="material-symbols-outlined">save</span>
             Lưu thay đổi
           </button>
@@ -40,15 +61,15 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
         <div class="form-grid">
           <div class="form-group">
             <label class="form-label">Tên cửa hàng</label>
-            <input type="text" class="form-input" value="FlySky Guitar Studio" />
+            <input type="text" id="stg-store-name" class="form-input" value={storeName} />
           </div>
           <div class="form-group">
             <label class="form-label">Email liên hệ</label>
-            <input type="email" class="form-input" value="contact@flysky.vn" />
+            <input type="email" id="stg-contact-email" class="form-input" value={contactEmail} />
           </div>
           <div class="form-group form-full">
             <label class="form-label">Địa chỉ cửa hàng</label>
-            <input type="text" class="form-input" value="123 Đường Nhạc Cụ, Phường Hòa Âm, Quận Giai Điệu, TP. HCM" />
+            <input type="text" id="stg-store-address" class="form-input" value={storeAddress} />
           </div>
         </div>
       </section>
@@ -89,11 +110,11 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
         <div class="stg-two-col-right">
           <div class="icon-input-wrap">
             <span class="material-symbols-outlined inp-icon">call</span>
-            <input type="text" class="form-input inp-with-icon" value="090 123 4567" />
+            <input type="text" id="stg-contact-phone" class="form-input inp-with-icon" value={contactPhone} />
           </div>
           <div class="icon-input-wrap" style="margin-top:12px;">
             <span class="material-symbols-outlined inp-icon">public</span>
-            <input type="text" class="form-input inp-with-icon" value="https://facebook.com/flyskyguitar" />
+            <input type="text" id="stg-social-url" class="form-input inp-with-icon" value={socialUrl} />
           </div>
         </div>
       </section>
@@ -112,7 +133,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 
       <div class="bottom-actions">
         <button class="btn-cancel">Hủy bỏ</button>
-        <button class="btn-update">Cập nhật tất cả</button>
+        <button class="btn-update" onclick="saveSettings()">Cập nhật tất cả</button>
       </div>
     </div>
   </div>
@@ -120,32 +141,6 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
   <!-- ── TAB: GIAO DIỆN ── -->
   <div id="tab-appearance" class="tab-pane" style="display:none;">
     <div class="app-content">
-
-      <!-- Logo Section -->
-      <section class="app-section">
-        <div class="app-sec-head">
-          <span class="material-symbols-outlined app-sec-icon">image</span>
-          <h2 class="app-sec-title">Tùy chỉnh Logo</h2>
-        </div>
-        <div class="logo-grid">
-          <div class="logo-upload-card">
-            <div class="logo-upload-preview light-bg">
-              <span class="material-symbols-outlined logo-cam">add_a_photo</span>
-              <div class="logo-upload-hover"><p class="logo-hover-text">Tải ảnh lên</p></div>
-            </div>
-            <h3 class="logo-card-title">Logo Chế độ sáng (Light)</h3>
-            <p class="logo-card-desc">Khuyên dùng: PNG hoặc SVG nền trong suốt, tỷ lệ 3:1</p>
-          </div>
-          <div class="logo-upload-card">
-            <div class="logo-upload-preview dark-bg">
-              <span class="material-symbols-outlined logo-cam dark-cam">add_a_photo</span>
-              <div class="logo-upload-hover"><p class="logo-hover-text">Tải ảnh lên</p></div>
-            </div>
-            <h3 class="logo-card-title">Logo Chế độ tối (Dark)</h3>
-            <p class="logo-card-desc">Khuyên dùng: Bản sáng màu để hiển thị tốt trên nền tối</p>
-          </div>
-        </div>
-      </section>
 
       <!-- Color Section -->
       <section class="app-section">
@@ -170,7 +165,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
           <div class="hex-row">
             <div class="hex-wrap">
               <label class="hex-label">Mã màu Hex</label>
-              <input type="text" class="hex-input" value="#f48c25" />
+              <input type="text" id="stg-brand-color" class="hex-input" value={brandColor} />
             </div>
           </div>
         </div>
@@ -204,11 +199,11 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
           <div class="banner-fields">
             <div class="form-group">
               <label class="form-label">Tiêu đề chính (H1)</label>
-              <input type="text" class="form-input" placeholder="Nhập tiêu đề banner..." />
+              <input type="text" id="stg-hero-h1" class="form-input" placeholder="Nhập tiêu đề banner..." value={heroH1} />
             </div>
             <div class="form-group">
               <label class="form-label">Lời kêu gọi hành động (CTA)</label>
-              <input type="text" class="form-input" placeholder="Ví dụ: Khám phá ngay" />
+              <input type="text" id="stg-hero-sub" class="form-input" placeholder="Ví dụ: Đàn guitar thủ công..." value={heroSub} />
             </div>
           </div>
         </div>
@@ -262,7 +257,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
       <!-- Save Actions -->
       <div class="app-actions">
         <button class="btn-cancel">Hủy thay đổi</button>
-        <button class="btn-save">
+        <button class="btn-save" onclick="saveSettings()">
           <span class="material-symbols-outlined">save</span>
           Lưu cấu hình
         </button>
@@ -591,26 +586,96 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
   (window as any).switchTab = switchTab;
 
   // Header Logo Upload Handlers
+  // Save Settings Function
+  async function saveSettings() {
+    const fields = [
+      { id: 'stg-store-name', key: 'flysky_storeName' },
+      { id: 'stg-contact-email', key: 'flysky_contactEmail' },
+      { id: 'stg-store-address', key: 'flysky_storeAddress' },
+      { id: 'stg-contact-phone', key: 'flysky_contactPhone' },
+      { id: 'stg-social-url', key: 'flysky_socialUrl' },
+      { id: 'stg-brand-color', key: 'flysky_brandColor' },
+      { id: 'stg-hero-h1', key: 'flysky_heroH1' },
+      { id: 'stg-hero-sub', key: 'flysky_heroSub' }
+    ];
+
+    const settingsToSave = [];
+    fields.forEach(field => {
+      const el = document.getElementById(field.id) as HTMLInputElement;
+      if (el) {
+        settingsToSave.push({ key: field.key, value: el.value });
+      }
+    });
+
+    try {
+      const res = await fetch('/api/settings/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ settings: settingsToSave })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('Đã lưu dữ liệu cài đặt thành công! Tải lại trang chủ để xem kết quả.');
+      } else {
+        alert('Lỗi lưu cấu hình: ' + data.error);
+      }
+    } catch (e) {
+      alert('Lỗi kết nối máy chủ');
+    }
+  }
+  (window as any).saveSettings = saveSettings;
+
   const logoInput = document.getElementById('logo-upload-input');
   const previewImg = document.getElementById('logo-preview-img');
   
   if (logoInput && previewImg) {
-    logoInput.addEventListener('change', (e: Event) => {
+    logoInput.addEventListener('change', async (e: Event) => {
       const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          const dataUrl = ev.target?.result as string;
+      if (!file) return;
+
+      try {
+        // Hiển thị trạng thái đang upload
+        const originalText = document.querySelector('.logo-info .form-label')?.textContent;
+        const submitBtn = document.querySelector('.logo-info .btn-upload') as HTMLButtonElement;
+        
+        if (submitBtn) submitBtn.textContent = 'Đang tải lên...';
+        if (submitBtn) submitBtn.disabled = true;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        // Gọi API upload
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          const publicUrl = result.url;
+          
           // Update preview
-          (previewImg as HTMLImageElement).src = dataUrl;
+          (previewImg as HTMLImageElement).src = publicUrl;
           // Save to localStorage
-          localStorage.setItem('flysky_custom_logo', dataUrl);
+          localStorage.setItem('flysky_custom_logo', publicUrl);
+          
           // Also update any other logos on the page immediately
           document.querySelectorAll('.flysky-global-logo').forEach((img) => {
-            (img as HTMLImageElement).src = dataUrl;
+            (img as HTMLImageElement).src = publicUrl;
           });
-        };
-        reader.readAsDataURL(file);
+          
+          alert('Upload logo lên Cloudflare R2 thành công!');
+        } else {
+          throw new Error(result.error || 'Upload thất bại');
+        }
+      } catch (error: any) {
+        console.error('Lỗi upload:', error);
+        alert('Có lỗi xảy ra khi upload: ' + error.message);
+      } finally {
+        const submitBtn = document.querySelector('.logo-info .btn-upload') as HTMLButtonElement;
+        if (submitBtn) submitBtn.textContent = 'Tải lên ảnh mới';
+        if (submitBtn) submitBtn.disabled = false;
       }
     });
   }

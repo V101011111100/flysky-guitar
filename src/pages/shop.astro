@@ -2,15 +2,37 @@
 import Layout from '../layouts/Layout.astro';
 import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
-import { products } from '../data/products';
+import { supabase } from '../lib/supabase';
 
+// Lấy danh mụć thực tế từ DB
+const { data: catData } = await supabase.from('categories').select('*');
 const categories = [
   { id: 'all', label: 'Tất cả' },
-  { id: 'electric', label: 'Guitar Điện' },
-  { id: 'acoustic', label: 'Guitar Acoustic' },
-  { id: 'bass', label: 'Guitar Bass' },
-  { id: 'piano', label: 'Piano' },
+  ...(catData || []).map(c => ({ id: c.slug, label: c.name }))
 ];
+
+// Lấy sản phẩm từ DB — chỉ hiển thị sản phẩm active & out_of_stock (không hiện draft)
+const { data: prodData } = await supabase
+  .from('products')
+  .select(`*, categories(name, slug)`)
+  .in('status', ['active', 'out_of_stock'])
+  .order('is_featured', { ascending: false })
+  .order('created_at', { ascending: false });
+
+const products = (prodData || []).map(p => ({
+  id: p.slug, // using slug as id for URL
+  category: p.categories?.slug || 'other',
+  categoryLabel: p.categories?.name || 'Khác',
+  name: p.name,
+  description: p.description ? (p.description.length > 100 ? p.description.substring(0, 100) + '...' : p.description) : 'Nhạc cụ chất lượng cao, chế tác tỉ mỉ.',
+  price: p.price,
+  priceFormatted: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p.price || 0),
+  image: p.main_image_url || 'https://images.unsplash.com/photo-1541689592655-f5f52825a3b8?auto=format&fit=crop&q=80',
+  rating: 5,
+  reviews: Math.floor(Math.random() * 50) + 10,
+  inStock: p.status === 'active',
+  badge: p.is_featured ? 'Nổi bật' : (p.status === 'out_of_stock' ? 'Hết hàng' : null)
+}));
 ---
 
 <Layout title="Cửa hàng Guitar | FlySky" description="Khám phá bộ sưu tập guitar điện, acoustic và bass cao cấp tại FlySky. Chất lượng thủ công, âm thanh đỉnh cao.">
@@ -61,10 +83,11 @@ const categories = [
         {products.map((product) => (
           <a
             href={`/products/${product.id}`}
-            class="product-card group flex flex-col bg-card-dark rounded-xl overflow-hidden hover:shadow-[0_0_24px_rgba(244,140,37,0.18)] transition-all duration-300 border border-border-dark cursor-pointer"
+            class={`product-card group flex flex-col bg-card-dark rounded-xl overflow-hidden transition-all duration-300 border cursor-pointer ${product.inStock ? 'hover:shadow-[0_0_24px_rgba(244,140,37,0.18)] border-border-dark' : 'border-border-dark/40 opacity-70'}`}
             data-cat={product.category}
             data-price={product.price}
             data-rating={product.rating}
+            data-instock={product.inStock ? '1' : '0'}
           >
             <!-- Image -->
             <div class="aspect-square w-full bg-[#2a2015] relative p-4 flex items-center justify-center overflow-hidden">
@@ -73,7 +96,7 @@ const categories = [
                 style={`background-image: url("${product.image}");`}
               ></div>
               {product.badge && (
-                <div class="absolute top-3 left-3 bg-primary text-background-dark text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">
+                <div class={`absolute top-3 left-3 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider ${product.inStock ? 'bg-primary text-background-dark' : 'bg-white/20 text-white/80'}`}>
                   {product.badge}
                 </div>
               )}
@@ -102,10 +125,14 @@ const categories = [
 
               <!-- Price + Arrow -->
               <div class="mt-auto flex items-center justify-between pt-3 border-t border-border-dark/50">
-                <span class="text-white font-extrabold text-base">{product.priceFormatted}</span>
-                <span class="bg-border-dark group-hover:bg-primary text-white group-hover:text-background-dark rounded-full p-2 transition-colors">
-                  <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
-                </span>
+                <span class={`font-extrabold text-base ${product.inStock ? 'text-white' : 'text-white/50 line-through'}`}>{product.priceFormatted}</span>
+                {product.inStock ? (
+                  <span class="bg-border-dark group-hover:bg-primary text-white group-hover:text-background-dark rounded-full p-2 transition-colors">
+                    <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+                  </span>
+                ) : (
+                  <span class="text-white/40 text-xs font-bold">Hết hàng</span>
+                )}
               </div>
             </div>
           </a>

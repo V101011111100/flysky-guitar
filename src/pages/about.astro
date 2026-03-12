@@ -1,0 +1,129 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Layout title="Câu chuyện thương hiệu | FlySky Guitar" description="Tìm hiểu về hành trình, sứ mệnh và đam mê dành cho âm nhạc của FlySky Guitar.">
+  <Navbar />
+
+  <!-- Breadcrumb -->
+  <div class="bg-background-dark border-b border-border-dark/50">
+    <div class="mx-auto max-w-7xl px-4 lg:px-10 py-3 flex items-center gap-2 text-sm text-text-muted">
+      <a href="/" class="hover:text-primary transition-colors">Trang chủ</a>
+      <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+      <span class="text-white/60">Câu chuyện thương hiệu</span>
+    </div>
+  </div>
+
+  <!-- Hero Section -->
+  <section class="relative py-20 lg:py-28 overflow-hidden bg-background-dark">
+    <!-- Decorative background elements -->
+    <div class="absolute inset-0 bg-gradient-to-tr from-primary/10 via-background-dark to-background-dark z-0"></div>
+    <div class="absolute top-0 right-0 w-96 h-96 bg-primary/20 blur-[100px] rounded-full mix-blend-screen opacity-50 z-0 pointer-events-none"></div>
+
+    <div class="relative mx-auto max-w-7xl px-4 lg:px-10 z-10">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        <div>
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold mb-6 tracking-wider uppercase">
+            <span class="material-symbols-outlined text-[16px]">history_edu</span>
+            Về chúng tôi
+          </div>
+          <h1 class="text-white text-4xl lg:text-5xl font-extrabold mb-6 leading-tight">Mang âm nhạc đích thực <br/><span class="text-primary italic">chạm đến tâm hồn bạn</span></h1>
+          <p class="text-text-muted text-base lg:text-lg mb-8 leading-relaxed">
+            Hành trình của FlySky Guitar không chỉ là mua bán nhạc cụ. Chúng tôi được sinh ra từ niềm đam mê chế tác và khao khát kết nối những người yêu nhạc với những cây đàn có 'linh hồn' thực sự. 
+          </p>
+          <div class="flex flex-col sm:flex-row gap-4">
+            <a href="/shop" class="bg-primary hover:bg-primary/90 text-background-dark font-extrabold py-3 px-8 rounded-xl transition-all hover:shadow-[0_0_15px_rgba(244,140,37,0.4)] text-center flex items-center justify-center gap-2">
+              Xem sản phẩm
+              <span class="material-symbols-outlined text-sm">arrow_forward</span>
+            </a>
+            <a href="/contact" class="bg-card-dark hover:bg-border-dark text-white font-semibold py-3 px-8 rounded-xl border border-border-dark transition-all text-center">
+              Liên hệ hợp tác
+            </a>
+          </div>
+        </div>
+        <div class="relative">
+          <div class="aspect-[4/3] rounded-3xl overflow-hidden border border-border-dark/50 relative shadow-2xl z-10 group">
+            <div class="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors z-10"></div>
+            <img src="https://images.unsplash.com/photo-1550985543-f47f38aeeaec?q=80&w=2070&auto=format&fit=crop" alt="Guitar workshop" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+            
+            <div class="absolute bottom-6 left-6 z-20">
+              <div class="bg-background-dark/80 backdrop-blur-md rounded-2xl p-4 border border-white/10 flex items-center gap-4">
+                <div class="p-3 bg-primary rounded-xl flex items-center justify-center text-background-dark">
+                  <span class="material-symbols-outlined text-2xl">workspace_premium</span>
+                </div>
+                <div>
+                  <p class="text-white font-bold text-lg">10 Năm</p>
+                  <p class="text-text-muted text-xs">Kinh nghiệm phân phối & chế tác</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="absolute -top-6 -right-6 w-full h-full border-2 border-primary/30 rounded-3xl -z-0"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Core Values -->
+  <section class="py-20 bg-card-dark border-t border-border-dark/50 border-b">
+    <div class="mx-auto max-w-7xl px-4 lg:px-10">
+      <div class="text-center max-w-2xl mx-auto mb-16">
+        <h2 class="text-white text-3xl font-bold mb-4">Giá trị cốt lõi</h2>
+        <p class="text-text-muted">Chúng tôi cam kết duy trì 3 nguyên tắc vàng trong mọi sản phẩm và dịch vụ mà FlySky Guitar cung cấp đến tay khách hàng.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+        {[
+          { icon: 'verified', title: 'Chất lượng nguyên bản', desc: 'Mọi cây đàn đều được trải qua quy trình đánh giá khắt khe trước khi lên kệ, đảm bảo âm thanh và cấu tạo hoàn hảo nhất.' },
+          { icon: 'handshake', title: 'Đồng hành tận tâm', desc: 'Không chỉ bán hàng, chúng tôi ở đây để hỗ trợ, tư vấn kỹ thuật và bảo hành bảo dưỡng trọn đời cho bạn.' },
+          { icon: 'music_note', title: 'Tinh thần nghệ sĩ', desc: 'Tôn trọng sự đa dạng trong phong cách chơi. Mỗi cây đàn mang một câu chuyện phù hợp với cá tính của từng người thợ.' },
+        ].map(item => (
+          <div class="bg-background-dark p-8 rounded-3xl border border-border-dark flex flex-col items-center group hover:border-primary/50 transition-colors">
+            <div class="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-6 group-hover:bg-primary/20 transition-colors group-hover:scale-110 duration-300">
+              <span class="material-symbols-outlined text-primary text-3xl">{item.icon}</span>
+            </div>
+            <h3 class="text-white text-xl font-bold mb-3">{item.title}</h3>
+            <p class="text-text-muted text-sm leading-relaxed">{item.desc}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- History Timeline (Optional/Simple) -->
+  <section class="py-24 bg-background-dark">
+    <div class="mx-auto max-w-3xl px-4 lg:px-10">
+       <div class="text-left mb-16">
+        <h2 class="text-white text-3xl font-bold mb-4">Cột mốc đáng nhớ</h2>
+        <p class="text-text-muted">Những dấu ấn hình thành nên thương hiệu ngày hôm nay.</p>
+      </div>
+
+      <div class="relative border-l-2 border-border-dark pl-8 ml-4 lg:ml-0 space-y-12">
+        <div class="relative">
+          <div class="absolute -left-[41px] top-1 w-5 h-5 rounded-full border-4 border-background-dark bg-primary"></div>
+          <p class="text-primary font-bold text-sm mb-1 tracking-widest">2016</p>
+          <h4 class="text-white text-lg font-bold mb-2">Lời chào sân</h4>
+          <p class="text-text-muted text-sm leading-relaxed">FlySky Guitar được hình thành như một xưởng sửa chữa và chỉnh âm nhỏ tại Đà Nẵng, phục vụ anh em chơi nhạc indie địa phương.</p>
+        </div>
+        
+        <div class="relative">
+          <div class="absolute -left-[41px] top-1 w-5 h-5 rounded-full border-4 border-background-dark bg-border-dark"></div>
+          <p class="text-text-muted font-bold text-sm mb-1 tracking-widest">2019</p>
+          <h4 class="text-white text-lg font-bold mb-2">Showroom đầu tiên</h4>
+          <p class="text-text-muted text-sm leading-relaxed">Sau 3 năm tích lũy, chúng tôi chính thức khai trương showroom offline đầu tiên trên đường Lê Thiện Trị và ký kết hợp đồng phân phối chính thức với các thương hiệu lớn.</p>
+        </div>
+
+        <div class="relative">
+          <div class="absolute -left-[41px] top-1 w-5 h-5 rounded-full border-4 border-background-dark bg-border-dark"></div>
+          <p class="text-text-muted font-bold text-sm mb-1 tracking-widest">2023 - NAY</p>
+          <h4 class="text-white text-lg font-bold mb-2">Vươn xa mạnh mẽ</h4>
+          <p class="text-text-muted text-sm leading-relaxed">Trở thành đối tác lớn, nâng cấp trải nghiệm mua bán trực tuyến toàn quốc và mang đến những đặc quyền bảo hành chưa từng có.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <Footer />
+</Layout>

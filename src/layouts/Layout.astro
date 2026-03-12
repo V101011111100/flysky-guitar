@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import FloatingWidgets from '../components/FloatingWidgets.astro';
+import { supabase } from '../lib/supabase';
 
 interface Props {
   title?: string;
@@ -8,6 +9,25 @@ interface Props {
 }
 
 const { title = 'FlySky Guitar - Đàn Guitar Thủ Công Cao Cấp', description = 'Đàn guitar thủ công cao cấp dành cho những nghệ sĩ hiện đại. Khơi dậy âm thanh của bạn với FlySky Guitar.' } = Astro.props;
+
+// Fetch settings from Database
+const { data: settingsData } = await supabase.from('site_settings').select('*');
+const getSetting = (key: string, _default: string) => {
+  const item = settingsData?.find((s: any) => s.key === key);
+  return item ? item.value : _default;
+};
+
+const clientSettings = {
+  logo: '', // Logo requires client-side loading or DB, localStorage is not available in SSR
+  flysky_storeName: getSetting('flysky_storeName', 'FlySky Guitar Studio'),
+  flysky_contactEmail: getSetting('flysky_contactEmail', 'contact@flysky.vn'),
+  flysky_storeAddress: getSetting('flysky_storeAddress', '37 Lê Thiện Trị'),
+  flysky_contactPhone: getSetting('flysky_contactPhone', '090 123 4567'),
+  flysky_socialUrl: getSetting('flysky_socialUrl', 'https://facebook.com/flyskyguitar'),
+  flysky_heroH1: getSetting('flysky_heroH1', 'Đánh Thức Đam Mê Âm Nhạc Của Bạn'),
+  flysky_heroSub: getSetting('flysky_heroSub', 'Khám phá bộ sưu tập nhạc cụ cao cấp, được tinh chỉnh hoàn hảo để mang lại cảm hứng sáng tạo bất tận cho mọi nghệ sĩ.'),
+  flysky_brandColor: getSetting('flysky_brandColor', '#f48c25'),
+};
 ---
 
 <!doctype html>
@@ -28,13 +48,36 @@ const { title = 'FlySky Guitar - Đàn Guitar Thủ Công Cao Cấp', descriptio
   <body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display overflow-x-hidden">
     <slot />
     <FloatingWidgets />
-    <script>
-      const savedLogo = localStorage.getItem('flysky_custom_logo');
-      if (savedLogo) {
-        document.querySelectorAll('.flysky-global-logo').forEach((img) => {
-          (img as HTMLImageElement).src = savedLogo;
+    <script is:inline define:vars={{ clientSettings }}>
+      document.addEventListener('DOMContentLoaded', () => {
+        // 1. Cập nhật Logo
+        if (clientSettings.logo || localStorage.getItem('flysky_custom_logo')) {
+          const customLogo = localStorage.getItem('flysky_custom_logo') || clientSettings.logo;
+          document.querySelectorAll('.flysky-global-logo').forEach((img) => {
+            img.src = customLogo;
+          });
+        }
+
+        // 2. Cập nhật Nội dung chữ (Text Settings)
+        Object.keys(clientSettings).forEach(key => {
+          if (key === 'logo' || key === 'flysky_brandColor') return;
+          const val = clientSettings[key];
+          if (val) {
+            document.querySelectorAll(`[data-setting="${key}"]`).forEach(el => {
+              if (el.tagName === 'A') {
+                  el.href = val;
+              } else {
+                  el.innerHTML = val;
+              }
+            });
+          }
         });
-      }
+
+        // 3. Cập nhật Màu chủ đạo (Accent Color)
+        if (clientSettings.flysky_brandColor) {
+          document.documentElement.style.setProperty('--color-primary', clientSettings.flysky_brandColor);
+        }
+      });
     </script>
   </body>
 </html>

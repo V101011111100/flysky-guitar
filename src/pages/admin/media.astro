@@ -12,29 +12,8 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
           <span class="material-symbols-outlined">create_new_folder</span>
         </button>
       </div>
-      <nav class="dir-nav">
-        <a class="nav-item nav-item-active" href="#">
-          <span class="material-symbols-outlined material-fill">folder_open</span>
-          <span class="nav-text">Tất cả tệp</span>
-        </a>
-        <div class="nav-group-wrapper">
-          <a class="nav-item" href="#">
-            <span class="material-symbols-outlined">folder</span>
-            <span class="nav-text">Guitar Acoustic</span>
-          </a>
-          <div class="sub-nav">
-            <a class="sub-item" href="#">Dáng Dreadnought</a>
-            <a class="sub-item" href="#">Dáng Grand Auditorium</a>
-          </div>
-        </div>
-        <a class="nav-item" href="#">
-          <span class="material-symbols-outlined">folder</span>
-          <span class="nav-text">Guitar Electric</span>
-        </a>
-        <a class="nav-item" href="#">
-          <span class="material-symbols-outlined">folder</span>
-          <span class="nav-text">Phụ kiện</span>
-        </a>
+      <nav class="dir-nav" id="dir-nav">
+        <!-- Dynamically populated from R2 folders -->
       </nav>
     </aside>
 
@@ -55,10 +34,12 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
           </div>
         </div>
         <div class="header-actions">
-          <button class="btn-upload">
+          <label class="btn-upload" style="cursor: pointer;">
+            <span class="material-upload"></span>
             <span class="material-symbols-outlined">cloud_upload</span>
             Tải lên mới
-          </button>
+            <input type="file" id="file-upload" style="display: none;" accept="image/*,video/*" multiple />
+          </label>
           <button class="icon-btn">
             <span class="material-symbols-outlined">notifications</span>
           </button>
@@ -88,120 +69,365 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 
       <!-- Media Grid -->
       <div class="grid-scroll-area">
-        <div class="media-grid">
-          <!-- Folder Item -->
-          <div class="grid-folder">
-            <span class="material-symbols-outlined folder-icon material-fill">folder</span>
-            <p class="folder-name">Guitar Custom 2024</p>
-          </div>
-          <!-- Image Item Selected -->
-          <div class="grid-item item-selected">
-            <div class="item-badge-checked">
-              <span class="material-symbols-outlined material-fill">check</span>
-            </div>
-            <div class="item-img" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDiWmWorm0hEJME-NA3eGddllIvTkwRtzNVNf_sID5Hn-TSW6VrRDbac6zNgeVDDwUO0FnS41ZMplD1qPCnTwHpeUa2bsPa65uw8XShK31oWa7MYMvEVlBzogqQJ9xXcQ-ODCEfilYUNGIN9yInp799s30U-BA_YQDw35nDZF5DoFHPj67m2hmyyRem5fR-S3BW-3KVmaMMX4tpj2zCUUuUgmh8r78wGTnh5BNzVUTndd6-aAKl7KRyY5qQ4yU6NlCohm7bsHp9iZcS')"></div>
-            <div class="item-overlay item-overlay-visible">
-              <p class="item-title">acoustic-premium-01.jpg</p>
-            </div>
-          </div>
-          <!-- Other Images -->
-          <div class="grid-item">
-            <div class="item-badge-hover"></div>
-            <div class="item-img" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDPWxoeL8b_1sZgGsvZrU9T4g7tBUV5mcORmXg4s9SHHFMLnYUYR9MP74mKqjMlE4mddGyUzLk68hrbBcyPP53uGrPzrrAlQUKVjvwdDqgP-l6ilVt5qqVEmR4bQKaqh2Sjjh26NQi71rci3cNefGcsl4nti0qF6YRHZ5yo3N18uSi_JiV76oiZ1ehPA4n_ayqSC4i0k6oVTILYTh-LEUfNegOgwRWGny9ZXtSsR3eYSSa5RvxYokFvrxwO3U5SZ__NlvfXuUu9ay2o')"></div>
-            <div class="item-overlay">
-              <p class="item-title">wood-texture-dark.png</p>
-            </div>
-          </div>
-          <div class="grid-item">
-            <div class="item-img" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD8KiIFx7YP3OnpUu3YZD6hH9JOZ8nsiPyRKsvTnb8rf6N2VnTt7tmEuWjoek8Muua7BZIi0D7SzwI-61Eae8ws0HRW-GFDpvM5k4fmHVl2Qz-oV6KM-hxJDL3Gps_1iecluEV6MwiRenWNLa81QtK2PF388f32-dNmFnMA0-bLtfXbrCtS9x2UQxhNn90djJf-nyf9p8G2fuhrVWjcEjGg4qndNa0FI33kfj7_kZ_NZeAwrqmWSbi_IyXrfWvsj3TWLfL_HN6WWg63')"></div>
-            <div class="item-overlay">
-              <p class="item-title">workshop-vibes.webp</p>
-            </div>
-          </div>
-          <div class="grid-item">
-            <div class="item-img" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDNXAgsKh1vq1v6thn_f2A3ucMJQzsatTnirvjqcImgKHFrbAlyQeWmMpsf9lXgumdxE02wHnt3MHqJ74JyJstACLTIwY2Y4Gp-CPeU1GK7dF4MDfoIyVYeM0BFPeQBeIuE3cBBTRYke0tP788bavESPjX3h_gV5o8LGbLpIx_hfPegtbFG_fIOht4o0LfKORtxxhxN7YcG0rAhGFtsR561rggNBvLTtGQJ2sGHPh52-H0Fw2YTIFNM8dKFRIiMo5uYlG3ctGpMu5WX')"></div>
-            <div class="item-overlay">
-              <p class="item-title">strings-detail-02.avif</p>
-            </div>
-          </div>
-          <div class="grid-item">
-            <div class="item-img" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBesLE28U94wEn4ajidw7jYgyQbkk7GCRl4F-xVUbfbl-fK-0tBuNhDxt8A0gHcBe5oFnAw9x8SRWD0wdXxF3CPbaOl69NnY1gmvXTWgKKn5e_gN-idMvYSvcq-U8MwSpN6D31Z6KO_U1NnetdlsDfIyred0CqGshoFLa4mR28s49Kr5zZEzZ3u7-hi-tuCVEnys6uNW4PRd6YvLqrq_0kmZ3sAsam3nVV4_Hw3ho-kFi08wNdrYWLaZtYnunTp5BZdUBu3vTuQe6cU')"></div>
-            <div class="item-overlay">
-              <p class="item-title">electric-shadow.jpg</p>
-            </div>
-          </div>
-          <div class="grid-item">
-            <div class="item-img" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAKt3BcbClmjBYqmQjQmaap6ceRHF1oYMwsBID6MOZq4DN8u4GaNdaIKCbuhXmqcpY0TTvPlXcbuMbI93NFl2pATmhMHNDV7sKIXyJvMZMsB0cMl6L5q9AyP-87qWL0kqoZDOlwhwx8ZPCj0QTtwpT4BBdtIdUUF8yuqwF62PrIqBLD0Fl7ihq2vaDLLaCkT9u492xuWFkol_3UnuzM5OCnWFWIOkKib5pYIdGjAfEzKYtyyC5CTKV09nYU0bWLXkZgO00zpVOLzQ9x')"></div>
-            <div class="item-overlay">
-              <p class="item-title">tools-luthier.jpg</p>
-            </div>
-          </div>
-          <div class="grid-item">
-            <div class="item-img" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBTzi974ZN6oRWoKa1A5EhzDC3ZxUz-cPmGPAOQeVai3DZ_2jmLifjHeS0wETv5VGi6TKQtovHJ-ke2EwdVHdRZEwiWi3090BgmvtfD6B9p0r6xDeuYND0kE1_0xhfV9Oaqk9u8_6bliphj5k8JNaIlmA1gvMpLnU14QMe0p8Kg7RCAvLbEI5mxCfPRLZ9sHlGtav1y7soJwXA3YAUkkEyykynwqCJClk1G8Vrd5JYZWWWP7u2bmFw8tM2EA_9fqwAg95ErTS-y71zL')"></div>
-            <div class="item-overlay">
-              <p class="item-title">logo-monochrome.svg</p>
-            </div>
-          </div>
+        <div id="media-loading" style="display: flex; justify-content: center; padding: 40px; color: #94a3b8;">
+          <span class="material-symbols-outlined" style="animation: spin 1s linear infinite;">autorenew</span>
+          <span style="margin-left: 8px;">Đang tải danh sách...</span>
         </div>
+        <div class="media-grid" id="media-grid" style="display: none;">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
       </div>
     </main>
 
     <!-- Details Sidebar -->
-    <aside class="details-sidebar">
+    <aside class="details-sidebar" id="details-sidebar" style="display: none;">
       <div class="details-header">
         <h3 class="details-title">
           <span class="material-symbols-outlined text-primary">info</span>
           Chi tiết tệp
         </h3>
       </div>
-      <div class="details-scroll">
-        <!-- Preview -->
-        <div class="preview-box">
-          <div class="preview-img" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDkH_87x4XiikdNTgNjlg24BJWeTzQmG2lcRaalZJnN4xEhFmRD8O7T1wJo0QWEPg-EbrbAmu9Pso9Zb4-AqQSsqsrFcu0lRdZA6QBQhXrlpS8upPsm2eVXLT_6wJvj6SNHhYlvW6YXLdZG741H6i5JlVd7mJDLoMTs7KCTW5WLo-mNbYUd_nIyQzR4RIGaB3wr98jJBkuKckyLTPMpeiutOCIB-D40dCv2urrZqkaVmsbL3bbsziqyt2jwQy2yfwEmI28WnVr1geTa')"></div>
-        </div>
-        <!-- Info Grid -->
-        <div class="info-group">
-          <div>
-            <label class="info-label">Tên tệp</label>
-            <p class="info-val break-words">acoustic-premium-01.jpg</p>
-          </div>
-          <div class="info-grid-2">
-            <div>
-              <label class="info-label">Kích thước</label>
-              <p class="info-val">1.2 MB</p>
-            </div>
-            <div>
-              <label class="info-label">Kích thước ảnh</label>
-              <p class="info-val">2400 x 1600 px</p>
-            </div>
-          </div>
-          <div>
-            <label class="info-label">Tối ưu hóa</label>
-            <div class="tag-flex">
-              <span class="tag tag-green">WEBP</span>
-              <span class="tag tag-amber">AVIF READY</span>
-            </div>
-          </div>
-          <div>
-            <label class="info-label">Văn bản thay thế (Alt Text)</label>
-            <textarea class="info-textarea" placeholder="Mô tả cho công cụ tìm kiếm...">Ảnh đàn guitar acoustic gỗ cao cấp trưng bày tại showroom FlySky.</textarea>
-          </div>
-        </div>
+      <div class="details-scroll" id="details-content">
+        <!-- Content will be injected here -->
       </div>
       <!-- Sidebar Actions -->
       <div class="details-actions">
-        <button class="btn-block btn-primary-lg">
-          <span class="material-symbols-outlined icon-norm">check_circle</span>
-          Sử dụng ảnh này
+        <button class="btn-block btn-primary-lg" id="btn-copy-url">
+          <span class="material-symbols-outlined icon-norm">content_copy</span>
+          Sao chép liên kết URL
         </button>
-        <button class="btn-block btn-danger-out">
+        <button class="btn-block btn-danger-out" id="btn-delete-file">
           <span class="material-symbols-outlined icon-norm">delete_forever</span>
           Xóa tệp
         </button>
       </div>
     </aside>
   </div>
+  
+  <div id="toast-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px;"></div>
 </AdminLayout>
+
+<script>
+  let filesData = [];
+  let selectedFile = null;
+
+  const mediaGrid = document.getElementById('media-grid');
+  const mediaLoading = document.getElementById('media-loading');
+  const fileUpload = document.getElementById('file-upload');
+  const detailsSidebar = document.getElementById('details-sidebar');
+  const detailsContent = document.getElementById('details-content');
+  const btnDelete = document.getElementById('btn-delete-file');
+  const btnCopy = document.getElementById('btn-copy-url');
+  
+  function showToast(message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `<span class="material-symbols-outlined">${type === 'success' ? 'check_circle' : 'error'}</span> ${message}`;
+    container.appendChild(toast);
+    
+    // Animate in
+    setTimeout(() => toast.style.transform = 'translateY(0)', 10);
+    
+    // Remove after 3s
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(20px)';
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  }
+
+  function formatBytes(bytes, decimals = 2) {
+      if (!+bytes) return '0 Bytes';
+      const k = 1024;
+      const dm = decimals < 0 ? 0 : decimals;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+  }
+
+  function formatDate(dateString) {
+      const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+      return new Date(dateString).toLocaleDateString('vi-VN', options);
+  }
+
+  function getFileName(key) {
+      const parts = key.split('/');
+      return parts[parts.length - 1];
+  }
+
+  function renderGrid() {
+      if (!mediaGrid) return;
+      mediaGrid.innerHTML = '';
+      
+      filesData.forEach(file => {
+          const isSelected = selectedFile && selectedFile.key === file.key;
+          const fileName = getFileName(file.key);
+          
+          const item = document.createElement('div');
+          item.className = `grid-item ${isSelected ? 'item-selected' : ''}`;
+          item.onclick = () => selectFile(file);
+          
+          const badgeChecked = isSelected ? `
+            <div class="item-badge-checked">
+              <span class="material-symbols-outlined material-fill">check</span>
+            </div>
+          ` : '<div class="item-badge-hover"></div>';
+          
+          const isLinked = file.linkedProducts && file.linkedProducts.length > 0;
+          const linkBadge = isLinked ? `
+            <div class="item-badge-linked" title="Đang được sử dụng bởi sản phẩm">
+              <span class="material-symbols-outlined material-fill" style="font-size: 14px;">link</span>
+            </div>
+          ` : '';
+          
+          item.innerHTML = `
+            ${badgeChecked}
+            ${linkBadge}
+            <div class="item-img" style="background-image: url('${file.url}')"></div>
+            <div class="item-overlay ${isSelected ? 'item-overlay-visible' : ''}">
+              <p class="item-title">${fileName}</p>
+            </div>
+          `;
+          mediaGrid.appendChild(item);
+      });
+  }
+
+  function renderSidebar() {
+      if (!selectedFile) {
+          detailsSidebar.style.display = 'none';
+          return;
+      }
+      
+      const fileName = getFileName(selectedFile.key);
+      const isImg = fileName.match(/\.(jpeg|jpg|gif|png|webp|avif|svg)$/i) != null;
+      
+      detailsContent.innerHTML = `
+        <div class="preview-box">
+          <div class="preview-img" style="${isImg ? `background-image: url('${selectedFile.url}')` : 'background: #3f3f46; display:flex; align-items:center; justify-content:center;'}">
+            ${!isImg ? '<span class="material-symbols-outlined" style="font-size: 48px; color: #94a3b8;">insert_drive_file</span>' : ''}
+          </div>
+        </div>
+        <div class="info-group">
+          <div>
+            <label class="info-label">Tên tệp</label>
+            <p class="info-val break-words">${fileName}</p>
+          </div>
+          <div class="info-grid-2">
+            <div>
+              <label class="info-label">Kích thước</label>
+              <p class="info-val">${formatBytes(selectedFile.size)}</p>
+            </div>
+            <div>
+              <label class="info-label">Ngày tải lên</label>
+              <p class="info-val" style="font-size: 11px;">${formatDate(selectedFile.lastModified)}</p>
+            </div>
+          </div>
+            <div>
+              <label class="info-label">URL Tệp</label>
+              <p class="info-val break-words" style="font-size: 11px; color: #94a3b8;">${selectedFile.url}</p>
+            </div>
+          </div>
+          ${selectedFile.linkedProducts && selectedFile.linkedProducts.length > 0 ? `
+            <div style="margin-top: 16px; padding: 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px;">
+              <div style="display:flex; align-items:center; gap:6px; color:#ef4444; font-weight:700; font-size:12px; margin-bottom: 6px;">
+                <span class="material-symbols-outlined material-fill" style="font-size:16px;">warning</span>
+                Ảnh đang được sử dụng
+              </div>
+              <ul style="margin:0; padding-left:16px; color:#fca5a5; font-size:11px;">
+                ${selectedFile.linkedProducts.map((p: string) => `<li>${p}</li>`).join('')}
+              </ul>
+              <p style="margin-top: 6px; font-size: 10px; color: #f87171;">Xóa tệp này sẽ làm mất ảnh của (các) sản phẩm trên.</p>
+            </div>
+          ` : ''}
+      `;
+      
+      detailsSidebar.style.display = 'flex';
+  }
+
+  function selectFile(file) {
+      if (selectedFile && selectedFile.key === file.key) {
+          selectedFile = null; // deselect
+      } else {
+          selectedFile = file;
+      }
+      renderGrid();
+      renderSidebar();
+  }
+
+  function renderFolderTree() {
+      const dirNav = document.getElementById('dir-nav');
+      if (!dirNav) return;
+      
+      // Extract unique folders from paths
+      const folders = new Set();
+      filesData.forEach(file => {
+          const parts = file.key.split('/');
+          // If the file is in a subfolder inside flysky-media, like 'flysky-media/folder/img.jpg'
+          if (parts.length > 2) { 
+               // e.g. parts = ['flysky-media', 'Guitar Acoustic', 'img.jpg']
+               const folderName = parts[1];
+               folders.add(folderName);
+          }
+      });
+
+      let html = `
+        <a class="nav-item nav-item-active" href="#">
+          <span class="material-symbols-outlined material-fill">folder_open</span>
+          <span class="nav-text">Tất cả tệp</span>
+        </a>
+      `;
+
+      Array.from(folders).sort().forEach(folder => {
+          html += `
+            <a class="nav-item" href="#">
+              <span class="material-symbols-outlined">folder</span>
+              <span class="nav-text">${folder}</span>
+            </a>
+          `;
+      });
+
+      dirNav.innerHTML = html;
+  }
+
+  async function fetchMedia() {
+      try {
+          mediaLoading.style.display = 'flex';
+          mediaGrid.style.display = 'none';
+          const res = await fetch('/api/media/list');
+          const data = await res.json();
+          if (data.success) {
+              filesData = data.files;
+              selectedFile = null;
+              renderFolderTree();
+              renderGrid();
+              renderSidebar();
+              mediaLoading.style.display = 'none';
+              mediaGrid.style.display = 'grid';
+          } else {
+              showToast('Không thể tải danh sách tệp', 'error');
+          }
+      } catch (e) {
+          showToast('Lỗi kết nối máy chủ', 'error');
+      }
+  }
+
+  async function handleFileUpload(e) {
+      const files = e.target.files;
+      if (!files || files.length === 0) return;
+      
+      showToast('Đang tải lên...', 'success');
+      
+      for (let i = 0; i < files.length; i++) {
+          const formData = new FormData();
+          formData.append('file', files[i]);
+          
+          try {
+              const res = await fetch('/api/upload', {
+                  method: 'POST',
+                  body: formData
+              });
+              const data = await res.json();
+              if (data.success && data.url) {
+                  // Prepend to filesData immediately for quick feedback
+                  filesData.unshift({
+                      key: data.path,
+                      url: data.url,
+                      size: files[i].size,
+                      lastModified: new Date().toISOString()
+                  });
+              } else {
+                  showToast(`Lỗi tải lên: ${files[i].name}`, 'error');
+              }
+          } catch (err) {
+              showToast(`Lỗi tải lên: ${files[i].name}`, 'error');
+          }
+      }
+      
+      showToast('Tải lên hoàn tất!', 'success');
+      selectedFile = filesData[0]; // Select the most recently uploaded
+      renderGrid();
+      renderSidebar();
+      
+      // Clear input
+      e.target.value = '';
+  }
+
+  async function handleDelete() {
+      if (!selectedFile) return;
+      
+      const isLinked = selectedFile.linkedProducts && selectedFile.linkedProducts.length > 0;
+      let confirmMessage = `Bạn có chắc muốn xóa tệp này vĩnh viễn không?`;
+      if (isLinked) {
+          confirmMessage = `CẢNH BÁO: Tệp này đang được sử dụng bởi ${selectedFile.linkedProducts.length} sản phẩm (VD: ${selectedFile.linkedProducts[0]}).\n\nNếu bạn tiếp tục xóa, ảnh của các sản phẩm này cũng sẽ bị gỡ bỏ.\nBạn có chắc chắn muốn XÓA LIÊN HOÀN không?`;
+      }
+
+      if (!confirm(confirmMessage)) return;
+      
+      const originalBtnText = btnDelete.innerHTML;
+      btnDelete.innerHTML = '<span class="material-symbols-outlined icon-norm" style="animation: spin 1s linear infinite;">autorenew</span> Đang xóa...';
+      btnDelete.disabled = true;
+      
+      try {
+          const res = await fetch('/api/media/delete', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ key: selectedFile.key })
+          });
+          const data = await res.json();
+          
+          if (data.success) {
+              filesData = filesData.filter(f => f.key !== selectedFile.key);
+              selectedFile = null;
+              renderGrid();
+              renderSidebar();
+              showToast('Đã xóa tệp thành công!', 'success');
+          } else {
+              showToast(data.error || 'Không thể xóa tệp', 'error');
+          }
+      } catch (e) {
+          showToast('Lỗi máy chủ khi xóa tệp', 'error');
+      } finally {
+          btnDelete.innerHTML = originalBtnText;
+          btnDelete.disabled = false;
+      }
+  }
+  
+  function copyToClipboard() {
+      if (!selectedFile) return;
+      navigator.clipboard.writeText(selectedFile.url).then(() => {
+          const originalText = btnCopy.innerHTML;
+          btnCopy.innerHTML = '<span class="material-symbols-outlined icon-norm">check</span> Đã sao chép!';
+          btnCopy.style.background = '#10b981';
+          showToast('Đã chép URL vào khay nhớ!', 'success');
+          
+          setTimeout(() => {
+              btnCopy.innerHTML = originalText;
+              btnCopy.style.background = '';
+          }, 2000);
+      });
+  }
+
+  const gridScrollArea = document.querySelector('.grid-scroll-area');
+  if (gridScrollArea) {
+      gridScrollArea.addEventListener('click', (e) => {
+          // If the user clicked directly on the flex container or grid container (the empty space), deselect.
+          if (e.target.classList.contains('grid-scroll-area') || e.target.id === 'media-grid') {
+              selectedFile = null;
+              renderGrid();
+              renderSidebar();
+          }
+      });
+  }
+
+  // Initialize
+  if (fileUpload) fileUpload.addEventListener('change', handleFileUpload);
+  if (btnDelete) btnDelete.addEventListener('click', handleDelete);
+  if (btnCopy) btnCopy.addEventListener('click', copyToClipboard);
+
+  document.addEventListener('DOMContentLoaded', fetchMedia);
+</script>
 
 <style is:global>
   /* Override the default padding and scrolling from AdminLayout's content-scroll to make this a full screen flex container */
@@ -213,7 +439,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
   }
 </style>
 
-<style>
+<style is:global>
   /* ══ GENERAL & LAYOUT ══ */
   .material-fill { font-variation-settings: 'FILL' 1; }
   .text-primary { color: #f48c25; }
@@ -604,6 +830,18 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
   }
   .grid-item:hover .item-badge-hover { opacity: 1; }
 
+  .item-badge-linked {
+    position: absolute;
+    bottom: 8px; right: 8px;
+    z-index: 9;
+    width: 24px; height: 24px;
+    background: rgba(239, 68, 68, 0.9);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
+  }
+
   .item-overlay {
     position: absolute;
     bottom: 0; left: 0; right: 0;
@@ -762,4 +1000,20 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
     background: #ef4444;
     color: #fff;
   }
+
+  /* Toasts component */
+  .toast {
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 16px; border-radius: 8px;
+    color: white; font-size: 13px; font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    background: #27272a; border: 1px solid #4a3a2a;
+    transform: translateY(20px); opacity: 1; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .toast-success { border-left: 4px solid #10b981; }
+  .toast-success .material-symbols-outlined { color: #10b981; }
+  .toast-error { border-left: 4px solid #ef4444; }
+  .toast-error .material-symbols-outlined { color: #ef4444; }
+  
+  @keyframes spin { 100% { transform: rotate(360deg); } }
 </style>

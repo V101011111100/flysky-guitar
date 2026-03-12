@@ -1,0 +1,104 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+
+// Lấy query từ URL parameters (Astro.url.searchParams)
+const query = Astro.url.searchParams.get('q') || '';
+
+// Mock data: In a real app, query the database based on 'query'
+const mockResults = query ? [
+  { id: 1, name: "Fender Stratocaster American Professional II", price: 35000000, category: "Guitar Điện", image: "https://images.unsplash.com/photo-1564186763535-ebb964f97157?q=80&w=2070&auto=format&fit=crop" },
+  { id: 2, name: "Taylor 214ce Plus Acoustic", price: 25500000, category: "Guitar Acoustic", image: "https://images.unsplash.com/photo-1525201548942-d8732f512e08?q=80&w=2070&auto=format&fit=crop" },
+  { id: 3, name: "Yamaha PAC112V Pacifica", price: 6500000, category: "Guitar Điện", image: "https://images.unsplash.com/photo-1629131726692-1accd0c53ce0?q=80&w=2070&auto=format&fit=crop" }
+] : [];
+---
+
+<Layout title={`Kết quả tìm kiếm cho "${query}" | FlySky Guitar`} description="Tìm kiếm nhạc cụ tại FlySky Guitar.">
+  <Navbar />
+
+  <section class="py-12 lg:py-16 bg-background-dark min-h-screen">
+    <div class="mx-auto max-w-7xl px-4 lg:px-10">
+      
+      <!-- Search Bar Banner -->
+      <div class="bg-card-dark border border-border-dark rounded-3xl p-8 mb-12 text-center">
+        <h1 class="text-white text-2xl lg:text-3xl font-bold mb-6">Bạn đang tìm gì?</h1>
+        
+        <form action="/search" method="get" class="max-w-2xl mx-auto relative group">
+          <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-text-muted">
+            <span class="material-symbols-outlined text-[24px]">search</span>
+          </div>
+          <input 
+            type="text" 
+            name="q" 
+            value={query}
+            placeholder="Gõ tên đàn, thương hiệu hoặc thiết bị..." 
+            class="w-full bg-background-dark border border-border-dark rounded-full py-4 pl-12 pr-32 text-white placeholder-text-muted text-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all shadow-inner"
+            required
+          />
+          <button type="submit" class="absolute inset-y-1.5 right-1.5 bg-primary hover:bg-primary/90 text-background-dark font-bold px-6 rounded-full transition-colors hidden sm:flex items-center gap-2">
+            Tìm kiếm
+          </button>
+          <button type="submit" class="absolute inset-y-1 right-1 bg-primary hover:bg-primary/90 text-background-dark font-bold w-12 rounded-full transition-colors flex sm:hidden items-center justify-center">
+            <span class="material-symbols-outlined font-bold text-[20px]">arrow_forward</span>
+          </button>
+        </form>
+      </div>
+
+      <!-- Search Results -->
+      <div>
+        {query ? (
+          <div class="mb-8 flex items-end justify-between">
+            <h2 class="text-white text-xl font-bold">
+              Kết quả tìm kiếm cho <span class="text-primary">"{query}"</span>
+            </h2>
+            <p class="text-text-muted text-sm">{mockResults.length} sản phẩm</p>
+          </div>
+        ) : (
+          <div class="mb-8 text-center py-10">
+            <span class="material-symbols-outlined text-border-dark text-6xl mb-4">page_info</span>
+            <p class="text-text-muted text-lg">Nhập từ khóa để bắt đầu tìm kiếm sản phẩm.</p>
+          </div>
+        )}
+
+        {query && mockResults.length > 0 && (
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
+            {mockResults.map(product => (
+              <a href={`/shop/${product.id}`} class="group bg-card-dark rounded-2xl border border-border-dark overflow-hidden hover:border-primary/50 transition-colors flex flex-col h-full">
+                <div class="aspect-square bg-background-dark p-4 relative overflow-hidden">
+                  <img src={product.image} alt={product.name} class="w-full h-full object-cover rounded-xl group-hover:scale-105 transition-transform duration-500" />
+                  <span class="absolute top-6 left-6 bg-background-dark/80 backdrop-blur-sm border border-border-dark text-white px-2 py-1 text-[10px] uppercase font-bold tracking-wider rounded">
+                    {product.category}
+                  </span>
+                </div>
+                <div class="p-4 sm:p-5 flex flex-col flex-1">
+                  <h3 class="text-white font-bold text-sm sm:text-base mb-2 line-clamp-2 group-hover:text-primary transition-colors flex-1">{product.name}</h3>
+                  <div class="flex items-center justify-between mt-auto">
+                    <span class="text-primary font-extrabold text-sm sm:text-base">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}</span>
+                    <button class="w-8 h-8 rounded-lg bg-background-dark border border-border-dark text-white flex items-center justify-center group-hover:bg-primary group-hover:text-background-dark group-hover:border-primary transition-all">
+                      <span class="material-symbols-outlined text-[16px]">add_shopping_cart</span>
+                    </button>
+                  </div>
+                </div>
+              </a>
+            ))}
+          </div>
+        )}
+
+        {query && mockResults.length === 0 && (
+          <div class="bg-card-dark border border-border-dark rounded-2xl p-12 text-center">
+             <div class="w-20 h-20 bg-background-dark rounded-full flex items-center justify-center mx-auto mb-6 text-border-dark">
+               <span class="material-symbols-outlined text-4xl">search_off</span>
+             </div>
+             <h3 class="text-white text-xl font-bold mb-2">Không tìm thấy sản phẩm nào</h3>
+             <p class="text-text-muted mb-6">Hãy thử sử dụng từ khóa khác chung chung hơn hoặc xem toàn bộ danh mục cửa hàng.</p>
+             <a href="/shop" class="inline-flex bg-primary text-background-dark font-bold px-6 py-3 rounded-xl">Đến Cửa hàng</a>
+          </div>
+        )}
+      </div>
+
+    </div>
+  </section>
+
+  <Footer />
+</Layout>

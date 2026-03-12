@@ -1,5 +1,43 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+const id = Astro.url.searchParams.get('id');
+let product: any = null;
+let isEdit = false;
+
+if (id) {
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .eq('id', id)
+    .single();
+    
+  if (data && !error) {
+    product = data;
+    isEdit = true;
+  }
+}
+
+// Fetch materials/woods for the spec dropdowns
+const { data: allProdsArray } = await supabase
+  .from('products')
+  .select(`
+    id,
+    name,
+    categories ( name, is_top_wood, is_body_wood, is_neck_wood )
+  `)
+  .order('name', { ascending: true });
+
+const topWoodProducts = (allProdsArray || []).filter(p => p.categories?.is_top_wood === true);
+const bodyWoodProducts = (allProdsArray || []).filter(p => p.categories?.is_body_wood === true);
+const neckWoodProducts = (allProdsArray || []).filter(p => p.categories?.is_neck_wood === true);
+
+// Fetch all categories for the main category dropdown
+const { data: categoriesArray } = await supabase
+  .from('categories')
+  .select('id, name')
+  .order('name', { ascending: true });
 ---
 
 <AdminLayout
@@ -11,18 +49,20 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
   <!-- HEADER ACTIONS -->
   <div class="prd-header">
     <div class="prd-header-left">
-      <h2 class="prd-title">Thêm sản phẩm mới</h2>
-      <p class="prd-sub">Thiết lập thông tin cho sản phẩm dòng Studio &amp; Wood</p>
+      <h2 class="prd-title">{isEdit ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'}</h2>
+      <p class="prd-sub">{isEdit ? `Đang chỉnh sửa sản phẩm: ${product?.name || id}` : 'Thiết lập thông tin cho sản phẩm dòng Studio & Wood'}</p>
     </div>
     <div class="prd-header-actions">
-      <button class="btn-ghost">Hủy</button>
+      <a href="/admin/inventory" class="btn-ghost" style="text-decoration:none;">Hủy</a>
       <button class="btn-outline-orange">Xem trước</button>
-      <button class="btn-orange">
+      <button class="btn-orange" id="btn-save-prod">
         <span class="material-symbols-outlined">save</span>
         Lưu thay đổi
       </button>
     </div>
   </div>
+  
+  <input type="hidden" id="prod-id" value={isEdit ? product.id : ''} />
 
   <!-- MAIN GRID -->
   <div class="prd-grid">
@@ -50,36 +90,37 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
         </div>
 
         <!-- Drag & Drop zone -->
-        <div class="upload-zone" id="uploadZone">
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('img-upload-input').click()">
+          <input type="file" id="img-upload-input" accept="image/*" style="display:none;" />
           <div class="upload-icons">
             <span class="material-symbols-outlined upload-icon">image</span>
             <span class="material-symbols-outlined upload-icon">cloud_upload</span>
           </div>
           <p class="upload-text">Kéo và thả ảnh tại đây hoặc click để chọn tệp</p>
-          <p class="upload-hint">Hỗ trợ JPG, PNG, WEBP (Tối đa 5MB)</p>
+          <p class="upload-hint">Hỗ trợ JPG, PNG, WEBP (Tối đa 15MB)</p>
+          
+          <!-- Upload overlay / simple progress -->
+          <div id="upload-progress-overlay" style="display:none; position:absolute; inset:0; background:rgba(34,25,16,0.8); border-radius:14px; flex-direction:column; align-items:center; justify-content:center; gap:10px;">
+             <span class="material-symbols-outlined" style="color:#f48c25; animation: spin 1s linear infinite;">sync</span>
+             <span style="font-size:12px; font-weight:700; color:#f9fafb;" id="upload-progress-text">Đang xử lý ảnh...</span>
+          </div>
         </div>
 
         <!-- Thumbnail Grid -->
         <div class="thumb-grid">
-          <div class="thumb-add">
+          <div class="thumb-add" onclick="document.getElementById('img-upload-input').click()">
             <span class="material-symbols-outlined">add</span>
             <span class="thumb-add-label">Thêm ảnh</span>
           </div>
-          <div class="thumb-item" style="background-image:url('https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=200&q=70')">
+          <div class="thumb-item bg-default-guitar" id="main-thumb-preview" style={!isEdit && !product?.main_image_url ? 'display:none;' : ''}>
+            <img src={isEdit ? product?.main_image_url : ''} id="main-thumb-img" alt="preview" style="width:100%;height:100%;object-fit:cover;mix-blend-mode:luminosity;opacity:0.8"/>
             <div class="thumb-overlay">
               <span class="material-symbols-outlined thumb-action" onclick="document.getElementById('crop-modal').style.display='flex'" title="Cắt ảnh">crop</span>
-              <span class="material-symbols-outlined thumb-action thumb-del" title="Xóa ảnh">delete</span>
+              <span class="material-symbols-outlined thumb-action thumb-del" onclick="document.getElementById('main-thumb-preview').style.display='none'; (document.getElementById('prod-image') as HTMLInputElement).value='';" title="Xóa ảnh">delete</span>
             </div>
-            <div class="thumb-badge">-65%</div>
+            <div class="thumb-badge" id="thumb-opt-badge" style="display:none;">-Optimized</div>
           </div>
-          <div class="thumb-item" style="background-image:url('https://images.unsplash.com/photo-1525201548942-d8732f6617a0?w=200&q=70')">
-            <div class="thumb-overlay">
-              <span class="material-symbols-outlined thumb-action" onclick="document.getElementById('crop-modal').style.display='flex'" title="Cắt ảnh">crop</span>
-              <span class="material-symbols-outlined thumb-action thumb-del" title="Xóa ảnh">delete</span>
-            </div>
-            <div class="thumb-badge">-65%</div>
-          </div>
-        </div>
+
 
         <!-- Video Link -->
         <div class="video-field">
@@ -99,39 +140,39 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
         </h3>
         <div class="prd-form-grid">
           <div class="form-group">
-            <label class="prd-label">Gỗ mặt trước</label>
-            <select class="prd-input">
-              <option>Spruce (Vân sam)</option>
-              <option>Mahogany (Hồng đào)</option>
-              <option>Cedar (Tuyết tùng)</option>
-              <option>Maple (Phong)</option>
+            <label class="prd-label">Gỗ mặt trước (Mặt Top)</label>
+            <select id="prod-top" class="prd-input">
+              <option value="">-- Không chỉ định / Khác --</option>
+              {topWoodProducts.map(mat => (
+                <option value={mat.name} selected={isEdit && product?.spec_top === mat.name}>{mat.name}</option>
+              ))}
             </select>
           </div>
           <div class="form-group">
-            <label class="prd-label">Gỗ lưng &amp; hông</label>
-            <select class="prd-input">
-              <option>Rosewood (Cẩm ấn)</option>
-              <option>Mahogany (Hồng đào)</option>
-              <option>Walnut (Óc chó)</option>
-              <option>Koa</option>
+            <label class="prd-label">Gỗ lưng &amp; hông (Lưng Hông)</label>
+            <select id="prod-body" class="prd-input">
+             <option value="">-- Không chỉ định / Khác --</option>
+              {bodyWoodProducts.map(mat => (
+                <option value={mat.name} selected={isEdit && product?.spec_body === mat.name}>{mat.name}</option>
+              ))}
             </select>
           </div>
           <div class="form-group">
+            <label class="prd-label">Cần Đàn</label>
+            <select id="prod-neck" class="prd-input">
+             <option value="">-- Không chỉ định / Khác --</option>
+              {neckWoodProducts.map(mat => (
+                <option value={mat.name} selected={isEdit && product?.spec_neck === mat.name}>{mat.name}</option>
+              ))}
+            </select>
+          </div>
+          <div class="form-group" style="display:none;">
             <label class="prd-label">Pickups</label>
             <select class="prd-input">
               <option>Fishman Presys II</option>
               <option>L.R. Baggs Anthem</option>
               <option>Taylor Expression System 2</option>
               <option>None (Acoustic only)</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="prd-label">Khóa đàn (Tuners)</label>
-            <select class="prd-input">
-              <option>Grover Rotomatics</option>
-              <option>Gotoh 510</option>
-              <option>Schaller GrandTune</option>
-              <option>Standard Die-cast</option>
             </select>
           </div>
         </div>
@@ -148,35 +189,47 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 
         <!-- Product Name (full width) -->
         <div class="form-group form-full" style="margin-bottom:20px;">
-          <label class="prd-label">Tên sản phẩm</label>
-          <input type="text" class="prd-input prd-input-lg" placeholder="Ví dụ: FlySky Studio Wood Edition G-200" />
+          <label class="prd-label">Tên sản phẩm *</label>
+          <input type="text" id="prod-name" class="prd-input prd-input-lg" placeholder="Ví dụ: FlySky Studio Wood Edition G-200" value={isEdit ? product?.name : ''} required />
         </div>
 
         <!-- 2-col fields -->
         <div class="prd-form-grid" style="margin-bottom:20px;">
           <div class="form-group">
-            <label class="prd-label">Mã SKU</label>
-            <input type="text" class="prd-input prd-input-upper" placeholder="FS-SW-200-MAH" />
+            <label class="prd-label">Đường dẫn hiển thị (Slug) *</label>
+            <input type="text" id="prod-slug" class="prd-input prd-input-upper" placeholder="dan-guitar-classic-c40" value={isEdit ? product?.slug : ''} required />
           </div>
           <div class="form-group">
             <label class="prd-label">Danh mục</label>
-            <select class="prd-input">
-              <option>Acoustic Guitars</option>
-              <option>Electric Guitars</option>
-              <option>Classical Guitars</option>
-              <option>Accessories</option>
+            <select id="prod-category" class="prd-input">
+              <option value="">-- Không chỉ định / Khác --</option>
+              {(categoriesArray || []).map(cat => (
+                <option value={cat.id} selected={isEdit && product?.category_id === cat.id}>{cat.name}</option>
+              ))}
             </select>
           </div>
           <div class="form-group">
-            <label class="prd-label">Giá bán (VNĐ)</label>
+            <label class="prd-label">Số lượng Tồn Kho</label>
+            <input type="number" id="prod-stock" class="prd-input" placeholder="Ví dụ: 50" value={isEdit ? product?.stock_quantity : '0'} min="0" required />
+          </div>
+          <div class="form-group">
+            <label class="prd-label">Trạng thái *</label>
+            <select id="prod-status" class="prd-input">
+              <option value="active" selected={isEdit ? product?.status === 'active' : true}>Đang bán</option>
+              <option value="draft" selected={isEdit && product?.status === 'draft'}>Bản nháp</option>
+              <option value="out_of_stock" selected={isEdit && product?.status === 'out_of_stock'}>Hết hàng</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="prd-label">Giá bán (VNĐ) *</label>
             <div class="icon-input-wrap">
-              <input type="number" class="prd-input prd-input-currency" placeholder="0" />
+              <input type="number" id="prod-price" class="prd-input prd-input-currency" placeholder="0" value={isEdit ? product?.price : ''} required />
               <span class="currency-sym">₫</span>
             </div>
           </div>
           <div class="form-group">
-            <label class="prd-label">Số lượng tồn kho</label>
-            <input type="number" class="prd-input" placeholder="10" />
+            <label class="prd-label">Link Ảnh Xóa Phông (HTTPS) *</label>
+            <input type="url" id="prod-image" class="prd-input" placeholder="https://..." value={isEdit ? product?.main_image_url : ''} required />
           </div>
         </div>
 
@@ -195,7 +248,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
               <button class="rte-btn"><span class="material-symbols-outlined">link</span></button>
               <button class="rte-btn"><span class="material-symbols-outlined">image</span></button>
             </div>
-            <textarea class="rte-body" rows="9" placeholder="Nhập mô tả chi tiết về sản phẩm, đặc điểm nổi bật và cảm giác chơi..."></textarea>
+            <textarea id="prod-desc" class="rte-body" rows="9" placeholder="Nhập mô tả chi tiết về sản phẩm, đặc điểm nổi bật và cảm giác chơi...">{isEdit ? product?.description : ''}</textarea>
           </div>
         </div>
       </section>
@@ -222,8 +275,8 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
     <div class="crop-body">
       <!-- Preview -->
       <div class="crop-preview-area">
-        <div class="crop-frame">
-          <img src="https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=600&q=70" alt="Crop preview" class="crop-img" />
+        <div class="crop-frame bg-default-guitar">
+          <img src="https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=600&q=70" alt="Crop preview" class="crop-img" style="mix-blend-mode:luminosity;" />
           <div class="crop-selection">
             <div class="crop-handle tl"></div>
             <div class="crop-handle tr"></div>
@@ -393,13 +446,16 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 
   /* ── UPLOAD ZONE ── */
   .upload-zone {
+    position: relative;
     border: 2px dashed rgba(244,140,37,.3); border-radius: 14px;
     background: rgba(34,25,16,.3); padding: 32px 20px;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 12px; text-align: center; cursor: pointer;
     transition: border-color .2s, background .2s;
+    overflow: hidden;
   }
   .upload-zone:hover { border-color: #f48c25; background: rgba(34,25,16,.5); }
+  @keyframes spin { 100% { transform: rotate(360deg); } }
   .upload-icons { display: flex; gap: 16px; }
   .upload-icon { font-size: 36px; color: rgba(244,140,37,.4); transition: color .2s; }
   .upload-zone:hover .upload-icon { color: #f48c25; }
@@ -595,3 +651,185 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
     .crop-controls { width: 100%; border-left: none; border-top: 1px solid rgba(74,58,42,.4); }
   }
 </style>
+
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    // Auto generate slug from name
+    document.getElementById('prod-name')?.addEventListener('input', (e) => {
+      const idField = document.getElementById('prod-id') as HTMLInputElement;
+      if (!idField?.value) { // Only auto-generate on create new
+         const name = (e.target as HTMLInputElement).value;
+         const slug = name.toLowerCase()
+          .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)+/g, '');
+         const slugEl = document.getElementById('prod-slug') as HTMLInputElement;
+         if (slugEl) slugEl.value = slug;
+      }
+    });
+
+    // Save product
+    const btnSave = document.getElementById('btn-save-prod') as HTMLButtonElement;
+    if (btnSave) {
+      btnSave.addEventListener('click', async () => {
+        btnSave.disabled = true;
+        btnSave.textContent = 'Đang lưu...';
+
+        const payload = {
+          'prod-id': (document.getElementById('prod-id') as HTMLInputElement)?.value || '',
+          'prod-name': (document.getElementById('prod-name') as HTMLInputElement)?.value || '',
+          'prod-slug': (document.getElementById('prod-slug') as HTMLInputElement)?.value || '',
+          'prod-price': (document.getElementById('prod-price') as HTMLInputElement)?.value || '',
+          'prod-image': (document.getElementById('prod-image') as HTMLInputElement)?.value || '',
+          'prod-desc': (document.getElementById('prod-desc') as HTMLTextAreaElement)?.value || '',
+          'prod-body': (document.getElementById('prod-body') as HTMLSelectElement)?.value || '',
+          'prod-top': (document.getElementById('prod-top') as HTMLSelectElement)?.value || '',
+          'prod-neck': (document.getElementById('prod-neck') as HTMLSelectElement)?.value || '',
+          'prod-category': (document.getElementById('prod-category') as HTMLSelectElement)?.value || '',
+          'prod-stock': (document.getElementById('prod-stock') as HTMLInputElement)?.value || '0',
+          'prod-status': (document.getElementById('prod-status') as HTMLSelectElement)?.value || 'active'
+        };
+
+        try {
+          const res = await fetch('/api/products/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          
+          if(data.success) {
+            alert('Lưu sản phẩm thành công!');
+            window.location.href = '/admin/inventory';
+          } else {
+            alert('Lỗi: ' + data.error);
+            btnSave.disabled = false;
+            btnSave.textContent = 'Lưu thay đổi';
+          }
+        } catch(err) {
+          alert('Lỗi kết nối máy chủ');
+          btnSave.disabled = false;
+          btnSave.textContent = 'Lưu thay đổi';
+        }
+      });
+    }
+
+    // TỐI ƯU VÀ UPLOAD ẢNH BẰNG CANVAS (Client-side)
+    const fileInput = document.getElementById('img-upload-input') as HTMLInputElement;
+    const progressOverlay = document.getElementById('upload-progress-overlay');
+    const progressText = document.getElementById('upload-progress-text');
+    
+    if (fileInput) {
+      fileInput.addEventListener('change', async (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (!file) return;
+
+        // Bật trạng thái loading
+        if (progressOverlay) progressOverlay.style.display = 'flex';
+        if (progressText) progressText.textContent = 'Đang xử lý ảnh độ phân giải cao...';
+
+        try {
+          // 1. Đọc file ảnh dưới dạng Image object
+          const img = new Image();
+          const objectUrl = URL.createObjectURL(file);
+          
+          await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = reject;
+            img.src = objectUrl;
+          });
+
+          // 2. Thiết lập Canvas với Kích Thước Lớn (Full HD / 4K)
+          // Đã tăng lên 2048x2048 để cho độ nét trên màn hình lớn.
+          const CANVAS_SIZE = 2048; 
+          const canvas = document.createElement('canvas');
+          canvas.width = CANVAS_SIZE;
+          canvas.height = CANVAS_SIZE;
+          const ctx = canvas.getContext('2d');
+          
+          if (!ctx) throw new Error("Không thể khởi tạo Canvas");
+
+          // 3. Đổ nền mặc định (nếu là ảnh PNG/trong suốt thì nền này sẽ lót phía dưới)
+          // Màu lấy từ CSS biến `.bg-default-guitar` (tương đương radial gradient #352a20 -> #15110c)
+          // Canvas không hỗ trợ vẽ Radial gradient CSS dễ dàng 1 dòng, nên ta sẽ tự cấu hình Gradient
+          const gradient = ctx.createRadialGradient(
+            CANVAS_SIZE/2, CANVAS_SIZE/2, 0,
+            CANVAS_SIZE/2, CANVAS_SIZE/2, CANVAS_SIZE/1.2
+          );
+          gradient.addColorStop(0, '#352a20');
+          gradient.addColorStop(1, '#15110c');
+          
+          ctx.fillStyle = gradient;
+          ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+
+          // 4. Tính toán Fit Ảnh (Object-fit: Contain) mà không bị méo (Aspect Ratio)
+          const scale = Math.min(CANVAS_SIZE / img.width, CANVAS_SIZE / img.height);
+          const drawWidth = img.width * scale;
+          const drawHeight = img.height * scale;
+          
+          // Căn giữa tấm ảnh
+          const dx = (CANVAS_SIZE - drawWidth) / 2;
+          const dy = (CANVAS_SIZE - drawHeight) / 2;
+
+          // Vẽ ảnh gốc lên Canvas
+          ctx.drawImage(img, dx, dy, drawWidth, drawHeight);
+          URL.revokeObjectURL(objectUrl);
+
+          // 5. Xuất Canvas ra file WebP siêu nhẹ với chất lượng 85%
+          if (progressText) progressText.textContent = 'Đang tối ưu dung lượng WebP...';
+          const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/webp', 0.85));
+          
+          if (!blob) throw new Error("Lỗi khi xuất định dạng WebP");
+
+          // Tạo File từ Blob để gửi lên server
+          const optimizedFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".webp", { type: 'image/webp' });
+
+          // 6. Upload file WebP lên API của chúng ta (local file system saving)
+          if (progressText) progressText.textContent = 'Đang tải lên hệ thống...';
+          const formData = new FormData();
+          formData.append('file', optimizedFile);
+
+          const uploadRes = await fetch('/api/products/upload', {
+            method: 'POST',
+            body: formData
+          });
+
+          const uploadData = await uploadRes.json();
+          if (uploadData.success && uploadData.url) {
+            // Thành công: Đưa URL trả về vào Input và update thumbnail preview
+            const urlInput = document.getElementById('prod-image') as HTMLInputElement;
+            if (urlInput) {
+               urlInput.value = uploadData.url;
+               // Trigger in case we want to listen to changes later
+               urlInput.dispatchEvent(new Event('input'));
+            }
+
+            // Update UI 
+            const imgPreviewEl = document.getElementById('main-thumb-img') as HTMLImageElement;
+            const previewContainer = document.getElementById('main-thumb-preview');
+            const optBadge = document.getElementById('thumb-opt-badge');
+
+            if (imgPreviewEl) imgPreviewEl.src = uploadData.url;
+            if (previewContainer) previewContainer.style.display = 'block';
+            if (optBadge) {
+               optBadge.style.display = 'block';
+               // Calculate savings roughly 
+               const savings = Math.max(10, Math.floor(100 - (optimizedFile.size / file.size * 100)));
+               optBadge.textContent = '-' + (savings > 0 ? savings : 10) + '% WebP';
+            }
+          } else {
+             throw new Error(uploadData.error || "Upload thất bại");
+          }
+
+        } catch (error: any) {
+          alert('Lỗi xử lý ảnh: ' + error.message);
+        } finally {
+          // Tắt trạng thái loading
+          if (progressOverlay) progressOverlay.style.display = 'none';
+          fileInput.value = ''; // xóa file sau khi xong để có thể up lại cùng 1 file
+        }
+      });
+    }
+
+  });
+</script>

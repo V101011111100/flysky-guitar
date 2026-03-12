@@ -6,7 +6,7 @@
     <div class="flex-shrink-0">
       <a class="flex items-center gap-2.5 text-white group" href="/">
         <img src="/logo.svg" alt="FlySky Guitar Logo" class="flysky-global-logo h-8 w-auto" />
-        <h2 class="text-white text-xl font-extrabold tracking-tight">FlySky Guitar</h2>
+        <h2 class="text-white text-xl font-extrabold tracking-tight" data-setting="flysky_storeName">FlySky Guitar</h2>
       </a>
     </div>
     <nav class="hidden lg:flex items-center gap-8 flex-1 justify-center">
@@ -54,15 +54,17 @@
         </div>
       </div>
 
-      <a class="text-white/90 hover:text-primary transition-colors text-sm font-semibold uppercase tracking-wider" href="#">Câu chuyện thương hiệu</a>
-      <a class="text-white/90 hover:text-primary transition-colors text-sm font-semibold uppercase tracking-wider" href="#">Blog</a>
+      <a class="text-white/90 hover:text-primary transition-colors text-sm font-semibold uppercase tracking-wider" href="/about">Câu chuyện thương hiệu</a>
+      <a class="text-white/90 hover:text-primary transition-colors text-sm font-semibold uppercase tracking-wider" href="/blog">Blog</a>
     </nav>
     <div class="flex items-center gap-2 lg:gap-4 flex-shrink-0">
-      <div class="hidden md:flex relative group">
-        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-text-muted">
-          <span class="material-symbols-outlined text-[20px]">search</span>
-        </div>
-        <input class="block w-48 lg:w-64 rounded-full border-none bg-border-dark/50 py-1.5 pl-10 pr-4 text-xs text-white placeholder-text-muted focus:ring-2 focus:ring-primary focus:bg-border-dark transition-all" placeholder="Tìm kiếm..." type="text" />
+      <div class="hidden md:block relative group">
+        <form action="/search" method="get" class="relative">
+          <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-text-muted">
+            <span class="material-symbols-outlined text-[20px]">search</span>
+          </div>
+          <input name="q" class="block w-48 lg:w-64 rounded-full border border-transparent bg-border-dark/50 py-1.5 pl-10 pr-4 text-xs text-white placeholder-text-muted focus:ring-2 focus:ring-primary focus:bg-border-dark focus:border-primary transition-all" placeholder="Tìm kiếm..." type="text" />
+        </form>
       </div>
       <div class="flex items-center gap-1">
         <button class="md:hidden flex items-center justify-center rounded-lg size-10 text-white hover:bg-border-dark transition-colors">

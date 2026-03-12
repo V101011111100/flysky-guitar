@@ -7,10 +7,11 @@
       <div class="flex flex-col gap-4">
         <a href="/" class="flex items-center gap-2.5">
           <img src="/logo.svg" alt="FlySky Guitar Logo" class="flysky-global-logo h-8 w-auto" />
-          <h2 class="text-white text-lg font-bold">FlySky Guitar</h2>
+          <h2 class="text-white text-lg font-bold" data-setting="flysky_storeName">FlySky Guitar</h2>
         </a>
-        <p class="text-text-muted text-sm leading-relaxed">
-          Chế tác tương lai của âm thanh qua từng sợi dây. Hãy gia nhập cộng đồng những nghệ sĩ chọn FlySky.
+        <p class="text-text-muted text-sm leading-relaxed flex items-start gap-2 mt-2">
+          <span class="material-symbols-outlined text-[18px] shrink-0 mt-0.5">location_on</span>
+          <span data-setting="flysky_storeAddress">37 Lê Thiện Trị, Phường Ngũ Hành Sơn, Thành phố Đà Nẵng, Da Nang, Vietnam</span>
         </p>
       </div>
       <div>
@@ -28,22 +29,22 @@
           <li><a class="hover:text-primary transition-colors" href="#">Thông tin bảo hành</a></li>
           <li><a class="hover:text-primary transition-colors" href="#">Giao hàng &amp; Trả hàng</a></li>
           <li><a class="hover:text-primary transition-colors" href="#">Hướng dẫn bảo quản</a></li>
-          <li><a class="hover:text-primary transition-colors" href="#">Liên hệ chúng tôi</a></li>
+          <li><a class="hover:text-primary transition-colors" href="/contact">Liên hệ chúng tôi</a></li>
         </ul>
       </div>
       <div>
         <h4 class="text-white font-bold mb-4">Đăng ký nhận tin</h4>
         <p class="text-text-muted text-sm mb-4">Đăng ký để nhận thông tin về các mẫu mới nhất và tiêu điểm nghệ sĩ.</p>
-        <div class="flex gap-2">
-          <input class="bg-card-dark border border-border-dark text-white text-sm rounded-lg px-4 py-2 w-full focus:ring-1 focus:ring-primary focus:border-primary outline-none" placeholder="Email của bạn" type="email" />
-          <button class="bg-primary hover:bg-primary/90 text-background-dark font-bold rounded-lg px-4 transition-colors cursor-pointer">
+        <form class="flex gap-2" onsubmit="event.preventDefault(); alert('Cảm ơn bạn đã đăng ký nhận bản tin!'); this.reset();">
+          <input required type="email" name="email" class="bg-card-dark border border-border-dark text-white text-sm rounded-lg px-4 py-2 w-full focus:ring-1 focus:ring-primary focus:border-primary outline-none" placeholder="Email của bạn" />
+          <button type="submit" class="bg-primary hover:bg-primary/90 text-background-dark font-bold rounded-lg px-4 transition-colors cursor-pointer">
             <span class="material-symbols-outlined">send</span>
           </button>
-        </div>
+        </form>
       </div>
     </div>
     <div class="border-t border-border-dark pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-      <p class="text-text-muted text-sm text-center md:text-left">© 2024 FlySky Guitar. Bảo lưu mọi quyền.</p>
+      <p class="text-text-muted text-sm text-center md:text-left">© 2024 <span data-setting="flysky_storeName">FlySky Guitar</span>. Bảo lưu mọi quyền.</p>
       <div class="flex gap-4">
         <a class="text-text-muted hover:text-white transition-colors" href="#"><span class="sr-only">Facebook</span>FB</a>
         <a class="text-text-muted hover:text-white transition-colors" href="#"><span class="sr-only">Instagram</span>IG</a>

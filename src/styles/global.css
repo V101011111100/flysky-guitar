@@ -21,3 +21,42 @@ body {
 .nav-dropdown:hover .dropdown-menu {
   display: block;
 }
+
+.bg-default-guitar {
+  background: radial-gradient(circle at center, #352a20 0%, #15110c 100%);
+  border-radius: inherit; /* inherit roundness of parent */
+}
+
+/* --- Mũi tên Tăng giảm Số lượng (Number Input Spinners) --- */
+/* Remove arrows in Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+/* Remove arrows in Firefox */
+input[type=number] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+/* --- Thanh cuộn (Scrollbar) --- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #221910; /* Nền tối - khớp với background chính */
+}
+::-webkit-scrollbar-thumb {
+  background: #4a3a2a; /* Nâu tối - khớp với border màu theme */
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #6b5540; /* Sáng hơn khi hover */
+}
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #4a3a2a #221910;
+}

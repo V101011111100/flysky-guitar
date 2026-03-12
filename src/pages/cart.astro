@@ -302,14 +302,17 @@ import Footer from '../components/Footer.astro';
   });
 
   // Submit
-  document.getElementById('btn-submit')?.addEventListener('click', () => {
-    const form = document.getElementById('checkout-form') as HTMLFormElement;
+  const btn = document.getElementById('btn-submit') as HTMLButtonElement;
+  btn?.addEventListener('click', async () => {
     const name = (document.getElementById('full-name') as HTMLInputElement).value.trim();
     const phone = (document.getElementById('phone') as HTMLInputElement).value.trim();
     const address = (document.getElementById('address') as HTMLInputElement).value.trim();
+    const email = (document.getElementById('email') as HTMLInputElement).value.trim();
+    const note = (document.getElementById('note') as HTMLTextAreaElement).value.trim();
+    const paymentRadio = document.querySelector<HTMLInputElement>('input[name="payment"]:checked');
+    const payment_method = paymentRadio?.value || 'bank';
 
     if (!name || !phone || !address) {
-      // Simple highlight empty required fields
       [document.getElementById('full-name'), document.getElementById('phone'), document.getElementById('address')].forEach(el => {
         if (el && !(el as HTMLInputElement).value.trim()) {
           el.classList.add('ring-2', 'ring-red-500', 'border-red-500');
@@ -319,23 +322,56 @@ import Footer from '../components/Footer.astro';
       return;
     }
 
-    // Generate fake order number, store info for success page
-    const orderNum = 'FSG-' + Math.floor(10000 + Math.random() * 90000);
     const cart = getCart();
-    
-    // Save order info for success page
-    sessionStorage.setItem('flysky_order', JSON.stringify({
-      orderNum,
-      name,
-      phone,
-      email: (document.getElementById('email') as HTMLInputElement).value.trim(),
-      address,
-      cart,
-      total: getCartTotal(),
-    }));
+    const total = getCartTotal();
 
-    clearCart();
-    window.location.href = '/order-success';
+    // Loading state
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-symbols-outlined animate-spin">autorenew</span> Đang gửi...';
+
+    try {
+      const res = await fetch('/api/orders/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customer_name: name,
+          customer_phone: phone,
+          customer_email: email || null,
+          customer_address: address,
+          note: note || null,
+          payment_method,
+          items: cart.map(item => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            image: item.image,
+            categoryLabel: item.categoryLabel,
+          })),
+          total_amount: total,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        // Store order info for success page
+        sessionStorage.setItem('flysky_order', JSON.stringify({
+          orderNum: data.order_number,
+          name, phone, email, address,
+          cart,
+          total,
+        }));
+        clearCart();
+        window.location.href = '/order-success';
+      } else {
+        throw new Error(data.error || 'Lỗi không xác định');
+      }
+    } catch (err: any) {
+      btn.disabled = false;
+      btn.innerHTML = '<span class="material-symbols-outlined">send</span> Gửi yêu cầu tư vấn';
+      alert('Lỗi khi gửi đơn hàng: ' + (err.message || 'Vui lòng thử lại.'));
+    }
   });
 
   renderCart();

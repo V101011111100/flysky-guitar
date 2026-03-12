@@ -1,0 +1,208 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Layout title="Liên hệ | FlySky Guitar" description="Gửi tin nhắn, đặt lịch hẹn hoặc tìm đường đến cửa hàng FlySky Guitar.">
+  <Navbar />
+
+  <!-- Breadcrumb -->
+  <div class="bg-background-dark border-b border-border-dark/50">
+    <div class="mx-auto max-w-7xl px-4 lg:px-10 py-3 flex items-center gap-2 text-sm text-text-muted">
+      <a href="/" class="hover:text-primary transition-colors">Trang chủ</a>
+      <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+      <span class="text-white/60">Liên hệ</span>
+    </div>
+  </div>
+
+  <section class="py-12 lg:py-20 bg-background-dark min-h-screen">
+    <div class="mx-auto max-w-7xl px-4 lg:px-10">
+      
+      <!-- Page Header -->
+      <div class="mb-12">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold mb-4 tracking-wider uppercase">
+          <span class="material-symbols-outlined text-[16px]">support_agent</span>
+          Hỗ trợ 24/7
+        </div>
+        <h1 class="text-white text-3xl font-extrabold mb-4">Kết nối với chúng tôi</h1>
+        <p class="text-text-muted text-sm max-w-xl">Mọi thắc mắc về sản phẩm, dịch vụ bảo hành hay hợp tác, đừng ngần ngại gửi tin nhắn cho đội ngũ FlySky Guitar. Chúng tôi luôn sẵn sàng lắng nghe.</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        
+        <!-- Contact Info (Left) -->
+        <div class="lg:col-span-1 flex flex-col gap-6">
+          <div class="bg-card-dark border border-border-dark rounded-2xl p-6 group hover:border-primary/50 transition-colors">
+            <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 text-primary">
+              <span class="material-symbols-outlined">location_on</span>
+            </div>
+            <h3 class="text-white font-bold text-lg mb-2">Đến cửa hàng</h3>
+            <p class="text-text-muted text-sm leading-relaxed mb-4">
+              Mở cửa từ 8:00 đến 21:00 hàng ngày. Trải nghiệm âm thanh thực tế trước khi mua.<br/><br/>
+              37 Lê Thiện Trị, P. Ngũ Hành Sơn, TP. Đà Nẵng
+            </p>
+            <a href="https://maps.google.com" target="_blank" class="text-primary font-bold text-sm flex items-center gap-1 hover:underline">
+              Chỉ đường <span class="material-symbols-outlined text-sm">open_in_new</span>
+            </a>
+          </div>
+
+          <div class="bg-card-dark border border-border-dark rounded-2xl p-6 group hover:border-primary/50 transition-colors">
+            <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 text-primary">
+              <span class="material-symbols-outlined">call</span>
+            </div>
+            <h3 class="text-white font-bold text-lg mb-2">Gọi trực tiếp</h3>
+            <p class="text-text-muted text-sm leading-relaxed mb-4">
+              Đội ngũ tư vấn online giải đáp và chốt đơn nhanh chóng.<br/><br/>
+              Hotline: <strong class="text-white">0987 654 321</strong>
+            </p>
+            <a href="tel:0987654321" class="text-primary font-bold text-sm flex items-center gap-1 hover:underline">
+              Bấm gọi ngay <span class="material-symbols-outlined text-sm">phone_forwarded</span>
+            </a>
+          </div>
+
+          <div class="bg-card-dark border border-border-dark rounded-2xl p-6 group hover:border-primary/50 transition-colors">
+            <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 text-primary">
+              <span class="material-symbols-outlined">mail</span>
+            </div>
+            <h3 class="text-white font-bold text-lg mb-2">Gửi Email</h3>
+            <p class="text-text-muted text-sm leading-relaxed mb-4">
+              Dành cho đối tác cung cấp, sửa chữa số lượng hoặc yêu cầu hợp tác đại lý.<br/><br/>
+              Email: <strong class="text-white">hello@flyskyguitar.com</strong>
+            </p>
+            <a href="mailto:hello@flyskyguitar.com" class="text-primary font-bold text-sm flex items-center gap-1 hover:underline">
+              Mở ứng dụng thư <span class="material-symbols-outlined text-sm">send</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Contact Form (Right) -->
+        <div class="lg:col-span-2">
+          <div class="bg-card-dark border border-border-dark rounded-3xl p-8 lg:p-10 relative overflow-hidden h-full">
+            <div class="absolute -top-32 -right-32 w-64 h-64 bg-primary/10 blur-[80px] rounded-full pointer-events-none"></div>
+            
+            <h2 class="text-white text-2xl font-bold mb-2 relative">Gửi lời nhắn</h2>
+            <p class="text-text-muted text-sm mb-8 relative">Vui lòng điền thông tin bên dưới, FlySky sẽ phản hồi chậm nhất trong 2 giờ làm việc.</p>
+
+            <form id="contact-form" class="flex flex-col gap-6 relative" novalidate>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                  <label class="block text-sm font-semibold text-white/80 mb-2" for="name">Họ và tên *</label>
+                  <input
+                    id="name"
+                    name="name"
+                    type="text"
+                    required
+                    placeholder="Nguyễn Văn A"
+                    class="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-3.5 text-white placeholder-text-muted text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold text-white/80 mb-2" for="phone">Số điện thoại *</label>
+                  <input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    required
+                    placeholder="0901 234 567"
+                    class="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-3.5 text-white placeholder-text-muted text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold text-white/80 mb-2" for="email">Email</label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="email@example.com"
+                  class="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-3.5 text-white placeholder-text-muted text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold text-white/80 mb-2" for="subject">Chủ đề</label>
+                <select 
+                  id="subject" 
+                  name="subject"
+                  class="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-3.5 text-white text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all appearance-none"
+                >
+                  <option value="tu-van">Tư vấn mua nhạc cụ</option>
+                  <option value="bao-hanh">Sửa chữa & Bảo hành</option>
+                  <option value="hop-tac">Hợp tác kinh doanh</option>
+                  <option value="khac">Vấn đề khác</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold text-white/80 mb-2" for="message">Nội dung chi tiết *</label>
+                <textarea
+                  id="message"
+                  name="message"
+                  rows="5"
+                  required
+                  placeholder="Nhập nội dung bạn cần hỗ trợ ở đây..."
+                  class="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-3.5 text-white placeholder-text-muted text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all resize-none"
+                ></textarea>
+              </div>
+
+              <div class="mt-2">
+                <button
+                  id="btn-send-message"
+                  type="button"
+                  class="bg-primary hover:bg-primary/90 text-background-dark font-extrabold py-4 px-8 rounded-xl transition-all duration-200 hover:shadow-[0_0_20px_rgba(244,140,37,0.4)] flex items-center justify-center gap-2 group w-full sm:w-auto"
+                >
+                  Gửi tin nhắn 
+                  <span class="material-symbols-outlined transition-transform group-hover:translate-x-1">send</span>
+                </button>
+              </div>
+            </form>
+            
+            <div id="contact-success" class="hidden absolute inset-0 bg-card-dark z-20 flex-col items-center justify-center text-center p-8">
+              <div class="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mb-6">
+                <span class="material-symbols-outlined text-green-500 text-5xl">check_circle</span>
+              </div>
+              <h2 class="text-white text-2xl font-bold mb-3">Đã gửi tin nhắn!</h2>
+              <p class="text-text-muted text-sm mb-8 max-w-md">Cảm ơn bạn đã liên hệ. Đội ngũ FlySky Guitar đã nhận được thông tin và sẽ phản hồi qua điện thoại / email sớm nhất.</p>
+              <button onclick="window.location.reload()" class="bg-border-dark hover:bg-border-dark/80 text-white font-bold py-3 px-8 rounded-xl transition-all">Gửi thư khác</button>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <Footer />
+</Layout>
+
+<script>
+  // Simple form validation and success message logic
+  document.getElementById('btn-send-message')?.addEventListener('click', () => {
+    const name = (document.getElementById('name') as HTMLInputElement).value.trim();
+    const phone = (document.getElementById('phone') as HTMLInputElement).value.trim();
+    const msg = (document.getElementById('message') as HTMLTextAreaElement).value.trim();
+
+    if (!name || !phone || !msg) {
+      [document.getElementById('name'), document.getElementById('phone'), document.getElementById('message')].forEach(el => {
+        if (el && !(el as HTMLInputElement|HTMLTextAreaElement).value.trim()) {
+           el.classList.add('ring-2', 'ring-red-500', 'border-red-500');
+           setTimeout(() => el.classList.remove('ring-2', 'ring-red-500', 'border-red-500'), 2000);
+        }
+      });
+      return;
+    }
+
+    // In a real app, send data to Supabase here
+    // For now just show success UI
+    const form = document.getElementById('contact-form');
+    const success = document.getElementById('contact-success');
+    
+    if (form && success) {
+      success.classList.remove('hidden');
+      success.classList.add('flex');
+    }
+  });
+</script>
