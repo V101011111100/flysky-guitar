@@ -29,7 +29,7 @@ create table public.products (
   slug text not null unique,
   description text,
   price numeric not null default 0,
-  main_image_url text,
+  gallery_images text[] default '{}', -- Array of image URLs, first image is main image
   is_featured boolean default false,
   status text check (status in ('active', 'draft', 'out_of_stock')) default 'active',
   stock_quantity integer not null default 0,

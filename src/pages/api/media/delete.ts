@@ -1,10 +1,34 @@
 import type { APIRoute } from 'astro';
-import { deleteFromR2, publicUrl } from '../../../lib/r2';
+import { deleteFromR2, publicUrl, bucketName } from '../../../lib/r2';
 import { supabase } from '../../../lib/supabase';
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, cookies }) => {
   try {
-    const { key } = await request.json();
+    // 1. Auth check - using same method as other admin APIs
+    const accessToken = cookies.get("sb-access-token");
+    const refreshToken = cookies.get("sb-refresh-token");
+
+    if (!accessToken || !refreshToken) {
+      return new Response(JSON.stringify({ success: false, error: "Unauthorized - No session" }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const { data: authData, error: authError } = await supabase.auth.setSession({
+      access_token: accessToken.value,
+      refresh_token: refreshToken.value,
+    });
+
+    if (authError || !authData.user) {
+      return new Response(JSON.stringify({ success: false, error: "Unauthorized - Invalid session" }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const body = await request.json();
+    const { key } = body;
 
     if (!key) {
       return new Response(JSON.stringify({ error: 'File key is required' }), {
@@ -18,32 +42,50 @@ export const POST: APIRoute = async ({ request }) => {
     let baseUrl = publicDomain.endsWith('/') ? publicDomain.slice(0, -1) : publicDomain;
     const fileUrl = `${baseUrl}/${key}`;
 
-    // Perform cascade delete: Set main_image_url to null for any products using this image
-    // This uses Supabase server-side matching (requires DB service role or bypassing RLS if it's admin, but API route should be admin anyway). 
-    // Since RLS is on, we should ideally check auth, but currently API doesn't. 
-    // Let's assume authorized for now or no strict RLS for updates via service role if we had one.
-    // The current anon client with standard token might fail if RLS blocks update without auth... 
-    // We can at least try to update.
-    const { error: dbError } = await supabase
+    // Remove from gallery_images array
+    // Get all products that have this image in gallery
+    const { data: productsWithGallery } = await supabase
       .from('products')
-      .update({ main_image_url: null })
-      .eq('main_image_url', fileUrl);
-      
-    if (dbError) {
-      console.warn("Could not cascade delete image URL from products:", dbError);
+      .select('id, gallery_images')
+      .contains('gallery_images', [fileUrl]);
+
+    if (productsWithGallery && productsWithGallery.length > 0) {
+      // Remove the image from each product's gallery
+      for (const product of productsWithGallery) {
+        const newGallery = product.gallery_images.filter((img: string) => img !== fileUrl);
+        const { error: dbError } = await supabase
+          .from('products')
+          .update({ gallery_images: newGallery.length > 0 ? newGallery : null })
+          .eq('id', product.id);
+
+        if (dbError) {
+          console.warn("[DELETE] Could not update gallery_images:", dbError);
+        }
+      }
+      console.log(`[DELETE] Updated ${productsWithGallery.length} products to remove image from gallery`);
     }
 
     // Delete from R2
-    await deleteFromR2(key);
+    const deleteResult = await deleteFromR2(key);
 
-    return new Response(JSON.stringify({ success: true }), {
+    if (!deleteResult) {
+      throw new Error('R2 delete returned false');
+    }
+
+    return new Response(JSON.stringify({
+      success: true,
+      message: `File ${key} deleted successfully`
+    }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
 
   } catch (error: any) {
-    console.error('Delete API Error:', error);
-    return new Response(JSON.stringify({ error: error.message || 'Delete failed' }), {
+    console.error('[DELETE] Delete API Error:', error);
+    return new Response(JSON.stringify({
+      error: error.message || 'Delete failed',
+      details: error.stack
+    }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });

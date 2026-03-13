@@ -16,7 +16,7 @@ const items = products?.map(p => ({
   catId: p.category_id,
   sku: p.slug?.toUpperCase() || 'NO-SKU',
   name: p.name,
-  img: p.main_image_url || 'https://images.unsplash.com/photo-1541689592655-f5f52825a3b8?w=200&q=70',
+  img: (p.gallery_images && p.gallery_images.length > 0) ? p.gallery_images[0] : '/images/default-guitar.webp',
   cat: p.categories?.name || 'Khác',
   rawPrice: p.price || 0,
   price: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p.price || 0),
@@ -157,7 +157,7 @@ const outOfStock = items.filter(i => i.status === 'out').length;
               <td>
                 <div class="prod-cell">
                   <div class="prod-img">
-                    <img src={item.img} alt={item.name} loading="lazy" decoding="async" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1541689592655-f5f52825a3b8?auto=format&fit=crop&w=200&q=70';" />
+                    <img src={item.img} alt={item.name} loading="lazy" decoding="async" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null;this.src='/images/default-guitar.webp';" />
                   </div>
                   <span class="prod-name">{item.name}</span>
                 </div>

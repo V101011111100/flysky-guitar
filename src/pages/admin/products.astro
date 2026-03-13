@@ -41,618 +41,333 @@ const { data: categoriesArray } = await supabase
 ---
 
 <AdminLayout
-  title="Thêm sản phẩm mới"
-  subtitle="Thiết lập thông tin cho sản phẩm dòng Studio & Wood"
+  title={isEdit ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'}
+  subtitle={isEdit ? `Đang chỉnh sửa sản phẩm: ${product?.name || id}` : 'Thiết lập thông tin cho sản phẩm dòng Studio & Wood'}
   activeNav="products"
 >
 
-  <!-- HEADER ACTIONS -->
-  <div class="prd-header">
-    <div class="prd-header-left">
-      <h2 class="prd-title">{isEdit ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'}</h2>
-      <p class="prd-sub">{isEdit ? `Đang chỉnh sửa sản phẩm: ${product?.name || id}` : 'Thiết lập thông tin cho sản phẩm dòng Studio & Wood'}</p>
+  <input type="hidden" id="prod-id" value={isEdit ? product.id : ''} />
+
+  <!-- Header -->
+  <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+    <div>
+      <h2 class="text-3xl font-extrabold tracking-tight text-white">{isEdit ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'}</h2>
+      <p class="text-slate-500 mt-1">{isEdit ? `Đang chỉnh sửa sản phẩm: ${product?.name || id}` : 'Thiết lập thông tin cho sản phẩm dòng Studio & Wood'}</p>
     </div>
-    <div class="prd-header-actions">
-      <a href="/admin/inventory" class="btn-ghost" style="text-decoration:none;">Hủy</a>
-      <button class="btn-outline-orange">Xem trước</button>
-      <button class="btn-orange" id="btn-save-prod">
-        <span class="material-symbols-outlined">save</span>
+    <div class="flex items-center gap-3">
+      <a href="/admin/inventory" class="px-5 py-2.5 rounded-lg border border-slate-700 font-bold text-sm hover:bg-slate-800 transition-colors inline-block text-center text-slate-300 no-underline cursor-pointer">Hủy</a>
+      <button class="px-5 py-2.5 rounded-lg border border-primary text-primary font-bold text-sm hover:bg-primary/10 transition-colors cursor-pointer">Xem trước</button>
+      <button id="btn-save-prod" class="px-5 py-2.5 rounded-lg bg-primary text-background-dark font-bold text-sm hover:opacity-90 transition-opacity flex items-center gap-2 cursor-pointer border-none shadow-[0_4px_16px_rgba(244,140,37,0.25)]">
+        <span class="material-symbols-outlined text-[20px]">save</span>
         Lưu thay đổi
       </button>
     </div>
-  </div>
-  
-  <input type="hidden" id="prod-id" value={isEdit ? product.id : ''} />
+  </header>
 
-  <!-- MAIN GRID -->
-  <div class="prd-grid">
-
-    <!-- ── LEFT COLUMN ── -->
-    <div class="prd-col-left">
-
+  <div class="grid grid-cols-12 gap-8">
+    <!-- Left Column: Media & Specifications -->
+    <div class="col-span-12 lg:col-span-5 space-y-8">
+      
       <!-- Media Management -->
-      <section class="prd-card">
-        <h3 class="prd-card-title">
-          <span class="material-symbols-outlined prd-card-icon">image</span>
+      <section class="bg-primary/5 border border-primary/10 rounded-xl p-6">
+        <h3 class="text-lg font-bold mb-4 flex items-center gap-2 text-white">
+          <span class="material-symbols-outlined text-primary">image</span>
           Quản lý truyền thông
         </h3>
-
-        <!-- Optimize toggle -->
-        <div class="media-opt-bar">
-          <div class="media-opt-left">
-            <span class="material-symbols-outlined media-bolt">bolt</span>
-            <span class="media-opt-label">Tự động tối ưu dung lượng (WebP/AVIF)</span>
-          </div>
-          <label class="toggle-label-wrap">
-            <input type="checkbox" class="toggle-chk" checked />
-            <div class="toggle-track"><div class="toggle-thumb"></div></div>
-          </label>
-        </div>
-
-        <!-- Drag & Drop zone -->
-        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('img-upload-input').click()">
-          <input type="file" id="img-upload-input" accept="image/*" multiple style="display:none;" />
-          <!-- Hidden inputs to store URLs -->
-          <input type="hidden" id="gallery-images-json" value={isEdit && product?.gallery_images ? JSON.stringify(product.gallery_images) : '[]'} />
-          <div class="upload-icons">
-            <span class="material-symbols-outlined upload-icon">image</span>
-            <span class="material-symbols-outlined upload-icon">cloud_upload</span>
-          </div>
-          <p class="upload-text">Kéo và thả ảnh tại đây hoặc click để chọn nhiều tệp</p>
-          <p class="upload-hint">Hỗ trợ JPG, PNG, WEBP (Tối đa 15MB). Có thể chọn nhiều ảnh cùng lúc</p>
+        <div class="space-y-6">
           
-          <!-- Upload overlay / simple progress -->
-          <div id="upload-progress-overlay" style="display:none; position:absolute; inset:0; background:rgba(34,25,16,0.8); border-radius:14px; flex-direction:column; align-items:center; justify-content:center; gap:10px;">
-             <span class="material-symbols-outlined" style="color:#f48c25; animation: spin 1s linear infinite;">sync</span>
-             <span style="font-size:12px; font-weight:700; color:#f9fafb;" id="upload-progress-text">Đang xử lý ảnh...</span>
-          </div>
-        </div>
-
-        <!-- Thumbnail Grid -->
-        <div class="thumb-grid" id="thumb-grid">
-          <div class="thumb-add" onclick="document.getElementById('img-upload-input').click()">
-            <span class="material-symbols-outlined">add</span>
-            <span class="thumb-add-label">Thêm ảnh</span>
-          </div>
-          <!-- Main image thumbnail -->
-          <div class="thumb-item bg-default-guitar" id="main-thumb-preview" style={!isEdit || !product?.main_image_url ? 'display:none;' : ''}>
-            <img src={isEdit ? product?.main_image_url : ''} id="main-thumb-img" alt="preview" style="width:100%;height:100%;object-fit:cover;mix-blend-mode:luminosity;opacity:0.8"/>
-            <div class="thumb-overlay">
-              <span class="material-symbols-outlined thumb-action" title="Ảnh chính">star</span>
-              <span class="material-symbols-outlined thumb-action thumb-del" onclick="removeMainImage()" title="Xóa ảnh chính">delete</span>
+          <!-- Primary Drag & Drop Zone -->
+          <div class="flex items-center justify-between mb-4 bg-background-dark/40 p-3 rounded-lg border border-primary/10">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary text-sm">bolt</span>
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-300">Tự động tối ưu dung lượng (WebP)</span>
             </div>
-            <div class="thumb-badge" id="thumb-opt-badge" style="display:none;">Ảnh chính</div>
+            <!-- Toggle -->
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" value="" class="sr-only peer" checked>
+              <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+            </label>
           </div>
-          <!-- Extra gallery thumbnails will be injected by JS -->
+          
+          <div id="uploadZone" onclick="document.getElementById('img-upload-input').click()" class="relative w-full border-2 border-dashed border-primary/30 rounded-xl bg-background-dark/30 hover:bg-background-dark/50 hover:border-primary transition-all cursor-pointer group p-8 flex flex-col items-center justify-center gap-3 text-center overflow-hidden">
+            <input type="file" id="img-upload-input" accept="image/*" multiple style="display:none;" />
+            <input type="hidden" id="prod-image" value={isEdit ? product?.main_image_url : ''} />
+            <input type="hidden" id="gallery-images-json" value={isEdit && product?.gallery_images ? JSON.stringify(product.gallery_images) : '[]'} />
+            
+            <div class="flex items-center gap-4 relative z-10">
+              <span class="material-symbols-outlined text-primary/40 group-hover:text-primary text-4xl transition-colors">image</span>
+              <span class="material-symbols-outlined text-primary/40 group-hover:text-primary text-4xl transition-colors">cloud_upload</span>
+            </div>
+            <div class="relative z-10">
+              <p class="text-sm font-semibold text-slate-300">Kéo và thả nhiều ảnh tại đây hoặc click để chọn tệp</p>
+              <p class="text-xs text-slate-500 mt-1 uppercase tracking-tighter">Hỗ trợ JPG, PNG, WEBP (Tối đa 15MB)</p>
+            </div>
+            
+            <!-- Upload overlay -->
+            <div id="upload-progress-overlay" style="display:none;" class="absolute inset-0 bg-background-dark/80 backdrop-blur-sm z-20 flex-col items-center justify-center gap-2">
+              <span class="material-symbols-outlined animate-spin text-primary text-3xl">sync</span>
+              <span id="upload-progress-text" class="text-xs font-bold text-slate-100 uppercase tracking-widest">Đang xử lý ảnh...</span>
+            </div>
+          </div>
+          
+          <!-- Image Thumbnails Grid -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-6" id="thumb-grid">
+            
+            <!-- Add New Image Button -->
+            <div onclick="document.getElementById('img-upload-input').click()" class="aspect-square rounded-xl border-2 border-dashed border-primary/30 flex flex-col items-center justify-center bg-background-dark/50 hover:border-primary transition-all cursor-pointer group">
+              <span class="material-symbols-outlined text-primary/50 group-hover:text-primary text-3xl">add_a_photo</span>
+              <span class="text-[10px] uppercase font-bold text-primary/50 mt-2 group-hover:text-primary text-center">Thêm<br/>ảnh mới</span>
+            </div>
+            
+            <!-- Gallery items will be injected here by JS -->
+          </div>
+          
+          <!-- Video Link -->
+          <div>
+            <label class="text-xs font-bold uppercase tracking-widest text-primary/70 mb-2 block">Link Video Demo Âm thanh</label>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">play_circle</span>
+              <input type="text" class="w-full bg-background-dark border border-primary/20 rounded-lg py-3 pl-10 pr-4 focus:ring-1 focus:ring-primary focus:border-primary text-sm outline-none text-slate-200 placeholder-slate-600 transition-colors" placeholder="YouTube hoặc Vimeo URL..." />
+            </div>
+          </div>
+          
         </div>
-
-        <!-- Video Link -->
-        <div class="video-field">
-          <label class="prd-label">Link Video Demo Âm thanh</label>
-          <div class="icon-input-wrap">
-            <span class="material-symbols-outlined inp-icon">play_circle</span>
-            <input type="text" class="prd-input inp-with-icon" placeholder="YouTube hoặc Vimeo URL..." />
+      </section>
+      
+      <!-- Tech Specs -->
+      <section class="bg-primary/5 border border-primary/10 rounded-xl p-6">
+        <h3 class="text-lg font-bold mb-4 flex items-center gap-2 text-white">
+          <span class="material-symbols-outlined text-primary">tune</span>
+          Thông số kỹ thuật
+        </h3>
+        <div class="space-y-5">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="text-xs font-bold uppercase tracking-widest text-primary/70 mb-2 block">Gỗ mặt trước (Top)</label>
+              <select id="prod-top" class="w-full bg-background-dark border border-primary/20 rounded-lg py-2.5 px-4 text-sm focus:ring-1 focus:ring-primary outline-none text-slate-200 cursor-pointer transition-colors">
+                <option value="">-- Trống / Khác --</option>
+                {topWoodProducts.map(mat => (
+                  <option value={mat.name} selected={isEdit && product?.spec_top === mat.name}>{mat.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label class="text-xs font-bold uppercase tracking-widest text-primary/70 mb-2 block">Gỗ lưng &amp; hông (Body)</label>
+              <select id="prod-body" class="w-full bg-background-dark border border-primary/20 rounded-lg py-2.5 px-4 text-sm focus:ring-1 focus:ring-primary outline-none text-slate-200 cursor-pointer transition-colors">
+                <option value="">-- Trống / Khác --</option>
+                {bodyWoodProducts.map(mat => (
+                  <option value={mat.name} selected={isEdit && product?.spec_body === mat.name}>{mat.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="text-xs font-bold uppercase tracking-widest text-primary/70 mb-2 block">Cần Đàn (Neck)</label>
+              <select id="prod-neck" class="w-full bg-background-dark border border-primary/20 rounded-lg py-2.5 px-4 text-sm focus:ring-1 focus:ring-primary outline-none text-slate-200 cursor-pointer transition-colors">
+                <option value="">-- Trống / Khác --</option>
+                {neckWoodProducts.map(mat => (
+                  <option value={mat.name} selected={isEdit && product?.spec_neck === mat.name}>{mat.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label class="text-xs font-bold uppercase tracking-widest text-primary/70 mb-2 block text-white/50">Pickups</label>
+              <select class="w-full bg-background-dark border border-primary/20 rounded-lg py-2.5 px-4 text-sm focus:ring-1 focus:ring-primary outline-none text-slate-400 cursor-not-allowed transition-colors" disabled>
+                <option>None (Acoustic only)</option>
+              </select>
+            </div>
           </div>
         </div>
       </section>
-
-      <!-- Tech Specs -->
-      <section class="prd-card">
-        <h3 class="prd-card-title">
-          <span class="material-symbols-outlined prd-card-icon">tune</span>
-          Thông số kỹ thuật
+      
+    </div>
+    
+    <!-- Right Column: Product Details -->
+    <div class="col-span-12 lg:col-span-7 space-y-8">
+      <section class="bg-primary/5 border border-primary/10 rounded-xl p-8">
+        <h3 class="text-lg font-bold mb-6 flex items-center gap-2 text-white">
+          <span class="material-symbols-outlined text-primary">info</span>
+          Thông tin chi tiết
         </h3>
-        <div class="prd-form-grid">
-          <div class="form-group">
-            <label class="prd-label">Gỗ mặt trước (Mặt Top)</label>
-            <select id="prod-top" class="prd-input">
-              <option value="">-- Không chỉ định / Khác --</option>
-              {topWoodProducts.map(mat => (
-                <option value={mat.name} selected={isEdit && product?.spec_top === mat.name}>{mat.name}</option>
-              ))}
-            </select>
+        <div class="space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="md:col-span-2">
+              <label class="text-xs font-bold uppercase tracking-widest text-primary/70 mb-2 block">Tên sản phẩm *</label>
+              <input type="text" id="prod-name" class="w-full bg-background-dark border border-primary/20 rounded-lg py-3 px-4 focus:ring-1 focus:ring-primary outline-none text-base text-slate-100 placeholder-slate-500 transition-colors" placeholder="Ví dụ: FlySky Studio Wood Edition G-200" value={isEdit ? product?.name : ''} required />
+            </div>
+            <div>
+              <label class="text-xs font-bold uppercase tracking-widest text-primary/70 mb-2 block">Đường dẫn (Slug) *</label>
+              <input type="text" id="prod-slug" class="w-full bg-background-dark border border-primary/20 rounded-lg py-3 px-4 focus:ring-1 focus:ring-primary outline-none text-sm font-bold text-primary placeholder-slate-600 transition-colors" placeholder="fs-sw-200-mah" value={isEdit ? product?.slug : ''} required />
+            </div>
+            <div>
+              <label class="text-xs font-bold uppercase tracking-widest text-primary/70 mb-2 block">Danh mục</label>
+              <select id="prod-category" class="w-full bg-background-dark border border-primary/20 rounded-lg py-3 px-4 focus:ring-1 focus:ring-primary outline-none text-sm text-slate-200 cursor-pointer transition-colors">
+                <option value="">-- Không chỉ định / Khác --</option>
+                {(categoriesArray || []).map(cat => (
+                  <option value={cat.id} selected={isEdit && product?.category_id === cat.id}>{cat.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label class="text-xs font-bold uppercase tracking-widest text-primary/70 mb-2 block">Giá bán (VNĐ) *</label>
+              <div class="relative">
+                <input type="number" id="prod-price" class="w-full bg-background-dark border border-primary/20 rounded-lg py-3 pl-4 pr-12 focus:ring-1 focus:ring-primary outline-none text-base text-slate-100 transition-colors" placeholder="0" value={isEdit ? product?.price : ''} required />
+                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-primary font-bold">₫</span>
+              </div>
+            </div>
+            <div>
+              <label class="text-xs font-bold uppercase tracking-widest text-primary/70 mb-2 block">Trạng thái *</label>
+              <select id="prod-status" class="w-full bg-background-dark border border-primary/20 rounded-lg py-3 px-4 focus:ring-1 focus:ring-primary outline-none text-sm text-slate-200 cursor-pointer transition-colors">
+                <option value="active" selected={isEdit ? product?.status === 'active' : true}>Đang bán</option>
+                <option value="draft" selected={isEdit && product?.status === 'draft'}>Bản nháp</option>
+                <option value="out_of_stock" selected={isEdit && product?.status === 'out_of_stock'}>Hết hàng</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs font-bold uppercase tracking-widest text-primary/70 mb-2 block">Số lượng tồn kho</label>
+              <input type="number" id="prod-stock" class="w-full bg-background-dark border border-primary/20 rounded-lg py-3 px-4 focus:ring-1 focus:ring-primary outline-none text-base text-slate-100 transition-colors" placeholder="10" value={isEdit ? product?.stock_quantity : '0'} min="0" required />
+            </div>
+            <div>
+              <label class="text-xs font-bold uppercase tracking-widest text-primary/70 mb-2 block">Link Ảnh Chính (Bắt buộc) *</label>
+              <input type="url" id="prod-image" class="w-full bg-background-dark border border-primary/20 rounded-lg py-3 px-4 focus:ring-1 focus:ring-primary outline-none text-sm text-slate-300 placeholder-slate-600 transition-colors" placeholder="https://..." value={isEdit ? product?.main_image_url : ''} required />
+            </div>
           </div>
-          <div class="form-group">
-            <label class="prd-label">Gỗ lưng &amp; hông (Lưng Hông)</label>
-            <select id="prod-body" class="prd-input">
-             <option value="">-- Không chỉ định / Khác --</option>
-              {bodyWoodProducts.map(mat => (
-                <option value={mat.name} selected={isEdit && product?.spec_body === mat.name}>{mat.name}</option>
-              ))}
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="prd-label">Cần Đàn</label>
-            <select id="prod-neck" class="prd-input">
-             <option value="">-- Không chỉ định / Khác --</option>
-              {neckWoodProducts.map(mat => (
-                <option value={mat.name} selected={isEdit && product?.spec_neck === mat.name}>{mat.name}</option>
-              ))}
-            </select>
-          </div>
-          <div class="form-group" style="display:none;">
-            <label class="prd-label">Pickups</label>
-            <select class="prd-input">
-              <option>Fishman Presys II</option>
-              <option>L.R. Baggs Anthem</option>
-              <option>Taylor Expression System 2</option>
-              <option>None (Acoustic only)</option>
-            </select>
+          
+          <!-- Rich Text Editor (Mockup) -->
+          <div>
+            <label class="text-xs font-bold uppercase tracking-widest text-primary/70 mb-2 block">Mô tả sản phẩm</label>
+            <div class="border border-primary/20 rounded-lg overflow-hidden transition-colors">
+              <div class="bg-background-dark/80 border-b border-primary/10 p-2 flex gap-1 flex-wrap">
+                <button type="button" class="border-none bg-transparent p-1.5 rounded hover:bg-primary/20 transition-colors text-slate-400 hover:text-primary cursor-pointer"><span class="material-symbols-outlined text-sm">format_bold</span></button>
+                <button type="button" class="border-none bg-transparent p-1.5 rounded hover:bg-primary/20 transition-colors text-slate-400 hover:text-primary cursor-pointer"><span class="material-symbols-outlined text-sm">format_italic</span></button>
+                <button type="button" class="border-none bg-transparent p-1.5 rounded hover:bg-primary/20 transition-colors text-slate-400 hover:text-primary cursor-pointer"><span class="material-symbols-outlined text-sm">format_underlined</span></button>
+                <div class="w-px h-6 bg-primary/20 mx-1"></div>
+                <button type="button" class="border-none bg-transparent p-1.5 rounded hover:bg-primary/20 transition-colors text-slate-400 hover:text-primary cursor-pointer"><span class="material-symbols-outlined text-sm">format_list_bulleted</span></button>
+                <button type="button" class="border-none bg-transparent p-1.5 rounded hover:bg-primary/20 transition-colors text-slate-400 hover:text-primary cursor-pointer"><span class="material-symbols-outlined text-sm">format_list_numbered</span></button>
+                <div class="w-px h-6 bg-primary/20 mx-1"></div>
+                <button type="button" class="border-none bg-transparent p-1.5 rounded hover:bg-primary/20 transition-colors text-slate-400 hover:text-primary cursor-pointer"><span class="material-symbols-outlined text-sm">link</span></button>
+                <button type="button" class="border-none bg-transparent p-1.5 rounded hover:bg-primary/20 transition-colors text-slate-400 hover:text-primary cursor-pointer"><span class="material-symbols-outlined text-sm">image</span></button>
+              </div>
+              <textarea id="prod-desc" class="w-full bg-background-dark border-none p-4 text-[13px] focus:ring-0 outline-none resize-none text-slate-200 placeholder-slate-600 font-display leading-[1.6]" placeholder="Nhập mô tả chi tiết về sản phẩm, đặc điểm nổi bật và cảm giác chơi..." rows="8">{isEdit ? product?.description : ''}</textarea>
+            </div>
           </div>
         </div>
       </section>
     </div>
+  </div>
 
-    <!-- ── RIGHT COLUMN ── -->
-    <div class="prd-col-right">
-      <section class="prd-card">
-        <h3 class="prd-card-title">
-          <span class="material-symbols-outlined prd-card-icon">info</span>
-          Thông tin chi tiết
-        </h3>
+  <!-- Footer Actions Mobile -->
+  <div class="mt-10 pt-8 border-t border-primary/10 flex md:hidden flex-col gap-3">
+    <button class="w-full px-5 py-3 rounded-lg bg-primary text-background-dark font-bold border-none" onclick="document.getElementById('btn-save-prod').click()">Lưu thay đổi</button>
+    <div class="grid grid-cols-2 gap-3">
+      <button class="px-5 py-3 bg-transparent rounded-lg border border-primary text-primary font-bold text-sm">Xem trước</button>
+      <a href="/admin/inventory" class="text-center bg-transparent px-5 py-3 rounded-lg border border-slate-700 font-bold text-sm text-slate-300 no-underline">Hủy</a>
+    </div>
+  </div>
 
-        <!-- Product Name (full width) -->
-        <div class="form-group form-full" style="margin-bottom:20px;">
-          <label class="prd-label">Tên sản phẩm *</label>
-          <input type="text" id="prod-name" class="prd-input prd-input-lg" placeholder="Ví dụ: FlySky Studio Wood Edition G-200" value={isEdit ? product?.name : ''} required />
+  <!-- Image Crop Modal -->
+  <div class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/90 hidden" id="crop-modal" onclick="if(event.target===this) this.classList.add('hidden')">
+    <div class="bg-background-dark border border-primary/20 rounded-2xl w-full max-w-4xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]" onclick="event.stopPropagation()">
+      <!-- Modal Header -->
+      <div class="p-6 border-b border-primary/10 flex items-center justify-between bg-primary/5">
+        <div class="flex items-center gap-3">
+          <span class="material-symbols-outlined text-primary">crop</span>
+          <h3 class="text-xl font-bold text-slate-100">Cắt và điều chỉnh ảnh</h3>
         </div>
-
-        <!-- 2-col fields -->
-        <div class="prd-form-grid" style="margin-bottom:20px;">
-          <div class="form-group">
-            <label class="prd-label">Đường dẫn hiển thị (Slug) *</label>
-            <input type="text" id="prod-slug" class="prd-input prd-input-upper" placeholder="dan-guitar-classic-c40" value={isEdit ? product?.slug : ''} required />
-          </div>
-          <div class="form-group">
-            <label class="prd-label">Danh mục</label>
-            <select id="prod-category" class="prd-input">
-              <option value="">-- Không chỉ định / Khác --</option>
-              {(categoriesArray || []).map(cat => (
-                <option value={cat.id} selected={isEdit && product?.category_id === cat.id}>{cat.name}</option>
-              ))}
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="prd-label">Số lượng Tồn Kho</label>
-            <input type="number" id="prod-stock" class="prd-input" placeholder="Ví dụ: 50" value={isEdit ? product?.stock_quantity : '0'} min="0" required />
-          </div>
-          <div class="form-group">
-            <label class="prd-label">Trạng thái *</label>
-            <select id="prod-status" class="prd-input">
-              <option value="active" selected={isEdit ? product?.status === 'active' : true}>Đang bán</option>
-              <option value="draft" selected={isEdit && product?.status === 'draft'}>Bản nháp</option>
-              <option value="out_of_stock" selected={isEdit && product?.status === 'out_of_stock'}>Hết hàng</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="prd-label">Giá bán (VNĐ) *</label>
-            <div class="icon-input-wrap">
-              <input type="number" id="prod-price" class="prd-input prd-input-currency" placeholder="0" value={isEdit ? product?.price : ''} required />
-              <span class="currency-sym">₫</span>
+        <button class="text-slate-400 hover:text-white transition-colors bg-transparent border-none cursor-pointer" onclick="document.getElementById('crop-modal').classList.add('hidden')">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      
+      <!-- Modal Body: Editor Area -->
+      <div class="flex-1 overflow-hidden flex flex-col lg:flex-row">
+        <!-- Main Preview Area -->
+        <div class="flex-1 bg-black/50 relative flex items-center justify-center p-8">
+          <div class="relative w-full max-w-md aspect-square border-2 border-primary/50 group">
+            <img src="https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=600&q=70" alt="Crop Preview" class="w-full h-full object-cover opacity-60 mix-blend-luminosity" />
+            <!-- Mock Crop Frame -->
+            <div class="absolute inset-4 border-2 border-dashed border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.5)] cursor-move">
+              <div class="absolute -top-1 -left-1 w-3 h-3 bg-white"></div>
+              <div class="absolute -top-1 -right-1 w-3 h-3 bg-white"></div>
+              <div class="absolute -bottom-1 -left-1 w-3 h-3 bg-white"></div>
+              <div class="absolute -bottom-1 -right-1 w-3 h-3 bg-white"></div>
             </div>
           </div>
-          <div class="form-group">
-            <label class="prd-label">Link Ảnh Xóa Phông (HTTPS) *</label>
-            <input type="url" id="prod-image" class="prd-input" placeholder="https://..." value={isEdit ? product?.main_image_url : ''} required />
-          </div>
         </div>
-
-        <!-- Rich Text Editor -->
-        <div class="form-group">
-          <label class="prd-label">Mô tả sản phẩm</label>
-          <div class="rte-wrap">
-            <div class="rte-toolbar">
-              <button class="rte-btn"><span class="material-symbols-outlined">format_bold</span></button>
-              <button class="rte-btn"><span class="material-symbols-outlined">format_italic</span></button>
-              <button class="rte-btn"><span class="material-symbols-outlined">format_underlined</span></button>
-              <div class="rte-sep"></div>
-              <button class="rte-btn"><span class="material-symbols-outlined">format_list_bulleted</span></button>
-              <button class="rte-btn"><span class="material-symbols-outlined">format_list_numbered</span></button>
-              <div class="rte-sep"></div>
-              <button class="rte-btn"><span class="material-symbols-outlined">link</span></button>
-              <button class="rte-btn"><span class="material-symbols-outlined">image</span></button>
+        
+        <!-- Controls Sidebar -->
+        <div class="w-full lg:w-72 border-l border-primary/10 p-6 space-y-8 bg-background-dark overflow-y-auto hidden-scrollbar">
+          <!-- Aspect Ratio -->
+          <div class="bg-primary/10 border border-primary/20 rounded-lg p-3 mb-6">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-[10px] font-bold uppercase tracking-widest text-primary">Tối ưu hóa</span>
+              <span class="text-[10px] font-bold text-emerald-400">BẬT</span>
             </div>
-            <textarea id="prod-desc" class="rte-body" rows="9" placeholder="Nhập mô tả chi tiết về sản phẩm, đặc điểm nổi bật và cảm giác chơi...">{isEdit ? product?.description : ''}</textarea>
+            <p class="text-[10px] text-slate-400 leading-tight mb-3">Tự động chuyển đổi sang WebP để tăng tốc độ tải trang.</p>
+            <div class="flex items-center gap-2 text-emerald-400">
+              <span class="material-symbols-outlined text-sm">check_circle</span>
+              <span class="text-[10px] font-bold">Đã tối ưu - tiết kiệm 65%</span>
+            </div>
+          </div>
+          
+          <div>
+            <label class="text-xs font-bold uppercase tracking-widest text-primary/70 mb-4 block">Tỷ lệ khung hình</label>
+            <div class="grid grid-cols-2 gap-2">
+              <button class="px-3 py-2 rounded border border-primary bg-primary/10 text-primary text-xs font-bold cursor-pointer">1:1 (Vuông)</button>
+              <button class="px-3 py-2 bg-transparent rounded border border-primary/20 text-slate-400 text-xs hover:bg-primary/5 hover:text-primary transition-colors cursor-pointer">4:3</button>
+              <button class="px-3 py-2 bg-transparent rounded border border-primary/20 text-slate-400 text-xs hover:bg-primary/5 hover:text-primary transition-colors cursor-pointer">16:9</button>
+              <button class="px-3 py-2 bg-transparent rounded border border-primary/20 text-slate-400 text-xs hover:bg-primary/5 hover:text-primary transition-colors cursor-pointer">Tự do</button>
+            </div>
+          </div>
+          
+          <!-- Zoom & Rotate -->
+          <div class="space-y-6">
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <label class="text-xs font-bold uppercase tracking-widest text-primary/70">Phóng to</label>
+                <span class="text-xs text-slate-400">100%</span>
+              </div>
+              <input type="range" class="w-full h-1.5 rounded-lg appearance-none cursor-pointer bg-primary/20" style="accent-color: #f48c25;"/>
+            </div>
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <label class="text-xs font-bold uppercase tracking-widest text-primary/70">Xoay</label>
+                <span class="text-xs text-slate-400">0°</span>
+              </div>
+              <div class="flex gap-2">
+                <button class="flex-1 bg-transparent p-2 rounded border border-primary/20 text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"><span class="material-symbols-outlined text-sm">rotate_left</span></button>
+                <button class="flex-1 bg-transparent p-2 rounded border border-primary/20 text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"><span class="material-symbols-outlined text-sm">rotate_right</span></button>
+                <button class="flex-1 bg-transparent p-2 rounded border border-primary/20 text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"><span class="material-symbols-outlined text-sm">flip</span></button>
+              </div>
+            </div>
           </div>
         </div>
-      </section>
+      </div>
+      
+      <!-- Modal Footer -->
+      <div class="p-6 border-t border-primary/10 flex items-center justify-end gap-3 bg-background-dark">
+        <button class="px-6 py-2.5 bg-transparent rounded-lg border border-slate-700 font-bold text-slate-300 text-sm hover:bg-slate-800 transition-colors cursor-pointer" onclick="document.getElementById('crop-modal').classList.add('hidden')">Hủy</button>
+        <button class="px-6 py-2.5 rounded-lg border-none bg-primary text-background-dark font-bold text-sm hover:opacity-90 transition-opacity cursor-pointer" onclick="document.getElementById('crop-modal').classList.add('hidden')">Áp dụng</button>
+      </div>
     </div>
   </div>
 
 </AdminLayout>
 
-<!-- ── IMAGE CROP MODAL ── -->
-<div class="crop-modal" id="crop-modal" style="display:none;" onclick="if(event.target===this) this.style.display='none'">
-  <div class="crop-dialog">
-    <!-- Modal Header -->
-    <div class="crop-header">
-      <div class="crop-header-left">
-        <span class="material-symbols-outlined" style="color:#f48c25;">crop</span>
-        <h3 class="crop-title">Cắt và điều chỉnh ảnh</h3>
-      </div>
-      <button class="crop-close-btn" onclick="document.getElementById('crop-modal').style.display='none'">
-        <span class="material-symbols-outlined">close</span>
-      </button>
-    </div>
-
-    <!-- Modal Body -->
-    <div class="crop-body">
-      <!-- Preview -->
-      <div class="crop-preview-area">
-        <div class="crop-frame bg-default-guitar">
-          <img src="https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=600&q=70" alt="Crop preview" class="crop-img" style="mix-blend-mode:luminosity;" />
-          <div class="crop-selection">
-            <div class="crop-handle tl"></div>
-            <div class="crop-handle tr"></div>
-            <div class="crop-handle bl"></div>
-            <div class="crop-handle br"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Controls -->
-      <div class="crop-controls">
-        <!-- Optimize bar -->
-        <div class="crop-opt-bar">
-          <div class="crop-opt-head">
-            <span class="crop-opt-label">Tối ưu hóa</span>
-            <span class="crop-opt-status">BẬT</span>
-          </div>
-          <p class="crop-opt-desc">Tự động chuyển đổi sang WebP/AVIF để tăng tốc độ tải trang.</p>
-          <div class="crop-opt-confirm">
-            <span class="material-symbols-outlined crop-check-icon">check_circle</span>
-            <span class="crop-check-text">Đã tối ưu - tiết kiệm 65%</span>
-          </div>
-        </div>
-
-        <!-- Aspect Ratio -->
-        <div class="crop-ctrl-group">
-          <label class="prd-label" style="margin-bottom:12px;">Tỷ lệ khung hình</label>
-          <div class="ratio-grid">
-            <button class="ratio-btn ratio-active">1:1 (Vuông)</button>
-            <button class="ratio-btn">4:3</button>
-            <button class="ratio-btn">16:9</button>
-            <button class="ratio-btn">Tự do</button>
-          </div>
-        </div>
-
-        <!-- Zoom -->
-        <div class="crop-ctrl-group">
-          <div class="crop-slider-head">
-            <label class="prd-label">Phóng to</label>
-            <span class="crop-slider-val">100%</span>
-          </div>
-          <input type="range" class="crop-slider" />
-        </div>
-
-        <!-- Rotate -->
-        <div class="crop-ctrl-group">
-          <div class="crop-slider-head">
-            <label class="prd-label">Xoay</label>
-            <span class="crop-slider-val">0°</span>
-          </div>
-          <div class="rotate-btns">
-            <button class="rotate-btn"><span class="material-symbols-outlined">rotate_left</span></button>
-            <button class="rotate-btn"><span class="material-symbols-outlined">rotate_right</span></button>
-            <button class="rotate-btn"><span class="material-symbols-outlined">flip</span></button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal Footer -->
-    <div class="crop-footer">
-      <button class="btn-ghost" onclick="document.getElementById('crop-modal').style.display='none'">Hủy</button>
-      <button class="btn-orange" onclick="document.getElementById('crop-modal').style.display='none'">Áp dụng</button>
-    </div>
-  </div>
-</div>
-
 <style>
-  /* ── PAGE HEADER ── */
-  .prd-header {
-    display: flex; align-items: flex-start; justify-content: space-between;
-    gap: 20px; margin-bottom: 32px; flex-wrap: wrap;
+  .hidden-scrollbar::-webkit-scrollbar { width: 4px; }
+  .hidden-scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .hidden-scrollbar::-webkit-scrollbar-thumb { background: #493622; border-radius: 10px; }
+  
+  @keyframes delete-pop {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+    100% { transform: scale(0); opacity: 0; }
   }
-  .prd-title { font-size: 26px; font-weight: 900; color: #f9fafb; }
-  .prd-sub   { font-size: 13px; color: #94a3b8; margin-top: 4px; }
-  .prd-header-actions { display: flex; align-items: center; gap: 10px; }
-  .btn-ghost {
-    padding: 9px 18px; border-radius: 10px;
-    border: 1px solid #4a3a2a; background: none; color: #94a3b8;
-    font-size: 13px; font-weight: 700; cursor: pointer; font-family: 'Manrope', sans-serif;
-    transition: background .15s;
-  }
-  .btn-ghost:hover { background: #2d2218; color: #f9fafb; }
-  .btn-outline-orange {
-    padding: 9px 18px; border-radius: 10px;
-    border: 1px solid #f48c25; background: none; color: #f48c25;
-    font-size: 13px; font-weight: 700; cursor: pointer; font-family: 'Manrope', sans-serif;
-    transition: background .15s;
-  }
-  .btn-outline-orange:hover { background: rgba(244,140,37,.1); }
-  .btn-orange {
-    display: flex; align-items: center; gap: 6px;
-    padding: 9px 18px; border-radius: 10px;
-    background: #f48c25; color: #221910; border: none;
-    font-size: 13px; font-weight: 700; cursor: pointer; font-family: 'Manrope', sans-serif;
-    box-shadow: 0 4px 16px rgba(244,140,37,.25); transition: filter .15s;
-  }
-  .btn-orange:hover { filter: brightness(1.08); }
-  .btn-orange .material-symbols-outlined { font-size: 18px; }
-
-  /* ── MAIN GRID ── */
-  .prd-grid {
-    display: grid;
-    grid-template-columns: 5fr 7fr;
-    gap: 28px;
-    align-items: start;
-  }
-  .prd-col-left, .prd-col-right { display: flex; flex-direction: column; gap: 24px; }
-
-  /* ── CARD ── */
-  .prd-card {
-    background: rgba(244,140,37,.04);
-    border: 1px solid rgba(74,58,42,.6);
-    border-radius: 16px; padding: 24px;
-    display: flex; flex-direction: column; gap: 18px;
-  }
-  .prd-card-title {
-    display: flex; align-items: center; gap: 10px;
-    font-size: 16px; font-weight: 800; color: #f9fafb;
-  }
-  .prd-card-icon { font-size: 20px; color: #f48c25; }
-
-  /* ── LABELS & INPUTS ── */
-  .prd-label {
-    display: block; font-size: 10px; font-weight: 800;
-    text-transform: uppercase; letter-spacing: .1em; color: rgba(244,140,37,.75);
-    margin-bottom: 8px;
-  }
-  .prd-input {
-    width: 100%; background: #2d2218; border: 1px solid rgba(74,58,42,.8);
-    border-radius: 10px; padding: 10px 16px;
-    font-size: 13px; color: #f1f5f9; font-family: 'Manrope', sans-serif;
-    outline: none; transition: border .2s; box-sizing: border-box;
-  }
-  .prd-input:focus { border-color: #f48c25; }
-  .prd-input::placeholder { color: #64748b; }
-  .prd-input-lg   { font-size: 15px; padding: 12px 16px; }
-  .prd-input-upper{ text-transform: uppercase; }
-  .prd-input-currency { padding-right: 40px; }
-  .icon-input-wrap { position: relative; display: flex; align-items: center; }
-  .inp-icon { position: absolute; left: 14px; font-size: 18px; color: #94a3b8; pointer-events: none; }
-  .inp-with-icon { padding-left: 44px; }
-  .currency-sym { position: absolute; right: 14px; font-size: 16px; font-weight: 800; color: #f48c25; pointer-events: none; }
-
-  /* ── FORM GRID ── */
-  .prd-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .form-group { display: flex; flex-direction: column; }
-  .form-full { grid-column: 1 / -1; }
-
-  /* ── OPTIMIZE TOGGLE BAR ── */
-  .media-opt-bar {
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 12px; padding: 12px 16px; border-radius: 10px;
-    background: rgba(34,25,16,.4); border: 1px solid rgba(244,140,37,.1);
-  }
-  .media-opt-left { display: flex; align-items: center; gap: 8px; }
-  .media-bolt { font-size: 16px; color: #f48c25; }
-  .media-opt-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: #e2e8f0; }
-
-  /* Toggle (reuse from settings) */
-  .toggle-label-wrap { display: flex; align-items: center; cursor: pointer; }
-  .toggle-chk { position: absolute; opacity: 0; width: 0; height: 0; }
-  .toggle-track { width: 40px; height: 22px; border-radius: 999px; background: #475569; position: relative; transition: background .2s; flex-shrink: 0; }
-  .toggle-chk:checked + .toggle-track { background: #f48c25; }
-  .toggle-thumb { position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left .2s; }
-  .toggle-chk:checked + .toggle-track .toggle-thumb { left: 20px; }
-
-  /* ── UPLOAD ZONE ── */
-  .upload-zone {
-    position: relative;
-    border: 2px dashed rgba(244,140,37,.3); border-radius: 14px;
-    background: rgba(34,25,16,.3); padding: 32px 20px;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 12px; text-align: center; cursor: pointer;
-    transition: border-color .2s, background .2s;
-    overflow: hidden;
-  }
-  .upload-zone:hover { border-color: #f48c25; background: rgba(34,25,16,.5); }
-  @keyframes spin { 100% { transform: rotate(360deg); } }
-  .upload-icons { display: flex; gap: 16px; }
-  .upload-icon { font-size: 36px; color: rgba(244,140,37,.4); transition: color .2s; }
-  .upload-zone:hover .upload-icon { color: #f48c25; }
-  .upload-text { font-size: 13px; font-weight: 600; color: #cbd5e1; }
-  .upload-hint { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #64748b; }
-
-  /* ── THUMBNAIL GRID ── */
-  .thumb-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 10px;
-  }
-  .thumb-add {
-    aspect-ratio: 1; border-radius: 10px;
-    border: 2px dashed rgba(244,140,37,.3);
-    background: rgba(34,25,16,.5);
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 4px;
-    cursor: pointer; transition: border-color .2s;
-  }
-  .thumb-add:hover { border-color: #f48c25; }
-  .thumb-add .material-symbols-outlined { font-size: 22px; color: rgba(244,140,37,.5); }
-  .thumb-add-label { font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: rgba(244,140,37,.5); }
-  .thumb-item {
-    aspect-ratio: 1; border-radius: 10px;
-    background-size: cover; background-position: center;
-    border: 1px solid rgba(244,140,37,.2);
-    position: relative; overflow: hidden;
-    box-shadow: 0 0 0 1px rgba(52,211,153,.25);
-  }
-  .thumb-overlay {
-    position: absolute; inset: 0;
-    background: rgba(0,0,0,.65);
-    display: flex; align-items: center; justify-content: center; gap: 12px;
-    opacity: 0; transition: opacity .2s;
-  }
-  .thumb-item:hover .thumb-overlay { opacity: 1; }
-  .thumb-action {
-    font-size: 20px; color: #fff; cursor: pointer; transition: color .15s;
-  }
-  .thumb-action:hover { color: #f48c25; }
-  .thumb-del:hover { color: #f87171 !important; }
-  .thumb-badge {
-    position: absolute; top: 4px; right: 4px;
-    background: rgba(52,211,153,.9); color: #fff;
-    font-size: 8px; font-weight: 900; padding: 2px 6px; border-radius: 999px;
-  }
-
-  /* ── VIDEO FIELD ── */
-  .video-field { }
-
-  /* ── RICH TEXT EDITOR ── */
-  .rte-wrap { border: 1px solid rgba(74,58,42,.8); border-radius: 10px; overflow: hidden; }
-  .rte-toolbar {
-    display: flex; align-items: center; gap: 2px;
-    padding: 8px 10px;
-    background: rgba(34,25,16,.6); border-bottom: 1px solid rgba(74,58,42,.5);
-    flex-wrap: wrap;
-  }
-  .rte-btn {
-    width: 30px; height: 30px; border-radius: 6px;
-    border: none; background: none; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    color: #94a3b8; transition: background .15s, color .15s;
-  }
-  .rte-btn:hover { background: rgba(244,140,37,.2); color: #f48c25; }
-  .rte-btn .material-symbols-outlined { font-size: 16px; }
-  .rte-sep { width: 1px; height: 20px; background: rgba(74,58,42,.6); margin: 0 4px; }
-  .rte-body {
-    width: 100%; background: #2d2218; border: none; padding: 16px;
-    font-size: 13px; color: #f1f5f9; font-family: 'Manrope', sans-serif;
-    outline: none; resize: none; box-sizing: border-box; line-height: 1.6;
-  }
-  .rte-body::placeholder { color: #64748b; }
-
-  /* ── CROP MODAL ── */
-  .crop-modal {
-    position: fixed; inset: 0; z-index: 9999;
-    background: rgba(0,0,0,.9);
-    display: flex; align-items: center; justify-content: center; padding: 20px;
-  }
-  .crop-dialog {
-    background: #221910; border: 1px solid rgba(244,140,37,.2);
-    border-radius: 20px; width: 100%; max-width: 900px;
-    max-height: 90vh; overflow: hidden;
-    display: flex; flex-direction: column;
-    box-shadow: 0 25px 60px rgba(0,0,0,.8);
-  }
-  .crop-header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 20px 24px; border-bottom: 1px solid rgba(244,140,37,.1);
-    background: rgba(244,140,37,.04);
-  }
-  .crop-header-left { display: flex; align-items: center; gap: 10px; }
-  .crop-title { font-size: 17px; font-weight: 800; color: #f9fafb; }
-  .crop-close-btn {
-    background: none; border: none; color: #94a3b8;
-    cursor: pointer; padding: 4px; transition: color .15s;
-  }
-  .crop-close-btn:hover { color: #f9fafb; }
-  .crop-close-btn .material-symbols-outlined { font-size: 22px; }
-
-  .crop-body { display: flex; flex: 1; overflow: hidden; }
-
-  /* Preview area */
-  .crop-preview-area {
-    flex: 1; background: rgba(0,0,0,.5);
-    display: flex; align-items: center; justify-content: center; padding: 32px;
-  }
-  .crop-frame {
-    position: relative; max-width: 360px; width: 100%;
-    aspect-ratio: 1; border: 2px solid rgba(244,140,37,.4);
-  }
-  .crop-img { width: 100%; height: 100%; object-fit: cover; opacity: .6; display: block; }
-  .crop-selection {
-    position: absolute; inset: 16px;
-    border: 2px dashed rgba(255,255,255,.8);
-    box-shadow: 0 0 0 9999px rgba(0,0,0,.45);
-    cursor: move;
-  }
-  .crop-handle {
-    position: absolute; width: 12px; height: 12px; background: #fff;
-  }
-  .crop-handle.tl { top: -1px; left: -1px; }
-  .crop-handle.tr { top: -1px; right: -1px; }
-  .crop-handle.bl { bottom: -1px; left: -1px; }
-  .crop-handle.br { bottom: -1px; right: -1px; }
-
-  /* Controls sidebar */
-  .crop-controls {
-    width: 270px; flex-shrink: 0;
-    border-left: 1px solid rgba(74,58,42,.4);
-    padding: 20px; overflow-y: auto;
-    display: flex; flex-direction: column; gap: 20px;
-    background: #221910;
-  }
-  .crop-opt-bar {
-    padding: 14px; background: rgba(244,140,37,.08);
-    border: 1px solid rgba(244,140,37,.2); border-radius: 10px;
-  }
-  .crop-opt-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-  .crop-opt-label { font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: .14em; color: #f48c25; }
-  .crop-opt-status { font-size: 9px; font-weight: 900; color: #34d399; }
-  .crop-opt-desc { font-size: 10px; color: #94a3b8; line-height: 1.5; margin-bottom: 10px; }
-  .crop-opt-confirm { display: flex; align-items: center; gap: 6px; }
-  .crop-check-icon { font-size: 14px; color: #34d399; }
-  .crop-check-text { font-size: 9px; font-weight: 800; color: #34d399; }
-
-  .crop-ctrl-group { }
-  .ratio-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-  .ratio-btn {
-    padding: 7px 4px; border-radius: 6px;
-    border: 1px solid rgba(74,58,42,.6);
-    background: none; color: #94a3b8;
-    font-size: 11px; font-weight: 700; cursor: pointer;
-    font-family: 'Manrope', sans-serif; transition: all .15s;
-  }
-  .ratio-btn:hover { border-color: #f48c25; color: #f48c25; }
-  .ratio-active { border-color: #f48c25 !important; background: rgba(244,140,37,.1) !important; color: #f48c25 !important; }
-
-  .crop-slider-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-  .crop-slider-val { font-size: 11px; color: #94a3b8; }
-  .crop-slider {
-    width: 100%; height: 4px; border-radius: 999px;
-    background: rgba(244,140,37,.2);
-    accent-color: #f48c25; cursor: pointer;
-  }
-  .rotate-btns { display: flex; gap: 8px; }
-  .rotate-btn {
-    flex: 1; padding: 8px; border-radius: 8px;
-    border: 1px solid rgba(74,58,42,.6); background: none;
-    color: #94a3b8; cursor: pointer; display: flex; align-items: center; justify-content: center;
-    transition: all .15s;
-  }
-  .rotate-btn:hover { border-color: #f48c25; color: #f48c25; background: rgba(244,140,37,.1); }
-  .rotate-btn .material-symbols-outlined { font-size: 18px; }
-
-  .crop-footer {
-    padding: 16px 24px; border-top: 1px solid rgba(74,58,42,.4);
-    display: flex; align-items: center; justify-content: flex-end; gap: 10px;
-  }
-
-  /* Responsive */
-  @media (max-width: 1100px) {
-    .prd-grid { grid-template-columns: 1fr; }
-    .thumb-grid { grid-template-columns: repeat(4, 1fr); }
-    .crop-controls { width: 220px; }
-  }
-  @media (max-width: 700px) {
-    .prd-form-grid { grid-template-columns: 1fr; }
-    .prd-header { flex-direction: column; }
-    .crop-body { flex-direction: column; }
-    .crop-controls { width: 100%; border-left: none; border-top: 1px solid rgba(74,58,42,.4); }
+  .animate-delete {
+    animation: delete-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    pointer-events: none;
   }
 </style>
 
@@ -677,7 +392,7 @@ const { data: categoriesArray } = await supabase
     if (btnSave) {
       btnSave.addEventListener('click', async () => {
         btnSave.disabled = true;
-        btnSave.textContent = 'Đang lưu...';
+        btnSave.innerHTML = '<span class="material-symbols-outlined text-[20px] animate-spin">sync</span> Đang lưu...';
 
         const payload = {
           'prod-id': (document.getElementById('prod-id') as HTMLInputElement)?.value || '',
@@ -709,92 +424,252 @@ const { data: categoriesArray } = await supabase
           } else {
             alert('Lỗi: ' + data.error);
             btnSave.disabled = false;
-            btnSave.textContent = 'Lưu thay đổi';
+            btnSave.innerHTML = '<span class="material-symbols-outlined text-[20px]">save</span> Lưu thay đổi';
           }
         } catch(err) {
           alert('Lỗi kết nối máy chủ');
           btnSave.disabled = false;
-          btnSave.textContent = 'Lưu thay đổi';
+          btnSave.innerHTML = '<span class="material-symbols-outlined text-[20px]">save</span> Lưu thay đổi';
         }
       });
     }
 
-    // === HELPER: Remove main image ===
+    // === HELPER: Remove main image & auto-promote gallery image ===
     (window as any).removeMainImage = () => {
-      const previewContainer = document.getElementById('main-thumb-preview');
       const urlInput = document.getElementById('prod-image') as HTMLInputElement;
-      if (previewContainer) previewContainer.style.display = 'none';
-      if (urlInput) urlInput.value = '';
-    };
-
-    // === HELPER: Remove a gallery image by index ===
-    (window as any).removeGalleryImage = (index: number) => {
+      const previewContainer = document.getElementById('main-thumb-preview');
+      const mainImg = document.getElementById('main-thumb-img') as HTMLImageElement;
       const galleryInput = document.getElementById('gallery-images-json') as HTMLInputElement;
+      
       let gallery: string[] = [];
-      try { gallery = JSON.parse(galleryInput.value || '[]'); } catch {}
-      gallery.splice(index, 1);
-      galleryInput.value = JSON.stringify(gallery);
-      // Re-render gallery thumbnails
-      renderGalleryThumbnails(gallery);
+      try { gallery = JSON.parse(galleryInput?.value || '[]'); } catch {}
+
+      if (gallery.length > 0) {
+        // Auto-promote first gallery image
+        const newMain = gallery.shift() as string;
+        
+        if (mainImg) mainImg.src = newMain;
+        if (urlInput) {
+          urlInput.value = newMain;
+          urlInput.dispatchEvent(new Event('input'));
+        }
+        
+        if (galleryInput) {
+          galleryInput.value = JSON.stringify(gallery);
+          renderGalleryThumbnails(gallery);
+        }
+        
+        // Brief visual flash to indicate change
+        if (previewContainer) {
+          previewContainer.style.opacity = '0.5';
+          setTimeout(() => previewContainer.style.opacity = '1', 150);
+        }
+      } else {
+        // No gallery images, just remove main image
+        if (previewContainer) {
+          previewContainer.classList.add('animate-delete');
+          setTimeout(() => {
+            previewContainer.style.setProperty('display', 'none', 'important');
+            previewContainer.classList.remove('animate-delete');
+            if (mainImg) mainImg.src = '';
+            if (urlInput) {
+              urlInput.value = '';
+              urlInput.dispatchEvent(new Event('input'));
+            }
+          }, 300);
+        }
+      }
     };
 
-    // === RENDER GALLERY THUMBNAILS ===
-    function renderGalleryThumbnails(gallery: string[]) {
-      // Remove existing extra thumbnails (keep thumb-add and main-thumb-preview)
+    // === UNIFIED GRID RENDERER ===
+    function updateThumbGrid() {
       const grid = document.getElementById('thumb-grid');
-      if (!grid) return;
+      const prodImageInput = document.getElementById('prod-image') as HTMLInputElement;
+      const galleryInput = document.getElementById('gallery-images-json') as HTMLInputElement;
+      if (!grid || !prodImageInput || !galleryInput) return;
+
+      // Hide the hardcoded main-thumb-preview initially
+      const staticMainPreview = document.getElementById('main-thumb-preview');
+      if (staticMainPreview) staticMainPreview.style.display = 'none';
+
+      // Clear dynamic items
       grid.querySelectorAll('.thumb-gallery-item').forEach(el => el.remove());
 
-      // Re-insert after main-thumb-preview
+      const mainUrl = prodImageInput.value;
+      let gallery: string[] = [];
+      try { gallery = JSON.parse(galleryInput.value || '[]'); } catch {}
+
+      // Render Main Image if exists
+      if (mainUrl) {
+        const div = document.createElement('div');
+        div.className = 'thumb-gallery-item aspect-square rounded-xl bg-cover bg-center border-2 border-primary relative group overflow-hidden shadow-lg shadow-primary/10 bg-zinc-900';
+        div.innerHTML = `
+          <img src="${mainUrl}" alt="Main Image" class="absolute inset-0 w-full h-full object-cover mix-blend-luminosity opacity-90" />
+          <div class="absolute top-2 left-2 bg-emerald-500/90 text-white text-[9px] font-bold px-2 py-1 rounded-md uppercase tracking-wider z-10 block">Ảnh chính</div>
+          <div class="absolute bottom-0 inset-x-0 p-2 flex gap-2 justify-center bg-black/60 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity z-10">
+            <button type="button" class="size-8 rounded border-none bg-primary text-background-dark flex items-center justify-center hover:opacity-90 transition-opacity cursor-default">
+              <span class="material-symbols-outlined text-[20px] fill-[1]">star</span>
+            </button>
+            <button type="button" onclick="removeMainImage()" class="size-8 border-none rounded bg-black/60 text-white flex items-center justify-center hover:bg-red-500 transition-colors cursor-pointer" title="Xóa ảnh chính">
+              <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+          </div>
+        `;
+        grid.appendChild(div);
+      }
+
+      // Render Gallery Images
       gallery.forEach((url, idx) => {
         const div = document.createElement('div');
-        div.className = 'thumb-item bg-default-guitar thumb-gallery-item';
+        div.className = 'thumb-gallery-item aspect-square rounded-xl bg-cover bg-center border border-primary/20 relative group overflow-hidden hover:border-primary/50 transition-all shadow-md bg-zinc-900';
         div.innerHTML = `
-          <img src="${url}" alt="Gallery ${idx + 1}" style="width:100%;height:100%;object-fit:cover;mix-blend-mode:luminosity;opacity:0.8"/>
-          <div class="thumb-overlay">
-            <span class="material-symbols-outlined thumb-action" style="font-size:14px;" title="Đặt làm ảnh chính" onclick="setAsMainImage(${idx})">star_outline</span>
-            <span class="material-symbols-outlined thumb-action thumb-del" onclick="removeGalleryImage(${idx})" title="Xóa ảnh">delete</span>
+          <img src="${url}" alt="Gallery ${idx + 1}" class="absolute inset-0 w-full h-full object-cover mix-blend-luminosity opacity-80" />
+          <div class="absolute bottom-0 inset-x-0 p-2 flex gap-2 justify-center bg-black/60 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity z-10">
+            <button type="button" onclick="setAsMainImage(${idx})" class="size-8 rounded border-none bg-background-dark/90 text-slate-400 border border-primary/30 flex items-center justify-center hover:text-primary hover:border-primary transition-all cursor-pointer" title="Đặt làm ảnh chính">
+              <span class="material-symbols-outlined text-[20px]">star</span>
+            </button>
+            <button type="button" onclick="removeGalleryImage(${idx})" class="size-8 rounded border-none bg-black/60 text-white flex items-center justify-center hover:bg-red-500 transition-colors cursor-pointer" title="Xóa ảnh">
+              <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
           </div>
-          <div class="thumb-badge" style="display:block;">#${idx + 2}</div>
         `;
         grid.appendChild(div);
       });
     }
 
-    // === HELPER: Set gallery image as main image ===
-    (window as any).setAsMainImage = (galleryIndex: number) => {
-      const galleryInput = document.getElementById('gallery-images-json') as HTMLInputElement;
-      const prodImageInput = document.getElementById('prod-image') as HTMLInputElement;
-      const mainThumbImg = document.getElementById('main-thumb-img') as HTMLImageElement;
-      const previewContainer = document.getElementById('main-thumb-preview');
+    // === UNIFIED DATA MODEL ===
+    // Ensure all images are tracked in a single array to preserve visual order
+    let uiImages: { url: string, isMain: boolean }[] = [];
 
-      let gallery: string[] = [];
-      try { gallery = JSON.parse(galleryInput.value || '[]'); } catch {}
+    // Initialize data from hidden inputs
+    function initGalleryData() {
+        const prodImageInput = document.getElementById('prod-image') as HTMLInputElement;
+        const galleryInput = document.getElementById('gallery-images-json') as HTMLInputElement;
+        
+        uiImages = []; // reset
+        
+        if (prodImageInput && prodImageInput.value) {
+            uiImages.push({ url: prodImageInput.value, isMain: true });
+        }
+        
+        if (galleryInput && galleryInput.value) {
+            try {
+                const arr = JSON.parse(galleryInput.value);
+                if (Array.isArray(arr)) {
+                    arr.forEach(url => {
+                        uiImages.push({ url, isMain: false });
+                    });
+                }
+            } catch {}
+        }
+    }
 
-      const newMain = gallery[galleryIndex];
-      const oldMain = prodImageInput?.value;
+    // Sync state back to hidden inputs
+    function syncToInputs() {
+        const prodImageInput = document.getElementById('prod-image') as HTMLInputElement;
+        const galleryInput = document.getElementById('gallery-images-json') as HTMLInputElement;
+        
+        const mainImg = uiImages.find(img => img.isMain);
+        const galleryImgs = uiImages.filter(img => !img.isMain).map(img => img.url);
 
-      // Swap: new main becomes main_image_url, old main moves to gallery
-      if (oldMain) {
-        gallery[galleryIndex] = oldMain;
-      } else {
-        gallery.splice(galleryIndex, 1);
-      }
+        if (prodImageInput) {
+            prodImageInput.value = mainImg ? mainImg.url : '';
+            prodImageInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        if (galleryInput) {
+            galleryInput.value = JSON.stringify(galleryImgs);
+        }
+    }
 
-      if (prodImageInput) prodImageInput.value = newMain;
-      if (mainThumbImg) mainThumbImg.src = newMain;
-      if (previewContainer) previewContainer.style.display = 'block';
-      galleryInput.value = JSON.stringify(gallery);
-      renderGalleryThumbnails(gallery);
+    // === UNIFIED GRID RENDERER ===
+    function updateThumbGrid() {
+      const grid = document.getElementById('thumb-grid');
+      if (!grid) return;
+
+      // Hide the hardcoded main-thumb-preview initially
+      const staticMainPreview = document.getElementById('main-thumb-preview');
+      if (staticMainPreview) staticMainPreview.style.display = 'none';
+
+      // Clear dynamic items
+      grid.querySelectorAll('.thumb-gallery-item').forEach(el => el.remove());
+
+      // Render All Images in their current order
+      uiImages.forEach((img, idx) => {
+        const div = document.createElement('div');
+        
+        if (img.isMain) {
+            div.className = 'thumb-gallery-item aspect-square rounded-xl bg-cover bg-center border-2 border-primary relative group overflow-hidden shadow-lg shadow-primary/10 bg-zinc-900';
+            div.innerHTML = `
+              <img src="${img.url}" alt="Main Image" class="absolute inset-0 w-full h-full object-cover mix-blend-luminosity opacity-90" />
+              <div class="absolute top-2 left-2 bg-emerald-500/90 text-white text-[9px] font-bold px-2 py-1 rounded-md uppercase tracking-wider z-10 block">Ảnh chính</div>
+              <div class="absolute bottom-0 inset-x-0 p-2 flex gap-2 justify-center bg-black/60 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                <button type="button" class="size-8 rounded border-none bg-primary text-background-dark flex items-center justify-center hover:opacity-90 transition-opacity cursor-default">
+                  <span class="material-symbols-outlined text-[20px] fill-[1]">star</span>
+                </button>
+                <button type="button" onclick="removeImage(${idx})" class="size-8 border-none rounded bg-black/60 text-white flex items-center justify-center hover:bg-red-500 transition-colors cursor-pointer" title="Xóa ảnh chính">
+                  <span class="material-symbols-outlined text-[20px]">close</span>
+                </button>
+              </div>
+            `;
+        } else {
+            div.className = 'thumb-gallery-item aspect-square rounded-xl bg-cover bg-center border border-primary/20 relative group overflow-hidden hover:border-primary/50 transition-all shadow-md bg-zinc-900';
+            div.innerHTML = `
+              <img src="${img.url}" alt="Gallery ${idx + 1}" class="absolute inset-0 w-full h-full object-cover mix-blend-luminosity opacity-80" />
+              <div class="absolute bottom-0 inset-x-0 p-2 flex gap-2 justify-center bg-black/60 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                <button type="button" onclick="setAsMainImage(${idx})" class="size-8 rounded border-none bg-background-dark/90 text-slate-400 border border-primary/30 flex items-center justify-center hover:text-primary hover:border-primary transition-all cursor-pointer" title="Đặt làm ảnh chính">
+                  <span class="material-symbols-outlined text-[20px]">star</span>
+                </button>
+                <button type="button" onclick="removeImage(${idx})" class="size-8 rounded border-none bg-black/60 text-white flex items-center justify-center hover:bg-red-500 transition-colors cursor-pointer" title="Xóa ảnh">
+                  <span class="material-symbols-outlined text-[20px]">close</span>
+                </button>
+              </div>
+            `;
+        }
+        grid.appendChild(div);
+      });
+    }
+
+    // === ACTION HANDLERS ===
+    
+    (window as any).removeImage = (index: number) => {
+        const img = uiImages[index];
+        uiImages.splice(index, 1);
+        
+        // If we deleted the main image, auto-promote the first available image to main
+        if (img.isMain && uiImages.length > 0) {
+            uiImages[0].isMain = true;
+        }
+        
+        syncToInputs();
+        updateThumbGrid();
     };
 
-    // === LOAD EXISTING GALLERY ON EDIT ===
-    const existingGalleryInput = document.getElementById('gallery-images-json') as HTMLInputElement;
-    if (existingGalleryInput) {
-      let existingGallery: string[] = [];
-      try { existingGallery = JSON.parse(existingGalleryInput.value || '[]'); } catch {}
-      if (existingGallery.length > 0) renderGalleryThumbnails(existingGallery);
-    }
+    (window as any).setAsMainImage = (index: number) => {
+        // Clear all mains
+        uiImages.forEach(img => img.isMain = false);
+        // Set new main
+        uiImages[index].isMain = true;
+        
+        syncToInputs();
+        updateThumbGrid();
+    };
+    
+    (window as any).removeGalleryImage = (index: number) => {
+        // Remove image at index
+        const removed = uiImages.splice(index, 1)[0];
+        
+        // If removed was main, promote first remaining as main
+        if (removed.isMain && uiImages.length > 0) {
+            uiImages[0].isMain = true;
+        }
+        
+        syncToInputs();
+        updateThumbGrid();
+    };
+
+    // === INITIALIZE GALLERY ===
+    initGalleryData();
+    updateThumbGrid();
 
     // === MULTI-IMAGE UPLOAD HANDLER ===
     const fileInput = document.getElementById('img-upload-input') as HTMLInputElement;
@@ -805,6 +680,78 @@ const { data: categoriesArray } = await supabase
       fileInput.addEventListener('change', async (e) => {
         const files = Array.from((e.target as HTMLInputElement).files || []);
         if (!files.length) return;
+
+        // === SHOW PREVIEW IMMEDIATELY BEFORE UPLOAD ===
+        const thumbGrid = document.getElementById('thumb-grid');
+        const urlInput = document.getElementById('prod-image') as HTMLInputElement;
+        const galleryInput = document.getElementById('gallery-images-json') as HTMLInputElement;
+        
+        // Get current images count to determine if first
+        let currentGallery: string[] = [];
+        try { currentGallery = JSON.parse(galleryInput?.value || '[]'); } catch {}
+        const isFirstImage = !urlInput?.value && currentGallery.length === 0;
+        
+        for (let fi = 0; fi < files.length; fi++) {
+          const file = files[fi];
+          
+          // Create preview using object URL (immediate preview)
+          const objectUrl = URL.createObjectURL(file);
+          
+          // Create preview element with star and delete buttons
+          const previewDiv = document.createElement('div');
+          previewDiv.setAttribute('data-object-index', fi.toString());
+          previewDiv.className = 'aspect-square rounded-xl overflow-hidden bg-background-dark relative group';
+          previewDiv.innerHTML = `
+            <img src="${objectUrl}" class="w-full h-full object-cover" />
+            <div class="absolute bottom-0 inset-x-0 p-2 flex gap-2 justify-center bg-black/60 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity z-10">
+              <button type="button" class="set-main-btn size-8 rounded border-none bg-background-dark/90 text-slate-400 border border-primary/30 flex items-center justify-center hover:text-primary hover:border-primary transition-all cursor-pointer" title="Đặt làm ảnh chính">
+                <span class="material-symbols-outlined text-[20px]">star</span>
+              </button>
+              <button type="button" class="remove-preview-btn size-8 rounded border-none bg-black/60 text-white flex items-center justify-center hover:bg-red-500 transition-colors cursor-pointer" title="Hủy ảnh">
+                <span class="material-symbols-outlined text-[20px]">close</span>
+              </button>
+            </div>
+          `;
+          
+          // Add click handler for remove button
+          const removeBtn = previewDiv.querySelector('.remove-preview-btn');
+          removeBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            previewDiv.remove();
+            URL.revokeObjectURL(objectUrl);
+          });
+          
+          // Add click handler for set main button - will be processed after upload
+          const mainBtn = previewDiv.querySelector('.set-main-btn');
+          mainBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Mark this preview as intended main image
+            previewDiv.setAttribute('data-intended-main', 'true');
+            // Remove mark from other previews
+            previewDiv.parentElement?.querySelectorAll('[data-intended-main]').forEach(el => {
+              if (el !== previewDiv) {
+                el.removeAttribute('data-intended-main');
+                // Remove badge if exists
+                const badge = el.querySelector('.main-badge');
+                if (badge) badge.remove();
+              }
+            });
+            // Add visual badge for main image
+            if (!previewDiv.querySelector('.main-badge')) {
+              const badge = document.createElement('div');
+              badge.className = 'main-badge absolute top-2 left-2 bg-emerald-500/90 text-white text-[9px] font-bold px-2 py-1 rounded-md uppercase tracking-wider z-10 block';
+              badge.textContent = 'Ảnh chính';
+              previewDiv.appendChild(badge);
+            }
+          });
+          
+          // Insert before the "add new" button
+          const addBtn = thumbGrid?.querySelector('div[onclick*="img-upload-input"]');
+          if (addBtn && thumbGrid) {
+            thumbGrid.insertBefore(previewDiv, addBtn);
+          }
+        }
+        // ============================================
 
         if (progressOverlay) progressOverlay.style.display = 'flex';
 
@@ -869,11 +816,14 @@ const { data: categoriesArray } = await supabase
               const previewContainer = document.getElementById('main-thumb-preview');
               const optBadge = document.getElementById('thumb-opt-badge');
               const galleryInput = document.getElementById('gallery-images-json') as HTMLInputElement;
+              const thumbGrid = document.getElementById('thumb-grid');
 
-              const isFirstImage = !urlInput?.value;
+              // Check if this image was marked as intended main
+              const previewEl = thumbGrid?.querySelector(`[data-object-index="${fi}"]`);
+              const isMarkedAsMain = previewEl?.hasAttribute('data-intended-main') || !urlInput?.value;
 
-              if (isFirstImage) {
-                // First image becomes the main image
+              if (isMarkedAsMain) {
+                // Set as main image
                 if (urlInput) urlInput.value = url;
                 if (mainThumbImg) mainThumbImg.src = url;
                 if (previewContainer) previewContainer.style.display = 'block';
@@ -884,8 +834,12 @@ const { data: categoriesArray } = await supabase
                 try { gallery = JSON.parse(galleryInput?.value || '[]'); } catch {}
                 gallery.push(url);
                 if (galleryInput) galleryInput.value = JSON.stringify(gallery);
-                renderGalleryThumbnails(gallery);
               }
+              
+              // Refresh the gallery to show uploaded images
+              let currentGallery: string[] = [];
+              try { currentGallery = JSON.parse(galleryInput?.value || '[]'); } catch {}
+              renderGalleryThumbnails(currentGallery);
             } else {
               throw new Error(uploadData.error || 'Upload thất bại');
             }
@@ -902,4 +856,3 @@ const { data: categoriesArray } = await supabase
 
   });
 </script>
-

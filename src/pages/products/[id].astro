@@ -34,8 +34,8 @@ const product = {
   price: dbProduct.price,
   priceFormatted: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(dbProduct.price),
   images: [
-    dbProduct.main_image_url || 'https://images.unsplash.com/photo-1541689592655-f5f52825a3b8?w=800&q=80',
-    ...(Array.isArray(dbProduct.gallery_images) ? dbProduct.gallery_images : [])
+    (dbProduct.gallery_images && dbProduct.gallery_images.length > 0) ? dbProduct.gallery_images[0] : '/images/default-guitar.webp',
+    ...(Array.isArray(dbProduct.gallery_images) ? dbProduct.gallery_images.slice(1) : [])
   ],
   rating: 5,
   reviews: Math.floor(Math.random() * 50) + 10,
@@ -62,7 +62,7 @@ const related = (dbRelated || []).map(rp => ({
   description: (rp.description || '').substring(0, 50) + '...',
   price: rp.price,
   priceFormatted: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(rp.price),
-  image: rp.main_image_url || 'https://images.unsplash.com/photo-1541689592655-f5f52825a3b8?auto=format&fit=crop&q=80',
+  image: (rp.gallery_images && rp.gallery_images.length > 0) ? rp.gallery_images[0] : '/images/default-guitar.webp',
   badge: rp.is_featured ? 'Nổi bật' : null
 }));
 ---

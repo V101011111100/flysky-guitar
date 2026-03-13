@@ -24,7 +24,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     // 2. Parse FormData
     const formData = await request.formData();
     const file = formData.get('file') as File;
-    
+
     if (!file) {
       return new Response(JSON.stringify({ success: false, error: "No file uploaded" }), { status: 400 });
     }
@@ -73,7 +73,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
             .insert({ name: categoryName, slug: catSlug })
             .select('id')
             .single();
-          
+
           if (newCat) categoryId = newCat.id;
         }
       }
@@ -85,18 +85,21 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         .replace(/(^-|-$)+/g, '');
 
       if (item['SKU']) {
-         productSlug = item['SKU'].toString().toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        productSlug = item['SKU'].toString().toLowerCase().replace(/[^a-z0-9]+/g, '-');
       }
 
       // Auto-migrate tables if columns don't exist (Supabase specific hack for rapid prototyping)
       // Executing one by one, ignore errors if it doesn't exist
       if (importedCount === 0) {
-        try { await supabase.rpc('exec_sql', { sql_string: 'ALTER TABLE IF EXISTS public.products ADD COLUMN IF NOT EXISTS spec_body text;' }); } catch(err){}
-        try { await supabase.rpc('exec_sql', { sql_string: 'ALTER TABLE IF EXISTS public.products ADD COLUMN IF NOT EXISTS spec_top text;' }); } catch(err){}
-        try { await supabase.rpc('exec_sql', { sql_string: 'ALTER TABLE IF EXISTS public.products ADD COLUMN IF NOT EXISTS spec_neck text;' }); } catch(err){}
+        try { await supabase.rpc('exec_sql', { sql_string: 'ALTER TABLE IF EXISTS public.products ADD COLUMN IF NOT EXISTS spec_body text;' }); } catch (err) { }
+        try { await supabase.rpc('exec_sql', { sql_string: 'ALTER TABLE IF EXISTS public.products ADD COLUMN IF NOT EXISTS spec_top text;' }); } catch (err) { }
+        try { await supabase.rpc('exec_sql', { sql_string: 'ALTER TABLE IF EXISTS public.products ADD COLUMN IF NOT EXISTS spec_neck text;' }); } catch (err) { }
       }
 
       // Upsert product relying on 'slug' as unique identifier
+      // Add image as first element in gallery
+      const galleryImages = imageUrl ? [imageUrl] : [];
+
       const { error: upsertErr } = await supabase
         .from('products')
         .upsert({
@@ -104,7 +107,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
           slug: productSlug,
           category_id: categoryId,
           price: price,
-          main_image_url: imageUrl,
+          gallery_images: galleryImages.length > 0 ? galleryImages : null,
           description: description,
           status: stock > 0 ? 'active' : 'out_of_stock',
           spec_body: item['Lưng Hông'] || null,

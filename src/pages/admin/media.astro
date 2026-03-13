@@ -61,7 +61,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
           </select>
         </div>
         <div class="actions-flex">
-          <button class="action-icon text-red" title="Xóa tệp"><span class="material-symbols-outlined">delete</span></button>
+          <button class="action-icon text-red" id="btn-delete-multiple" title="Xóa tệp"><span class="material-symbols-outlined">delete</span></button>
           <button class="action-icon text-primary" title="Di chuyển"><span class="material-symbols-outlined">folder_shared</span></button>
           <button class="action-icon text-primary" title="Tải xuống"><span class="material-symbols-outlined">download</span></button>
         </div>
@@ -76,7 +76,6 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
         <div class="media-grid" id="media-grid" style="display: none;">
           <!-- Dynamically populated -->
         </div>
-      </div>
       </div>
     </main>
 
@@ -97,7 +96,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
           <span class="material-symbols-outlined icon-norm">content_copy</span>
           Sao chép liên kết URL
         </button>
-        <button class="btn-block btn-danger-out" id="btn-delete-file">
+        <button class="btn-block btn-danger-out" id="btn-delete-file" type="button">
           <span class="material-symbols-outlined icon-norm">delete_forever</span>
           Xóa tệp
         </button>
@@ -111,6 +110,8 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 <script is:inline>
   let filesData = [];
   let selectedFile = null;
+  let selectedFiles = []; // Multi-select mode
+  let isMultiSelectMode = false;
 
   const mediaGrid = document.getElementById('media-grid');
   const mediaLoading = document.getElementById('media-loading');
@@ -157,17 +158,47 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
       return parts[parts.length - 1];
   }
 
+  let currentFolder = ''; // Empty string means Root / All files
+
   function renderGrid() {
       if (!mediaGrid) return;
       mediaGrid.innerHTML = '';
       
-      filesData.forEach(file => {
+      const filteredFiles = filesData.filter(file => {
+          if (!currentFolder) return true;
+          // Support multiple levels if needed, or simple prefix match
+          const parts = file.key.split('/');
+          if (parts.length > 2) {
+             return parts[1] === currentFolder;
+          }
+          return false;
+      });
+
+      filteredFiles.forEach(file => {
           const isSelected = selectedFile && selectedFile.key === file.key;
+          const isMultiSelected = selectedFiles.some(f => f.key === file.key);
           const fileName = getFileName(file.key);
           
           const item = document.createElement('div');
-          item.className = `grid-item ${isSelected ? 'item-selected' : ''}`;
-          item.onclick = () => selectFile(file);
+          item.className = `grid-item ${isSelected ? 'item-selected' : ''} ${isMultiSelected ? 'item-multi-selected' : ''}`;
+          
+          // Click toggles multi-select, Ctrl+Click or checkbox toggles single select
+          item.onclick = (e) => {
+              if (isMultiSelectMode || e.ctrlKey || e.shiftKey) {
+                  // Multi-select mode
+                  toggleMultiSelect(file);
+              } else {
+                  // Single select mode
+                  selectFile(file);
+              }
+          };
+          
+          // Checkbox for multi-select
+          const checkbox = isMultiSelected ? `
+            <div class="item-checkbox item-checkbox-checked">
+              <span class="material-symbols-outlined material-fill">check</span>
+            </div>
+          ` : '<div class="item-checkbox"></div>';
           
           const badgeChecked = isSelected ? `
             <div class="item-badge-checked">
@@ -178,11 +209,12 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
           const isLinked = file.linkedProducts && file.linkedProducts.length > 0;
           const linkBadge = isLinked ? `
             <div class="item-badge-linked" title="Đang được sử dụng bởi sản phẩm">
-              <span class="material-symbols-outlined material-fill" style="font-size: 14px;">link</span>
+              <span class="material-symbols-outlined material-fill" style="font-size: 14px;">lock</span>
             </div>
           ` : '';
           
           item.innerHTML = `
+            ${checkbox}
             ${badgeChecked}
             ${linkBadge}
             <div class="item-img" style="background-image: url('${file.url}')"></div>
@@ -195,6 +227,42 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
   }
 
   function renderSidebar() {
+      // If multiple files are selected, show summary instead of single file details
+      if (selectedFiles.length > 0) {
+          const totalSize = selectedFiles.reduce((sum, f) => sum + (f.size || 0), 0);
+          const linkedCount = selectedFiles.filter(f => f.linkedProducts && f.linkedProducts.length > 0).length;
+          
+          detailsContent.innerHTML = `
+            <div style="text-align: center; padding: 20px;">
+              <div style="width: 64px; height: 64px; background: rgba(244,140,37,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                <span class="material-symbols-outlined" style="font-size: 32px; color: #f48c25;">checklist</span>
+              </div>
+              <h3 style="color: #fff; margin-bottom: 8px;">${selectedFiles.length} tệp được chọn</h3>
+              <p style="color: #94a3b8; font-size: 13px;">Tổng kích thước: ${formatBytes(totalSize)}</p>
+              ${linkedCount > 0 ? `<p style="color: #ef4444; font-size: 12px; margin-top: 8px;">${linkedCount} tệp đang được sử dụng</p>` : ''}
+            </div>
+            <div style="padding: 16px; background: rgba(39,39,42,0.5); border-radius: 8px; margin-top: 16px;">
+              <p style="color: #64748b; font-size: 12px; margin-bottom: 8px;">Sử dụng nút xóa trên thanh công cụ để xóa các tệp đã chọn.</p>
+              <button id="btn-clear-selection" style="width: 100%; padding: 8px; background: transparent; border: 1px solid #4b5563; color: #94a3b8; border-radius: 6px; cursor: pointer; font-size: 13px;">
+                Bỏ chọn tất cả
+              </button>
+            </div>
+          `;
+          
+          // Add clear selection handler
+          const clearBtn = document.getElementById('btn-clear-selection');
+          if (clearBtn) {
+              clearBtn.addEventListener('click', () => {
+                  selectedFiles = [];
+                  renderGrid();
+                  renderSidebar();
+              });
+          }
+          
+          detailsSidebar.style.display = 'flex';
+          return;
+      }
+      
       if (!selectedFile) {
           detailsSidebar.style.display = 'none';
           return;
@@ -211,36 +279,43 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
         </div>
         <div class="info-group">
           <div>
-            <label class="info-label">Tên tệp</label>
-            <p class="info-val break-words">${fileName}</p>
+            <label class="info-label">TÊN TỆP</label>
+            <p class="info-val break-words" style="color: #f1f5f9;">${fileName}</p>
           </div>
           <div class="info-grid-2">
             <div>
-              <label class="info-label">Kích thước</label>
-              <p class="info-val">${formatBytes(selectedFile.size)}</p>
+              <label class="info-label">KÍCH THƯỚC</label>
+              <p class="info-val" style="color: #f1f5f9; font-weight: 500;">${formatBytes(selectedFile.size)}</p>
             </div>
             <div>
-              <label class="info-label">Ngày tải lên</label>
-              <p class="info-val" style="font-size: 11px;">${formatDate(selectedFile.lastModified)}</p>
+              <label class="info-label">KÍCH THƯỚC ẢNH</label>
+              <p class="info-val" style="color: #f1f5f9; font-size: 13px;">Auto px</p>
             </div>
           </div>
-            <div>
-              <label class="info-label">URL Tệp</label>
-              <p class="info-val break-words" style="font-size: 11px; color: #94a3b8;">${selectedFile.url}</p>
+          <div>
+            <label class="info-label">TỐI ƯU HÓA</label>
+            <div class="tag-flex">
+              <span class="tag tag-green">WEBP</span>
+              <span class="tag tag-amber">AVIF READY</span>
             </div>
           </div>
-          ${selectedFile.linkedProducts && selectedFile.linkedProducts.length > 0 ? `
-            <div style="margin-top: 16px; padding: 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px;">
-              <div style="display:flex; align-items:center; gap:6px; color:#ef4444; font-weight:700; font-size:12px; margin-bottom: 6px;">
-                <span class="material-symbols-outlined material-fill" style="font-size:16px;">warning</span>
-                Ảnh đang được sử dụng
-              </div>
-              <ul style="margin:0; padding-left:16px; color:#fca5a5; font-size:11px;">
-                ${selectedFile.linkedProducts.map((p) => `<li>${p}</li>`).join('')}
-              </ul>
-              <p style="margin-top: 6px; font-size: 10px; color: #f87171;">Xóa tệp này sẽ làm mất ảnh của (các) sản phẩm trên.</p>
+          <div>
+            <label class="info-label mt-4">VĂN BẢN THAY THẾ (ALT TEXT)</label>
+            <textarea class="info-textarea" placeholder="Nhập văn bản thay thế cho ảnh này..." spellcheck="false">Ảnh đàn guitar cao cấp trưng bày tại showroom FlySky.</textarea>
+          </div>
+        </div>
+        ${selectedFile.linkedProducts && selectedFile.linkedProducts.length > 0 ? `
+          <div style="margin-top: 16px; padding: 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px;">
+            <div style="display:flex; align-items:center; gap:6px; color:#ef4444; font-weight:700; font-size:12px; margin-bottom: 6px;">
+              <span class="material-symbols-outlined material-fill" style="font-size:16px;">warning</span>
+              Ảnh đang được sử dụng
             </div>
-          ` : ''}
+            <ul style="margin:0; padding-left:16px; color:#fca5a5; font-size:11px;">
+              ${selectedFile.linkedProducts.map((p) => `<li>${p}</li>`).join('')}
+            </ul>
+            <p style="margin-top: 6px; font-size: 10px; color: #f87171;">Xóa tệp này sẽ làm mất ảnh của (các) sản phẩm trên.</p>
+          </div>
+        ` : ''}
       `;
       
       detailsSidebar.style.display = 'flex';
@@ -256,6 +331,46 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
       renderSidebar();
   }
 
+  function toggleMultiSelect(file) {
+      const index = selectedFiles.findIndex(f => f.key === file.key);
+      if (index >= 0) {
+          selectedFiles.splice(index, 1);
+      } else {
+          selectedFiles.push(file);
+      }
+      // Clear single selection when in multi-select mode
+      selectedFile = null;
+      renderGrid();
+      renderSidebar();
+  }
+
+  function selectFolder(folderName) {
+      currentFolder = folderName;
+      selectedFile = null;
+      renderFolderTree();
+      renderGrid();
+      renderSidebar();
+      
+      // Update breadcrumb
+      const breadcrumb = document.querySelector('.breadcrumb');
+      if(breadcrumb) {
+         breadcrumb.innerHTML = `
+            <div class="bc-flex">
+              <span class="material-symbols-outlined text-primary">perm_media</span>
+              <span class="bc-text-muted">Thư viện</span>
+              <span class="material-symbols-outlined bc-separator">chevron_right</span>
+              <span class="bc-text-active">${folderName || 'Tất cả tệp'}</span>
+            </div>
+            <div class="search-box">
+              <span class="material-symbols-outlined search-icon">search</span>
+              <input class="search-input" placeholder="Tìm kiếm tệp..." type="text"/>
+            </div>
+         `;
+      }
+  }
+
+  window.selectFolder = selectFolder; // Make global
+
   function renderFolderTree() {
       const dirNav = document.getElementById('dir-nav');
       if (!dirNav) return;
@@ -264,26 +379,26 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
       const folders = new Set();
       filesData.forEach(file => {
           const parts = file.key.split('/');
-          // If the file is in a subfolder inside flysky-media, like 'flysky-media/folder/img.jpg'
           if (parts.length > 2) { 
-               // e.g. parts = ['flysky-media', 'Guitar Acoustic', 'img.jpg']
-               const folderName = parts[1];
-               folders.add(folderName);
+               folders.add(parts[1]);
           }
       });
 
       let html = `
-        <a class="nav-item nav-item-active" href="#">
-          <span class="material-symbols-outlined material-fill">folder_open</span>
+        <a class="nav-item ${currentFolder === '' ? 'nav-item-active' : ''}" href="#" onclick="selectFolder('')">
+          <span class="material-symbols-outlined ${currentFolder === '' ? 'material-fill' : ''}">folder${currentFolder === '' ? '_open' : ''}</span>
           <span class="nav-text">Tất cả tệp</span>
         </a>
       `;
 
       Array.from(folders).sort().forEach(folder => {
+          const isActive = currentFolder === folder;
           html += `
-            <a class="nav-item" href="#">
-              <span class="material-symbols-outlined">folder</span>
-              <span class="nav-text">${folder}</span>
+            <a class="nav-item ${isActive ? 'nav-item-active' : ''}" href="#" onclick="selectFolder('${folder}')" style="position: relative;">
+              <div style="position: absolute; left: 15px; top: -14px; bottom: 50%; width: 2px; background: rgba(244,140,37,0.1); display: ${folder === Array.from(folders).sort()[0] && currentFolder !== '' ? 'none' : 'block'};"></div>
+              <div style="position: absolute; left: 15px; top: 50%; width: 12px; height: 2px; background: rgba(244,140,37,0.1);"></div>
+              <span class="material-symbols-outlined ${isActive ? 'material-fill' : ''}" style="margin-left: 14px; z-index: 2; background: #221910;">folder${isActive ? '_open' : ''}</span>
+              <span class="nav-text" style="z-index: 2;">${folder}</span>
             </a>
           `;
       });
@@ -354,20 +469,209 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
       e.target.value = '';
   }
 
-  async function handleDelete() {
-      if (!selectedFile) return;
+  // Custom confirmation modal
+  function showConfirmModal(message, onConfirm, onCancel) {
+      // Remove any existing modal first
+      const existingModal = document.getElementById('confirm-modal');
+      if (existingModal) {
+          existingModal.remove();
+      }
+      
+      const modal = document.createElement('div');
+      modal.id = 'confirm-modal';
+      modal.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0,0,0,0.7);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 999999;
+      `;
+      
+      const modalContent = document.createElement('div');
+      modalContent.style.cssText = `
+          background: #1e1e1e;
+          padding: 24px;
+          border-radius: 12px;
+          max-width: 400px;
+          text-align: center;
+          box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      `;
+      
+      modalContent.innerHTML = `
+          <p style="color: #fff; margin-bottom: 20px; font-size: 16px;">${message}</p>
+          <div style="display: flex; gap: 12px; justify-content: center;">
+              <button id="confirm-cancel" style="
+                  padding: 10px 24px;
+                  border: 1px solid #4b5563;
+                  background: transparent;
+                  color: #fff;
+                  border-radius: 6px;
+                  cursor: pointer;
+                  font-size: 14px;
+              ">Hủy</button>
+              <button id="confirm-ok" style="
+                  padding: 10px 24px;
+                  border: none;
+                  background: #ef4444;
+                  color: #fff;
+                  border-radius: 6px;
+                  cursor: pointer;
+                  font-size: 14px;
+                  font-weight: 600;
+              ">Xóa</button>
+          </div>
+      `;
+      
+      modal.appendChild(modalContent);
+      document.body.appendChild(modal);
+      
+      const cancelBtn = document.getElementById('confirm-cancel');
+      const okBtn = document.getElementById('confirm-ok');
+      
+      cancelBtn.onclick = () => {
+          document.body.removeChild(modal);
+          if (onCancel) onCancel();
+      };
+      
+      okBtn.onclick = () => {
+          document.body.removeChild(modal);
+          if (onConfirm) onConfirm();
+      };
+      
+      // Close on background click
+      modal.onclick = (e) => {
+          if (e.target === modal) {
+              document.body.removeChild(modal);
+              if (onCancel) onCancel();
+          }
+      };
+  }
+  
+  window.handleDelete = async function handleDelete() {
+      if (!selectedFile) {
+          showToast('Vui lòng chọn một tệp trước!', 'error');
+          return;
+      }
       
       const isLinked = selectedFile.linkedProducts && selectedFile.linkedProducts.length > 0;
       let confirmMessage = `Bạn có chắc muốn xóa tệp này vĩnh viễn không?`;
       if (isLinked) {
-          confirmMessage = `CẢNH BÁO: Tệp này đang được sử dụng bởi ${selectedFile.linkedProducts.length} sản phẩm (VD: ${selectedFile.linkedProducts[0]}).\n\nNếu bạn tiếp tục xóa, ảnh của các sản phẩm này cũng sẽ bị gỡ bỏ.\nBạn có chắc chắn muốn XÓA LIÊN HOÀN không?`;
+          confirmMessage = `CẢNH BÁO: Tệp này đang được sử dụng bởi ${selectedFile.linkedProducts.length} sản phẩm.\n\nNếu bạn tiếp tục xóa, ảnh của các sản phẩm này cũng sẽ bị gỡ bỏ.`;
       }
 
-      if (!confirm(confirmMessage)) return;
+      // Use custom modal instead of confirm()
+      showConfirmModal(
+          confirmMessage,
+          () => {
+              // User confirmed - proceed with delete
+              proceedWithDelete();
+          },
+          () => {
+              // User cancelled
+          }
+      );
+  }
+
+  function handleDeleteMultiple() {
+      // Check if there are selected files
+      if (selectedFiles.length === 0) {
+          // If no multi-selected files, check for single selected file
+          if (selectedFile) {
+              window.handleDelete();
+              return;
+          }
+          showToast('Vui lòng chọn ít nhất một tệp để xóa!', 'error');
+          return;
+      }
       
-      const originalBtnText = btnDelete.innerHTML;
-      btnDelete.innerHTML = '<span class="material-symbols-outlined icon-norm" style="animation: spin 1s linear infinite;">autorenew</span> Đang xóa...';
-      btnDelete.disabled = true;
+      const count = selectedFiles.length;
+      const linkedFiles = selectedFiles.filter(f => f.linkedProducts && f.linkedProducts.length > 0);
+      let confirmMessage = `Bạn có chắc muốn xóa ${count} tệp này vĩnh viễn không?`;
+      
+      if (linkedFiles.length > 0) {
+          confirmMessage = `CẢNH BÁO: ${linkedFiles.length} tệp đang được sử dụng bởi sản phẩm.\n\nNếu bạn tiếp tục xóa, ảnh của các sản phẩm này cũng sẽ bị gỡ bỏ.\n\nTổng cộng: ${count} tệp`;
+      }
+
+      showConfirmModal(
+          confirmMessage,
+          () => {
+              proceedWithDeleteMultiple();
+          },
+          () => {
+              // User cancelled
+          }
+      );
+  }
+
+  async function proceedWithDeleteMultiple() {
+      const deleteBtn = document.getElementById('btn-delete-multiple');
+      const originalBtnHTML = deleteBtn ? deleteBtn.innerHTML : '';
+      
+      if (deleteBtn) {
+          deleteBtn.innerHTML = '<span class="material-symbols-outlined" style="animation: spin 1s linear infinite;">autorenew</span>';
+          deleteBtn.disabled = true;
+      }
+      
+      let successCount = 0;
+      let failedCount = 0;
+      
+      for (const file of selectedFiles) {
+          try {
+              const res = await fetch('/api/media/delete', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ key: file.key })
+              });
+              const data = await res.json();
+              
+              if (data.success) {
+                  successCount++;
+                  filesData = filesData.filter(f => f.key !== file.key);
+              } else {
+                  failedCount++;
+                  console.error(`Failed to delete ${file.key}:`, data.error);
+              }
+          } catch (e) {
+              failedCount++;
+              console.error(`Error deleting ${file.key}:`, e);
+          }
+      }
+      
+      // Clear selection
+      selectedFiles = [];
+      selectedFile = null;
+      renderGrid();
+      renderSidebar();
+      
+      if (deleteBtn) {
+          deleteBtn.innerHTML = originalBtnHTML;
+          deleteBtn.disabled = false;
+      }
+      
+      if (failedCount === 0) {
+          showToast(`Đã xóa ${successCount} tệp thành công!`, 'success');
+      } else {
+          showToast(`Đã xóa ${successCount} tệp, ${failedCount} tệp thất bại`, 'error');
+      }
+  }
+  
+  async function proceedWithDelete() {
+      if (!selectedFile) {
+          showToast('Vui lòng chọn một tệp trước!', 'error');
+          return;
+      }
+      
+      const btnDelete = document.getElementById('btn-delete-file');
+      const originalBtnText = btnDelete ? btnDelete.innerHTML : '';
+      if (btnDelete) {
+          btnDelete.innerHTML = '<span class="material-symbols-outlined icon-norm" style="animation: spin 1s linear infinite;">autorenew</span> Đang xóa...';
+          btnDelete.disabled = true;
+      }
       
       try {
           const res = await fetch('/api/media/delete', {
@@ -384,19 +688,24 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
               renderSidebar();
               showToast('Đã xóa tệp thành công!', 'success');
           } else {
-              showToast(data.error || 'Không thể xóa tệp', 'error');
+              const errorMsg = data.error || 'Không thể xóa tệp';
+              showToast(`Lỗi: ${errorMsg}`, 'error');
           }
       } catch (e) {
           showToast('Lỗi máy chủ khi xóa tệp', 'error');
       } finally {
-          btnDelete.innerHTML = originalBtnText;
-          btnDelete.disabled = false;
+          if (btnDelete) {
+              btnDelete.innerHTML = originalBtnText;
+              btnDelete.disabled = false;
+          }
       }
   }
   
-  function copyToClipboard() {
+  window.copyToClipboard = function copyToClipboard() {
       if (!selectedFile) return;
       navigator.clipboard.writeText(selectedFile.url).then(() => {
+          const btnCopy = document.getElementById('btn-copy-url');
+          if (!btnCopy) return;
           const originalText = btnCopy.innerHTML;
           btnCopy.innerHTML = '<span class="material-symbols-outlined icon-norm">check</span> Đã sao chép!';
           btnCopy.style.background = '#10b981';
@@ -423,10 +732,41 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 
   // Initialize
   if (fileUpload) fileUpload.addEventListener('change', handleFileUpload);
-  if (btnDelete) btnDelete.addEventListener('click', handleDelete);
-  if (btnCopy) btnCopy.addEventListener('click', copyToClipboard);
-
-  document.addEventListener('DOMContentLoaded', fetchMedia);
+  
+  // Add event listeners for sidebar buttons - wait for DOM to be ready
+  let buttonListenersSetup = false;
+  
+  function setupButtonListeners() {
+      // Prevent setting up multiple times
+      if (buttonListenersSetup) {
+          return;
+      }
+      buttonListenersSetup = true;
+      
+      const deleteBtn = document.getElementById('btn-delete-file');
+      if (deleteBtn) {
+          deleteBtn.addEventListener('click', () => window.handleDelete());
+      }
+      
+      const copyBtn = document.getElementById('btn-copy-url');
+      if (copyBtn) {
+          copyBtn.addEventListener('click', () => window.copyToClipboard());
+      }
+      
+      // Toolbar delete button for multiple files
+      const deleteMultipleBtn = document.getElementById('btn-delete-multiple');
+      if (deleteMultipleBtn) {
+          deleteMultipleBtn.addEventListener('click', () => handleDeleteMultiple());
+      }
+  }
+  
+  // Run setup after a short delay to ensure DOM is ready
+  setTimeout(setupButtonListeners, 100);
+  
+  document.addEventListener('DOMContentLoaded', () => {
+      fetchMedia();
+      setupButtonListeners();
+  });
 </script>
 
 <style is:global>
@@ -435,7 +775,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
     padding: 0 !important;
     overflow: hidden !important;
     display: flex;
-    flex-direction: column;
+    flex-direction: row; /* Ensure row direction for the media view */
   }
 </style>
 
@@ -448,6 +788,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
   
   .media-container {
     display: flex;
+    flex-direction: row;
     height: 100%;
     width: 100%;
     overflow: hidden;
@@ -556,6 +897,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
   /* ══ MAIN CONTENT ══ */
   .media-main {
     flex: 1;
+    min-width: 0; /* Critical for flex grid to not overflow */
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -815,6 +1157,29 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
     box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
   }
   .item-badge-checked .material-symbols-outlined { font-size: 14px; font-weight: 700; }
+  
+  .item-checkbox {
+    position: absolute;
+    top: 8px; left: 8px;
+    z-index: 10;
+    width: 20px; height: 20px;
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(4px);
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.3);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .grid-item:hover .item-checkbox { opacity: 1; }
+  .item-checkbox-checked {
+    opacity: 1;
+    background: #f48c25;
+    border-color: #f48c25;
+  }
+  .item-checkbox-checked .material-symbols-outlined { font-size: 14px; color: #fff; }
+  
+  .item-multi-selected .item-checkbox { opacity: 1; }
   
   .item-badge-hover {
     position: absolute;

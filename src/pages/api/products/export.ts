@@ -38,7 +38,7 @@ export const GET: APIRoute = async ({ request, cookies }) => {
       "Danh mục": p.categories?.name || 'Chưa phân loại',
       "Giá bán": p.price || 0,
       "Số lượng": p.status === 'out_of_stock' ? 0 : 50, // Mock
-      "Hình Ảnh": p.main_image_url || '',
+      "Hình Ảnh": p.gallery_images && p.gallery_images.length > 0 ? p.gallery_images[0] : '',
       "Mô tả": p.description || '',
       "Lưng Hông": p.spec_body || '',
       "Mặt Top": p.spec_top || '',
@@ -48,7 +48,7 @@ export const GET: APIRoute = async ({ request, cookies }) => {
     // 4. Create Workbook and Sheet
     const ws = XLSX.utils.json_to_sheet(excelData);
     const wscols = [
-      { wch: 20 }, { wch: 40 }, { wch: 20 }, { wch: 15 }, 
+      { wch: 20 }, { wch: 40 }, { wch: 20 }, { wch: 15 },
       { wch: 10 }, { wch: 100 }, { wch: 60 }
     ];
     ws['!cols'] = wscols;

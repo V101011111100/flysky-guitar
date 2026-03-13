@@ -27,7 +27,7 @@ const products = (prodData || []).map(p => ({
   description: p.description ? (p.description.length > 100 ? p.description.substring(0, 100) + '...' : p.description) : 'Nhạc cụ chất lượng cao, chế tác tỉ mỉ.',
   price: p.price,
   priceFormatted: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p.price || 0),
-  image: p.main_image_url || 'https://images.unsplash.com/photo-1541689592655-f5f52825a3b8?auto=format&fit=crop&q=80',
+  image: (p.gallery_images && p.gallery_images.length > 0) ? p.gallery_images[0] : '/images/default-guitar.webp',
   rating: 5,
   reviews: Math.floor(Math.random() * 50) + 10,
   inStock: p.status === 'active',

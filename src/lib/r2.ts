@@ -70,11 +70,11 @@ export async function listR2Files(prefix: string = 'flysky-media/') {
       Bucket: bucketName,
       Prefix: prefix,
     });
-    
+
     const response = await r2Client.send(command);
-    
+
     if (!response.Contents) return [];
-    
+
     return response.Contents.map((item: any) => ({
       key: item.Key,
       size: item.Size,
@@ -91,17 +91,32 @@ export async function listR2Files(prefix: string = 'flysky-media/') {
  * Xóa một tệp khỏi Cloudflare R2
  * @param fileKey Key (đường dẫn) của tệp trên R2
  */
-export async function deleteFromR2(fileKey: string) {
+export async function deleteFromR2(fileKey: string): Promise<boolean> {
   try {
+    console.log(`[R2_DELETE] Starting delete for key: ${fileKey}`);
+    console.log(`[R2_DELETE] Bucket: ${bucketName}`);
+
     const command = new DeleteObjectCommand({
       Bucket: bucketName,
       Key: fileKey,
     });
-    await r2Client.send(command);
-    console.log(`Xóa thành công: ${fileKey}`);
+
+    const response = await r2Client.send(command);
+    console.log(`[R2_DELETE] Delete command response:`, response);
+    console.log(`[R2_DELETE] Successfully deleted: ${fileKey}`);
     return true;
-  } catch (error) {
-    console.error('Lỗi khi xóa file trên R2:', error);
+  } catch (error: any) {
+    console.error('[R2_DELETE] Error deleting file from R2:', error);
+    console.error('[R2_DELETE] Error code:', error.code);
+    console.error('[R2_DELETE] Error message:', error.message);
+    console.error('[R2_DELETE] Error name:', error.name);
+
+    // Check if file doesn't exist (NoSuchKey) - consider it success
+    if (error.name === 'NoSuchKey' || error.code === 'NoSuchKey') {
+      console.warn(`[R2_DELETE] File not found on R2 (may already be deleted): ${fileKey}`);
+      return true; // Consider it success if file doesn't exist
+    }
+
     throw error;
   }
 }

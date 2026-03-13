@@ -15,15 +15,20 @@ export const GET: APIRoute = async () => {
     // Fetch all products to cross-reference images
     const { data: products } = await supabase
       .from('products')
-      .select('id, name, main_image_url')
-      .not('main_image_url', 'is', null);
+      .select('id, name, gallery_images');
 
-    // Map files to products
+    // Map files to products - check if image is in gallery_images array
     const enrichedFiles = files.map((file: any) => {
       let linkedProducts: string[] = [];
       if (products) {
         linkedProducts = products
-          .filter(p => p.main_image_url === file.url)
+          .filter(p => {
+            // Check gallery images (main image is now first element in gallery)
+            if (p.gallery_images && Array.isArray(p.gallery_images)) {
+              return p.gallery_images.includes(file.url);
+            }
+            return false;
+          })
           .map(p => p.name);
       }
       return { ...file, linkedProducts };

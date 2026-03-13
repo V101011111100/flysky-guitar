@@ -53,16 +53,13 @@ export const POST: APIRoute = async ({ request }) => {
 
     await s3Client.send(command);
 
-    // Xây dựng Public URL của Cloudflare R2
-    // Cấu trúc URL thông thường: https://pub-[r2tùychọn].r2.dev/products/anh.webp
-    // Nếu bạn có tên miền riêng thì thay 'pub-abc.r2.dev' bằng tên miền đó.
-    // Ở đây ta mặc định cấu trúc R2 public domain thường dùng, nhưng cần cấu hình Public URL trên Cloudflare dashboard.
-    // Do thông tin config chưa có r2.dev CNAME, tạm thời ta có thể lưu public link theo domain mặc định hoặc R2_PUBLIC_DOMAIN.
-    const publicDomain = process.env.R2_PUBLIC_DOMAIN || import.meta.env.R2_PUBLIC_DOMAIN || 'https://pub-2831f2deefd049618f0c23945c7ed734.r2.dev'; // example dev url
+    // Sử dụng R2_PUBLIC_URL đã được cấu hình trong .env
+    const publicDomain = process.env.R2_PUBLIC_URL || import.meta.env.R2_PUBLIC_URL || '';
     
-    // Nếu chưa có cài biến môi trường R2_PUBLIC_DOMAIN, bạn cần cập nhật R2_PUBLIC_DOMAIN vào file .env.
-    // VD: R2_PUBLIC_DOMAIN="https://pub-xxxxxx.r2.dev"
-    
+    if (!publicDomain) {
+      return new Response(JSON.stringify({ success: false, error: 'R2_PUBLIC_URL chưa được cấu hình trong .env' }), { status: 500 });
+    }
+
     let baseUrl = publicDomain.endsWith('/') ? publicDomain.slice(0, -1) : publicDomain;
     const publicUrl = `${baseUrl}/${finalName}`;
 
