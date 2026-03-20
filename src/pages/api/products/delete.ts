@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { logActivity, getClientIp } from '../../../lib/logger';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
@@ -35,6 +36,18 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       .eq('id', productId);
 
     if (error) throw error;
+    
+    const clientIp = await getClientIp(request);
+
+    await logActivity({
+      user_id: authData?.user?.id,
+      user_name: authData?.user?.user_metadata?.full_name || authData?.user?.email || 'Admin',
+      user_role: 'Quản trị viên',
+      action_type: 'Xóa',
+      action_text: `Xóa sản phẩm ID: ${productId}`,
+      module_name: 'Inventory',
+      ip_address: clientIp
+    });
 
     return new Response(JSON.stringify({ success: true }), { status: 200 });
 

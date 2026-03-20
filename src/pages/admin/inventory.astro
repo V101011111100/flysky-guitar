@@ -145,7 +145,11 @@ const outOfStock = items.filter(i => i.status === 'out').length;
         </thead>
         <tbody>
           {items.map(item => (
-            <tr class={`inv-row ${item.status === 'out' || item.dbStatus === 'draft' ? 'row-faded' : ''}`} data-category={item.cat}>
+            <tr
+              class={`inv-row ${item.status === 'out' || item.dbStatus === 'draft' ? 'row-faded' : ''}`}
+              data-category={item.cat}
+              data-search={`${item.sku} ${item.name} ${item.cat}`.toLowerCase()}
+            >
               <td class="sku-col">
                 {item.sku}
                 {item.dbStatus === 'draft' && (
@@ -298,6 +302,19 @@ const outOfStock = items.filter(i => i.status === 'out').length;
       });
     });
   });
+
+  // --- Search by tên / SKU / danh mục ---
+  const searchInput = document.querySelector('.search-input') as HTMLInputElement | null;
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      const q = searchInput.value.toLowerCase().trim();
+      rows.forEach(row => {
+        const el = row as HTMLElement;
+        const baseMatch = !q || (el.dataset.search || '').includes(q) || (el.textContent || '').toLowerCase().includes(q);
+        el.style.display = baseMatch ? '' : 'none';
+      });
+    });
+  }
 
   // Delete product function
   (window as any).deleteProduct = async (id: any) => {

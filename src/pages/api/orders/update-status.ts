@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { logActivity, getClientIp } from '../../../lib/logger';
 
 const VALID_STATUSES = ['pending', 'processing', 'completed', 'cancelled'];
 
@@ -38,6 +39,18 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       .eq('id', id);
 
     if (error) throw error;
+
+    const clientIp = await getClientIp(request);
+
+    await logActivity({
+      user_id: authData?.user?.id,
+      user_name: authData?.user?.user_metadata?.full_name || authData?.user?.email || 'Admin',
+      user_role: 'Quản trị viên',
+      action_type: 'Cập nhật',
+      action_text: `Cập nhật trạng thái đơn hàng #${id} thành ${status}`,
+      module_name: 'Orders',
+      ip_address: clientIp
+    });
 
     return new Response(JSON.stringify({ success: true }), { status: 200 });
 

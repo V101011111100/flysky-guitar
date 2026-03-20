@@ -109,6 +109,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 
 <script is:inline>
   let filesData = [];
+  let searchTerm = '';
   let selectedFile = null;
   let selectedFiles = []; // Multi-select mode
   let isMultiSelectMode = false;
@@ -160,11 +161,13 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 
   let currentFolder = ''; // Empty string means Root / All files
 
+  let lastClickedIndex = -1;
+
   function renderGrid() {
       if (!mediaGrid) return;
       mediaGrid.innerHTML = '';
       
-      const filteredFiles = filesData.filter(file => {
+      let filteredFiles = filesData.filter(file => {
           if (!currentFolder) return true;
           // Support multiple levels if needed, or simple prefix match
           const parts = file.key.split('/');
@@ -174,7 +177,15 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
           return false;
       });
 
-      filteredFiles.forEach(file => {
+      // Lọc theo từ khóa tìm kiếm (theo tên file)
+      if (searchTerm) {
+        filteredFiles = filteredFiles.filter(file => {
+          const name = getFileName(file.key).toLowerCase();
+          return name.includes(searchTerm);
+        });
+      }
+
+      filteredFiles.forEach((file, index) => {
           const isSelected = selectedFile && selectedFile.key === file.key;
           const isMultiSelected = selectedFiles.some(f => f.key === file.key);
           const fileName = getFileName(file.key);
@@ -184,12 +195,23 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
           
           // Click toggles multi-select, Ctrl+Click or checkbox toggles single select
           item.onclick = (e) => {
-              if (isMultiSelectMode || e.ctrlKey || e.shiftKey) {
-                  // Multi-select mode
-                  toggleMultiSelect(file);
+              const isMeta = e.metaKey || e.ctrlKey;
+              const isShift = e.shiftKey;
+
+              if (isShift && lastClickedIndex !== -1) {
+                  // Range selection like Windows/Mac
+                  selectRange(filteredFiles, lastClickedIndex, index, isMeta);
+              } else if (isMeta) {
+                  // Ctrl/Cmd toggle single item
+                  toggleMultiSelect(file, /*preserveSingle*/true);
+                  lastClickedIndex = index;
               } else {
-                  // Single select mode
-                  selectFile(file);
+                  // Single click → chọn một file, clear các chọn khác
+                  lastClickedIndex = index;
+                  selectedFiles = [file];
+                  selectedFile = file;
+                  renderGrid();
+                  renderSidebar();
               }
           };
           
@@ -322,23 +344,39 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
   }
 
   function selectFile(file) {
-      if (selectedFile && selectedFile.key === file.key) {
-          selectedFile = null; // deselect
-      } else {
-          selectedFile = file;
-      }
+      selectedFile = file;
+      selectedFiles = [file];
       renderGrid();
       renderSidebar();
   }
 
-  function toggleMultiSelect(file) {
+  function toggleMultiSelect(file, preserveSingle = false) {
       const index = selectedFiles.findIndex(f => f.key === file.key);
       if (index >= 0) {
           selectedFiles.splice(index, 1);
       } else {
           selectedFiles.push(file);
       }
-      // Clear single selection when in multi-select mode
+      // Khi multi-select, ưu tiên panel tổng quan, trừ khi chỉ còn 1 file
+      selectedFile = preserveSingle && selectedFiles.length === 1 ? selectedFiles[0] : null;
+      renderGrid();
+      renderSidebar();
+  }
+
+  function selectRange(list, start, end, keepExisting) {
+      const [from, to] = start < end ? [start, end] : [end, start];
+      const range = list.slice(from, to + 1);
+
+      if (!keepExisting) {
+        selectedFiles = [];
+      }
+
+      range.forEach(file => {
+        if (!selectedFiles.find(f => f.key === file.key)) {
+          selectedFiles.push(file);
+        }
+      });
+
       selectedFile = null;
       renderGrid();
       renderSidebar();
@@ -732,6 +770,16 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 
   // Initialize
   if (fileUpload) fileUpload.addEventListener('change', handleFileUpload);
+
+  // Search input (header)
+  const headerSearch = document.querySelector('.media-header .search-input');
+  if (headerSearch) {
+    headerSearch.addEventListener('input', () => {
+      // @ts-ignore
+      searchTerm = (headerSearch.value || '').toLowerCase().trim();
+      renderGrid();
+    });
+  }
   
   // Add event listeners for sidebar buttons - wait for DOM to be ready
   let buttonListenersSetup = false;

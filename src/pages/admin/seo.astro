@@ -1,5 +1,47 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+// 1. Fetch SEO Settings (from site_settings KV table)
+const { data: settingsData } = await supabase.from('site_settings').select('key, value').like('key', 'seo_%');
+const seo = settingsData?.reduce((acc: any, curr: any) => {
+  acc[curr.key.replace('seo_', '')] = curr.value;
+  return acc;
+}, {
+  meta_title: '',
+  meta_description: '',
+  meta_keywords: '',
+  sitemap_url: '/sitemap.xml',
+  gsc_id: '',
+  ga4_id: '',
+  fb_pixel_id: ''
+});
+
+// 2. Fetch Email Campaigns
+const { data: campaignsData } = await supabase.from('email_campaigns').select('*').order('created_at', { ascending: false }).limit(5);
+const emailCampaigns = campaignsData || [];
+
+// 3. Fetch Automated Workflows
+const { data: workflowsData } = await supabase.from('marketing_workflows').select('*').order('created_at', { ascending: true });
+const marketingWorkflows = workflowsData || [];
+
+// 4. Fetch Newsletter Subscribers Stats & List
+const { count: totalSubscribers } = await supabase.from('newsletter_subscribers').select('*', { count: 'exact', head: true });
+const { data: recentSubscribersData } = await supabase.from('newsletter_subscribers').select('*').order('joined_at', { ascending: false }).limit(5);
+const recentSubscribers = recentSubscribersData || [];
+
+// 5. Calculate Average Open Rate (Mock stat based on campaigns)
+const avgOpenRate = emailCampaigns.length > 0 
+  ? (emailCampaigns.reduce((acc:any, c:any) => acc + Number(c.open_rate || 0), 0) / emailCampaigns.length).toFixed(1)
+  : '0.0';
+
+// 6. Fetch Active Discounts
+const { data: discountData } = await supabase.from('discounts').select('*').eq('status', 'Đang hoạt động').limit(3);
+const activeDiscounts = discountData || [];
+
+// 7. Fetch Newsletter Templates
+const { data: templateData } = await supabase.from('newsletter_templates').select('*').order('created_at', { ascending: false }).limit(3);
+const newsletterTemplates = templateData || [];
 ---
 
 <AdminLayout
@@ -31,17 +73,17 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
           <div class="seo-fields">
             <div class="form-group">
               <label class="seo-label">Meta Title mặc định</label>
-              <input type="text" class="seo-input" value="FlySky Guitar - Nhạc cụ cao cấp & Studio chuyên nghiệp" />
+              <input type="text" id="seo-meta-title" class="seo-input" value={seo.meta_title} />
               <p class="seo-hint">Được đề xuất: 50-60 ký tự.</p>
             </div>
             <div class="form-group">
               <label class="seo-label">Meta Description mặc định</label>
-              <textarea class="seo-input seo-textarea" rows="4">Khám phá thế giới nhạc cụ FlySky Guitar, chuyên cung cấp các dòng guitar gỗ thủ công, thiết bị phòng thu và dịch vụ thu âm chuyên nghiệp tại Việt Nam.</textarea>
+              <textarea id="seo-meta-desc" class="seo-input seo-textarea" rows="4">{seo.meta_description}</textarea>
               <p class="seo-hint">Được đề xuất: 150-160 ký tự.</p>
             </div>
             <div class="form-group">
               <label class="seo-label">Từ khóa (Keywords)</label>
-              <input type="text" class="seo-input" placeholder="guitar, studio, wood guitar, flysky..." />
+              <input type="text" id="seo-meta-keywords" class="seo-input" value={seo.meta_keywords} placeholder="guitar, studio, wood guitar..." />
             </div>
           </div>
         </section>
@@ -56,7 +98,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
             <div class="form-group">
               <label class="seo-label">Sitemap URL</label>
               <div class="seo-input-group">
-                <input type="text" class="seo-input seo-input-readonly" value="/sitemap.xml" readonly />
+                <input type="text" id="seo-sitemap" class="seo-input seo-input-readonly" value={seo.sitemap_url} readonly />
                 <button class="seo-input-btn">
                   <span class="material-symbols-outlined">open_in_new</span>
                 </button>
@@ -74,7 +116,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
             <label class="seo-label">Google Search Console ID</label>
             <div class="seo-icon-input">
               <span class="material-symbols-outlined seo-input-icon">verified_user</span>
-              <input type="text" class="seo-input seo-input-icon-pad" placeholder="G-XXXXXXXXXX" />
+              <input type="text" id="seo-gsc-id" class="seo-input seo-input-icon-pad" value={seo.gsc_id} placeholder="G-XXXXXXXXXX" />
             </div>
           </div>
         </section>
@@ -88,11 +130,11 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
           <div class="seo-tech-grid">
             <div class="seo-analytics-card">
               <label class="seo-label-tiny">Google Analytics 4</label>
-              <input type="text" class="seo-input" placeholder="UA-000000-01" />
+              <input type="text" id="seo-ga4-id" class="seo-input" value={seo.ga4_id} placeholder="UA-000000-01" />
             </div>
             <div class="seo-analytics-card">
               <label class="seo-label-tiny">Facebook Pixel ID</label>
-              <input type="text" class="seo-input" placeholder="1234567890" />
+              <input type="text" id="seo-fb-pixel" class="seo-input" value={seo.fb_pixel_id} placeholder="1234567890" />
             </div>
           </div>
         </section>
@@ -115,11 +157,11 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
                 <div class="gp-url">https://flysky-guitar.vn</div>
               </div>
             </div>
-            <div class="gp-headline">FlySky Guitar - Nhạc cụ cao cấp &amp; Studio chuyên nghiệp</div>
-            <p class="gp-snippet">Khám phá thế giới nhạc cụ FlySky Guitar, chuyên cung cấp các dòng guitar gỗ thủ công, thiết bị phòng thu và dịch vụ thu âm chuyên nghiệp...</p>
+            <div class="gp-headline" id="gp-preview-title">{seo.meta_title || 'Thêm tiêu đề trang web...'}</div>
+            <p class="gp-snippet" id="gp-preview-desc">{seo.meta_description || 'Thêm mô tả cho trang web của bạn...'}</p>
           </div>
           <div class="gp-actions">
-            <button class="btn-save-orange">
+            <button class="btn-save-orange" id="btn-save-seo">
               <span class="material-symbols-outlined">save</span>
               Lưu cấu hình
             </button>
@@ -134,17 +176,18 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
         <div class="seo-side-card">
           <div class="seo-side-card-head">
             <h3 class="seo-side-title">Mã giảm giá hoạt động</h3>
-            <span class="badge-running">3 ĐANG CHẠY</span>
+            <span class="badge-running">{activeDiscounts.length} ĐANG CHẠY</span>
           </div>
           <div class="discount-list">
-            <div class="discount-row">
-              <span class="discount-code">WOODGUITAR20</span>
-              <span class="discount-val">-20%</span>
-            </div>
-            <div class="discount-row">
-              <span class="discount-code">STUDIOSET</span>
-              <span class="discount-val">500k</span>
-            </div>
+            {activeDiscounts.map((dc: any) => (
+              <div class="discount-row">
+                <span class="discount-code">{dc.code}</span>
+                <span class="discount-val">
+                  {dc.discount_type === 'percent' ? `-${dc.discount_value}%` : `-${Number(dc.discount_value)/1000}k`}
+                </span>
+              </div>
+            ))}
+            {activeDiscounts.length === 0 && <p style="color:#64748b; font-size:12px;">Không có mã dồi dào chạy.</p>}
           </div>
           <a href="/admin/discounts" class="seo-manage-btn">Quản lý mã giảm giá</a>
         </div>
@@ -207,33 +250,27 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td>
-                      <div class="mkt-cp-title">BST Guitar Gỗ Mùa Thu</div>
-                      <div class="mkt-cp-date">Gửi lúc: 15/10/2023</div>
-                    </td>
-                    <td><span class="mkt-badge mkt-badge-done">HOÀN THÀNH</span></td>
-                    <td class="mkt-stat">24.8%</td>
-                    <td class="mkt-stat">3.2%</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <div class="mkt-cp-title">Ưu đãi phụ kiện Studio</div>
-                      <div class="mkt-cp-date">Gửi lúc: 08/10/2023</div>
-                    </td>
-                    <td><span class="mkt-badge mkt-badge-done">HOÀN THÀNH</span></td>
-                    <td class="mkt-stat">18.5%</td>
-                    <td class="mkt-stat">1.9%</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <div class="mkt-cp-title">Bản tin tháng 10</div>
-                      <div class="mkt-cp-date">Đang lên lịch: 01/11/2023</div>
-                    </td>
-                    <td><span class="mkt-badge mkt-badge-pending">ĐANG CHỜ</span></td>
-                    <td class="mkt-stat">-</td>
-                    <td class="mkt-stat">-</td>
-                  </tr>
+                  {emailCampaigns.map((cp: any) => (
+                    <tr>
+                      <td>
+                        <div class="mkt-cp-title">{cp.title}</div>
+                        <div class="mkt-cp-date">
+                          {cp.status === 'ĐANG CHỜ' ? 'Đang lên lịch: ' : 'Gửi lúc: '}
+                          {new Date(cp.sent_at).toLocaleDateString('vi-VN')}
+                        </div>
+                      </td>
+                      <td>
+                        {cp.status === 'HOÀN THÀNH' && <span class="mkt-badge mkt-badge-done">{cp.status}</span>}
+                        {cp.status === 'ĐANG CHỜ' && <span class="mkt-badge mkt-badge-pending">{cp.status}</span>}
+                        {cp.status !== 'HOÀN THÀNH' && cp.status !== 'ĐANG CHỜ' && <span class="mkt-badge">{cp.status}</span>}
+                      </td>
+                      <td class="mkt-stat">{cp.open_rate > 0 ? `${cp.open_rate}%` : '-'}</td>
+                      <td class="mkt-stat">{cp.click_rate > 0 ? `${cp.click_rate}%` : '-'}</td>
+                    </tr>
+                  ))}
+                  {emailCampaigns.length === 0 && (
+                    <tr><td colspan="4" style="text-align:center;color:#64748b;padding:24px;">Chưa có chiến dịch nào</td></tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -251,44 +288,20 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
             </div>
             
             <div class="mkt-workflows">
-              <!-- Workflow 1 -->
-              <div class="mkt-wf-item">
-                <div class="mkt-wf-head">
-                  <div class="mkt-wf-icon-wrap"><span class="material-symbols-outlined mkt-wf-icon">handshake</span></div>
-                  <label class="mkt-wf-chk-wrap">
-                    <input type="checkbox" class="mkt-wf-chk" checked />
-                    <span class="mkt-wf-custom-chk"></span>
-                  </label>
+              {marketingWorkflows.map((wf: any) => (
+                <div class="mkt-wf-item">
+                  <div class="mkt-wf-head">
+                    <div class="mkt-wf-icon-wrap"><span class="material-symbols-outlined mkt-wf-icon">{wf.icon || 'settings_suggest'}</span></div>
+                    <label class="mkt-wf-chk-wrap">
+                      <input type="checkbox" class="mkt-wf-chk wf-toggle" data-id={wf.id} checked={wf.is_active} />
+                      <span class="mkt-wf-custom-chk"></span>
+                    </label>
+                  </div>
+                  <div class="mkt-wf-title">{wf.title}</div>
+                  <div class="mkt-wf-desc">{wf.description}</div>
                 </div>
-                <div class="mkt-wf-title">Chuỗi chào mừng</div>
-                <div class="mkt-wf-desc">Gửi khi khách hàng đăng ký tài khoản mới.</div>
-              </div>
-              
-              <!-- Workflow 2 -->
-              <div class="mkt-wf-item">
-                <div class="mkt-wf-head">
-                  <div class="mkt-wf-icon-wrap"><span class="material-symbols-outlined mkt-wf-icon">shopping_cart_checkout</span></div>
-                  <label class="mkt-wf-chk-wrap">
-                    <input type="checkbox" class="mkt-wf-chk" checked />
-                    <span class="mkt-wf-custom-chk"></span>
-                  </label>
-                </div>
-                <div class="mkt-wf-title">Giỏ hàng bỏ quên</div>
-                <div class="mkt-wf-desc">Nhắc nhở khách hàng hoàn tất đơn hàng.</div>
-              </div>
-
-              <!-- Workflow 3 -->
-              <div class="mkt-wf-item">
-                <div class="mkt-wf-head">
-                  <div class="mkt-wf-icon-wrap"><span class="material-symbols-outlined mkt-wf-icon">celebration</span></div>
-                  <label class="mkt-wf-chk-wrap">
-                    <input type="checkbox" class="mkt-wf-chk" />
-                    <span class="mkt-wf-custom-chk"></span>
-                  </label>
-                </div>
-                <div class="mkt-wf-title">Chúc mừng sinh nhật</div>
-                <div class="mkt-wf-desc">Gửi ưu đãi đặc biệt vào ngày sinh nhật.</div>
-              </div>
+              ))}
+              {marketingWorkflows.length === 0 && <p style="color:#64748b; font-size:13px;">Chưa có workflow nào</p>}
             </div>
 
             <button class="seo-dashed-btn mkt-add-wf-btn">
@@ -309,18 +322,18 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
       <div class="nl-stats-row">
         <div class="nl-stat-card">
           <p class="nl-stat-label">Tổng người đăng ký</p>
-          <h4 class="nl-stat-val">12,842</h4>
-          <p class="nl-stat-trend text-green"><span class="material-symbols-outlined">trending_up</span> +12% tháng này</p>
+          <h4 class="nl-stat-val">{totalSubscribers?.toLocaleString('vi-VN') || 0}</h4>
+          <p class="nl-stat-trend text-green"><span class="material-symbols-outlined">trending_up</span> +12% tháng này *(Mock)*</p>
         </div>
         <div class="nl-stat-card">
           <p class="nl-stat-label">Tỷ lệ mở trung bình</p>
-          <h4 class="nl-stat-val">24.8%</h4>
-          <p class="nl-stat-desc">Cao hơn 2% so với ngành</p>
+          <h4 class="nl-stat-val">{avgOpenRate}%</h4>
+          <p class="nl-stat-desc">Dựa trên {emailCampaigns.length} chiến dịch</p>
         </div>
         <div class="nl-stat-card">
           <p class="nl-stat-label">Chiến dịch đã gửi</p>
-          <h4 class="nl-stat-val">156</h4>
-          <p class="nl-stat-desc">Cập nhật 2 giờ trước</p>
+          <h4 class="nl-stat-val">{emailCampaigns.filter((c:any) => c.status === 'HOÀN THÀNH').length}</h4>
+          <p class="nl-stat-desc">Cập nhật lúc {new Date().toLocaleTimeString('vi-VN')}</p>
         </div>
         <div class="nl-stat-card nl-stat-action">
           <button class="btn-orange nl-btn-full">
@@ -383,30 +396,24 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td><span class="nl-email">nguyen.van@gmail.com</span></td>
-                    <td><span class="nl-date">15/10/2023</span></td>
-                    <td><span class="mkt-badge mkt-badge-done">Đang hoạt động</span></td>
-                    <td style="text-align:right;">
-                      <button class="nl-action-btn"><span class="material-symbols-outlined">more_vert</span></button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td><span class="nl-email">tran.thi@outlook.com</span></td>
-                    <td><span class="nl-date">14/10/2023</span></td>
-                    <td><span class="mkt-badge mkt-badge-done">Đang hoạt động</span></td>
-                    <td style="text-align:right;">
-                      <button class="nl-action-btn"><span class="material-symbols-outlined">more_vert</span></button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td><span class="nl-email">le.hoang@yahoo.com</span></td>
-                    <td><span class="nl-date">12/10/2023</span></td>
-                    <td><span class="mkt-badge" style="background:rgba(100,116,139,.1); color:#94a3b8;">Đã hủy</span></td>
-                    <td style="text-align:right;">
-                      <button class="nl-action-btn"><span class="material-symbols-outlined">more_vert</span></button>
-                    </td>
-                  </tr>
+                  {recentSubscribers.map((sub: any) => (
+                    <tr>
+                      <td><span class="nl-email">{sub.email}</span></td>
+                      <td><span class="nl-date">{new Date(sub.joined_at).toLocaleDateString('vi-VN')}</span></td>
+                      <td>
+                        {sub.status === 'Đang hoạt động' 
+                         ? <span class="mkt-badge mkt-badge-done">Đang hoạt động</span> 
+                         : <span class="mkt-badge" style="background:rgba(100,116,139,.1); color:#94a3b8;">{sub.status}</span>
+                        }
+                      </td>
+                      <td style="text-align:right;">
+                        <button class="nl-action-btn"><span class="material-symbols-outlined">more_vert</span></button>
+                      </td>
+                    </tr>
+                  ))}
+                  {recentSubscribers.length === 0 && (
+                    <tr><td colspan="4" style="text-align:center;color:#64748b;padding:24px;">Chưa có subscriber nào</td></tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -424,33 +431,22 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
               <a href="/admin/newsletter-editor" class="nl-btn-text" style="text-decoration: none; display: inline-block;">Thêm mẫu</a>
             </div>
             <div class="nl-tpl-list">
-              <!-- Template 1 -->
-              <div class="nl-tpl-item">
-                <div class="nl-tpl-cover">
-                  <span class="material-symbols-outlined">draft</span>
-                  <div class="nl-tpl-overlay">
-                    <button class="nl-tpl-btn"><span class="material-symbols-outlined">edit</span></button>
-                    <button class="nl-tpl-btn"><span class="material-symbols-outlined">preview</span></button>
+              {newsletterTemplates.map((tpl: any) => (
+                <div class="nl-tpl-item">
+                  <div class="nl-tpl-cover">
+                    <span class="material-symbols-outlined">{tpl.icon}</span>
+                    <div class="nl-tpl-overlay">
+                      <button class="nl-tpl-btn"><span class="material-symbols-outlined">edit</span></button>
+                      <button class="nl-tpl-btn"><span class="material-symbols-outlined">preview</span></button>
+                    </div>
+                  </div>
+                  <div class="nl-tpl-info">
+                    <div class="nl-tpl-name">{tpl.name}</div>
+                    <div class="nl-tpl-meta">{tpl.type === 'system' ? 'Hệ thống tự động' : 'Tùy chỉnh'}</div>
                   </div>
                 </div>
-                <div class="nl-tpl-info">
-                  <div class="nl-tpl-name">Khuyến mãi Thu 2023</div>
-                  <div class="nl-tpl-meta">Cập nhật: 2 ngày trước</div>
-                </div>
-              </div>
-              <!-- Template 2 -->
-              <div class="nl-tpl-item">
-                <div class="nl-tpl-cover">
-                  <span class="material-symbols-outlined">mail</span>
-                  <div class="nl-tpl-overlay">
-                    <button class="nl-tpl-btn"><span class="material-symbols-outlined">settings</span></button>
-                  </div>
-                </div>
-                <div class="nl-tpl-info">
-                  <div class="nl-tpl-name">Chào mừng khách hàng</div>
-                  <div class="nl-tpl-meta">Hệ thống tự động</div>
-                </div>
-              </div>
+              ))}
+              {newsletterTemplates.length === 0 && <p style="font-size:12px;color:#64748b;padding:12px;">Chưa có mẫu bản tin nào.</p>}
             </div>
           </section>
 
@@ -480,6 +476,96 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
     btn.classList.add('seo-tab-active');
   }
   (window as any).switchSeoTab = switchSeoTab;
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // 1. Google Search Preview reactivity
+    const titleInput = document.getElementById('seo-meta-title') as HTMLInputElement;
+    const descInput = document.getElementById('seo-meta-desc') as HTMLTextAreaElement;
+    const previewTitle = document.getElementById('gp-preview-title');
+    const previewDesc = document.getElementById('gp-preview-desc');
+
+    if (titleInput && previewTitle) {
+      titleInput.addEventListener('input', (e) => {
+        previewTitle.textContent = (e.target as HTMLInputElement).value || 'Thêm tiêu đề trang web...';
+      });
+    }
+
+    if (descInput && previewDesc) {
+      descInput.addEventListener('input', (e) => {
+        previewDesc.textContent = (e.target as HTMLTextAreaElement).value || 'Thêm mô tả cho trang web của bạn...';
+      });
+    }
+
+    // 2. Save SEO Settings API Call
+    const btnSaveSeo = document.getElementById('btn-save-seo');
+    if (btnSaveSeo) {
+      btnSaveSeo.addEventListener('click', async () => {
+        const payload = {
+          meta_title: titleInput.value,
+          meta_description: descInput.value,
+          meta_keywords: (document.getElementById('seo-meta-keywords') as HTMLInputElement).value,
+          gsc_id: (document.getElementById('seo-gsc-id') as HTMLInputElement).value,
+          ga4_id: (document.getElementById('seo-ga4-id') as HTMLInputElement).value,
+          fb_pixel_id: (document.getElementById('seo-fb-pixel') as HTMLInputElement).value,
+        };
+
+        const oldText = btnSaveSeo.innerHTML;
+        btnSaveSeo.innerHTML = '<span class="material-symbols-outlined">sync</span> Đang lưu...';
+        btnSaveSeo.style.opacity = '0.7';
+
+        try {
+          const res = await fetch('/api/seo/save-settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const result = await res.json();
+          if (result.success) {
+            btnSaveSeo.innerHTML = '<span class="material-symbols-outlined">check</span> Đã lưu';
+            btnSaveSeo.style.background = '#22c55e';
+            btnSaveSeo.style.color = '#fff';
+            setTimeout(() => {
+              btnSaveSeo.innerHTML = oldText;
+              btnSaveSeo.style.background = '#f48c25';
+              btnSaveSeo.style.color = '#221910';
+              btnSaveSeo.style.opacity = '1';
+            }, 3000);
+          } else {
+            alert('Lỗi lưu cấu hình: ' + (result.error || 'Unknown error'));
+            btnSaveSeo.innerHTML = oldText;
+            btnSaveSeo.style.opacity = '1';
+          }
+        } catch (e) {
+          alert('Không thể kết nối lưu cấu hình.');
+          btnSaveSeo.innerHTML = oldText;
+          btnSaveSeo.style.opacity = '1';
+        }
+      });
+    }
+
+    // 3. Workflow Automations Toggles
+    const workflowToggles = document.querySelectorAll('.wf-toggle');
+    workflowToggles.forEach(toggle => {
+      toggle.addEventListener('change', async (e) => {
+        const el = e.target as HTMLInputElement;
+        const id = el.dataset.id;
+        const isActive = el.checked;
+
+        if (id) {
+          try {
+            await fetch('/api/seo/toggle-workflow', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id, isActive })
+            });
+          } catch (err) {
+            console.error('Lỗi khi bật tắt workflow:', err);
+            el.checked = !isActive; // revert on fail
+          }
+        }
+      });
+    });
+  });
 </script>
 
 <style>

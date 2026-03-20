@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { logActivity, getClientIp } from '../../../lib/logger';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
@@ -72,6 +73,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       gallery_images: galleryImages.length > 0 ? galleryImages : null
     };
 
+    const clientIp = await getClientIp(request);
+
     if (productId) {
       // Update existing
       const { error } = await supabase
@@ -83,6 +86,17 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         console.error("Supabase Update Error:", error);
         return new Response(JSON.stringify({ success: false, error: error.message || "Database error" }), { status: 400 });
       }
+      
+      await logActivity({
+        user_id: authData.user?.id,
+        user_name: authData.user?.user_metadata?.full_name || authData.user?.email || 'Admin',
+        user_role: 'Quản trị viên',
+        action_type: 'Cập nhật',
+        action_text: `Cập nhật thông tin/số lượng sản phẩm: ${name}`,
+        module_name: 'Inventory',
+        ip_address: clientIp
+      });
+      
     } else {
       // Insert new
       const { error } = await supabase
@@ -93,6 +107,16 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         console.error("Supabase Insert Error:", error);
         return new Response(JSON.stringify({ success: false, error: error.message || "Database error" }), { status: 400 });
       }
+      
+      await logActivity({
+        user_id: authData.user?.id,
+        user_name: authData.user?.user_metadata?.full_name || authData.user?.email || 'Admin',
+        user_role: 'Quản trị viên',
+        action_type: 'Thêm mới',
+        action_text: `Thêm sản phẩm mới vào kho: ${name}`,
+        module_name: 'Inventory',
+        ip_address: clientIp
+      });
     }
 
     return new Response(JSON.stringify({ success: true }), { status: 200 });

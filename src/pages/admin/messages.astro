@@ -1,43 +1,97 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
+import { supabase } from '../../lib/supabase';
 
-const barData = [40, 55, 45, 70, 65, 85, 90, 80, 60, 75, 95, 100];
-const months  = ['Th1','Th2','Th3','Th4','Th5','Th6','Th7','Th8','Th9','Th10','Th11','Th12'];
+const currentYear = new Date().getFullYear();
 
-const categories = [
-  { name: 'Đàn Electric (Điện)', pct: 45 },
-  { name: 'Đàn Acoustic',        pct: 30 },
-  { name: 'Đàn Bass',            pct: 15 },
-  { name: 'Phụ kiện & Khác',     pct: 10 },
-];
+// Fetch orders
+const { data: ordersRaw } = await supabase
+  .from('orders')
+  .select('*')
+  .order('created_at', { ascending: true });
 
-const topProducts = [
-  {
-    name: 'Heritage Custom Shop 59', cat: 'Electric', catClass: 'cat-elec',
-    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDRnIZvfyg2KcoH3d0bIUWPOZjYNkP3kre_978ZuXjNw_Ts3frW44Tav1-rEAtPxfULtTSm34pDU0kDB1quH4ydxmfJCM6YlPDhhA-gH6NwMcAvQqaU0g2phD-aOS2AfeIUZDNJVoGAOrl9YjmhPD7U6zv-LKo1uJ0A5Y2tVuvh33Hc4Aiy_QgfQcfV4ux5EPerB8Cw-c2jawwNXepKSQZl16q-UcJuvDvKIQgaaBkyJbGL6ODAJh9fhLLBFU98dCrHQFAazpR_mn5h',
-    qty: 412, revenue: '3.200.000.000 ₫', pct: 21,
-  },
-  {
-    name: 'Rosewood Artisan Acoustic', cat: 'Acoustic', catClass: 'cat-acou',
-    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAaf2l-IWkGNf1DtnBbI3nSYGykC4FrqoOn_sF7kI7SE91uVypfJ2AZ28yI-d_bLsjmcwIzqCxEs04zqTTodwuoeaD2YqlDbHgmgEZ_8Zywo3Fx_3TKXfYG33QRGvIi-SbK92h8A-R6iUOSU_NgQP8kjd0oxw79SddK_XA5YmUKLKsI7Xuw0G-j4CMZ08J-AQa9quKA4E8WsLOyVUwrdEjVs1r67a9lxHtn4OF1nc1zB0jkFUMwAy7EwItvjB1OuYyelBUfjEk1HgAe',
-    qty: 356, revenue: '2.800.000.000 ₫', pct: 18,
-  },
-  {
-    name: 'Maple Burst Standard', cat: 'Electric', catClass: 'cat-elec',
-    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD_9QgETdm1EnrEjqNnYFhnszLbbMx5FUzoyHP1HWGt-YJSs8-afttgYFLkM9NucR4gMj-IoeN9hQMfMvOt0moEJaLGCcNcEqIXx49XrVUS8PFeCEdHmIJ19xmGmaF9PRzbz6N-WFBZvFwKJ0mA1Tn6d6doZrS6OS2SUjYU1ZLQP7T0-9vUxm02CUDQoeMre9QAUix06GylWYwJ7b8MDxHSkDt2sxHz7JF5MzJBsk3ZUP-WoeK5MEpDw8LAOQnBM9bNZSjyrcH3OKIL',
-    qty: 298, revenue: '2.100.000.000 ₫', pct: 14,
-  },
-  {
-    name: 'Thunder Deep Bass 5-String', cat: 'Bass', catClass: 'cat-bass',
-    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD8fxWHedAqBX9-stJldOUvYL07kqbuE5r639v3HmTQrH3RH4lCdQkQokKbnAdduDnLiSQSW9KUAJvM21sgJqTiIyEViCaRSK9ZmENNDgd2meqaUAr-PYmbbKZm2v7jeQANGm7LWQCIibolzZFBmK-_e8zuG30smWnIcAYVymYyuVxT2FYywinCFxiaFuzmvRxjK9sIeD6u3rFJYzGHczecw4lQ7nK5Gd3kEzsDk1DzGhom1kGsVXQf2LeqKym59PrAbPxUjEbA3vXG',
-    qty: 184, revenue: '1.500.000.000 ₫', pct: 10,
-  },
-  {
-    name: 'Professional Studio Cables', cat: 'Accessories', catClass: 'cat-acc',
-    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDL1LcQTkN9pdQAXBuIRaNFA0k9D38wEnlwV1i9X7fsEgY3jYnlpX_eUedJmi6E1xELerIu44sXzfGNFwyTkHAR7yjE3gClZfWEEjinduR7GYSdsN6Iq-g10uJ1icZMd40nTVHzqFeR08EDytG3eTcVpafClzwn0ro6yCiGWKti3mdgCP5W3dxidB91ZjgtrYKCEqpnSYNng3cMxhB6fdVZ5xevIA2bsNBwtzoUMi4eDL-mNjkqFgXrJe7KTFiqqbJtrPtox4_fFzCP',
-    qty: 842, revenue: '950.000.000 ₫', pct: 6,
-  },
-];
+const orders = ordersRaw || [];
+
+const monthlyRevenue = Array(12).fill(0);
+let totalRevenueYear = 0;
+let totalSalesQty = 0;
+
+const productRev: Record<string, { qty: number, revenue: number, name: string, img: string }> = {};
+
+for (const o of orders as any[]) {
+  if (o.status === 'cancelled') continue;
+  const created = new Date(o.created_at);
+  if (created.getFullYear() === currentYear) {
+    const amount = o.total_amount || 0;
+    const m = created.getMonth(); // 0 to 11
+    monthlyRevenue[m] += amount;
+    totalRevenueYear += amount;
+    
+    // Items
+    const items = o.items || [];
+    for (const item of items) {
+      const pId = item.product_id || item.id;
+      if (pId) {
+        if (!productRev[pId]) productRev[pId] = { qty: 0, revenue: 0, name: item.name || 'Unknown', img: item.image || '' };
+        const q = item.quantity || 1;
+        productRev[pId].qty += q;
+        productRev[pId].revenue += (item.price || 0) * q;
+        totalSalesQty += q;
+      }
+    }
+  }
+}
+
+// Data for bar chart
+const maxMonth = Math.max(...monthlyRevenue) || 1;
+const barData = monthlyRevenue.map(rev => (rev / maxMonth) * 100);
+const months = ['Th1','Th2','Th3','Th4','Th5','Th6','Th7','Th8','Th9','Th10','Th11','Th12'];
+
+// Categories Performance
+const { data: allProductsRaw } = await supabase
+  .from('products')
+  .select('id, category_id, categories(name)');
+
+const categoryRev: Record<string, number> = {};
+(allProductsRaw || []).forEach((p: any) => {
+  if(productRev[p.id]) {
+    const catName = p.categories?.name || 'Khác';
+    if (!categoryRev[catName]) categoryRev[catName] = 0;
+    categoryRev[catName] += productRev[p.id].revenue;
+  }
+});
+
+const totalCatRev = Object.values(categoryRev).reduce((a, b) => a + b, 0) || 1;
+const categories = Object.keys(categoryRev).map(name => ({
+  name: name,
+  pct: Math.round((categoryRev[name] / totalCatRev) * 100)
+})).sort((a,b) => b.pct - a.pct).slice(0, 4);
+
+// Top Products
+const topProducts = Object.keys(productRev).map(id => {
+  const data = productRev[id];
+  const prodInfo = (allProductsRaw || []).find((p:any) => p.id === id);
+  const catName = prodInfo?.categories?.name || 'Accessories';
+  let catClass = 'cat-acc';
+  if (catName.toLowerCase().includes('acoustic')) catClass = 'cat-acou';
+  else if (catName.toLowerCase().includes('electric')) catClass = 'cat-elec';
+  else if (catName.toLowerCase().includes('bass')) catClass = 'cat-bass';
+  
+  return {
+    name: data.name,
+    cat: catName,
+    catClass: catClass,
+    img: data.img || '',
+    qty: data.qty,
+    revenue: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(data.revenue),
+    pct: Math.round((data.revenue / totalRevenueYear) * 100) || 0
+  };
+}).sort((a,b) => b.qty - a.qty).slice(0, 5);
+
+// KPIs
+const fmtCurrency = (n: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n);
+const validOrdersCount = orders.filter((o:any) => o.status !== 'cancelled' && new Date(o.created_at).getFullYear() === currentYear).length;
+const avgOrderValue = validOrdersCount > 0 ? totalRevenueYear / validOrdersCount : 0;
 ---
 
 <AdminLayout
@@ -76,37 +130,37 @@ const topProducts = [
     <div class="kpi-card">
       <div class="kpi-top">
         <div class="kpi-icon orange"><span class="material-symbols-outlined">payments</span></div>
-        <span class="kpi-trend up"><span class="material-symbols-outlined">trending_up</span>12.5%</span>
+        <span class="kpi-trend up"><span class="material-symbols-outlined">trending_up</span>Tốt</span>
       </div>
       <p class="kpi-label">Tổng doanh thu năm</p>
-      <h3 class="kpi-val">15.200.000.000 ₫</h3>
+      <h3 class="kpi-val">{fmtCurrency(totalRevenueYear)}</h3>
     </div>
 
     <div class="kpi-card">
       <div class="kpi-top">
         <div class="kpi-icon blue"><span class="material-symbols-outlined">show_chart</span></div>
-        <span class="kpi-trend up"><span class="material-symbols-outlined">add</span>2.1%</span>
+        <span class="kpi-trend up"><span class="material-symbols-outlined">add</span>--</span>
       </div>
-      <p class="kpi-label">Tăng trưởng so với 2023</p>
-      <h3 class="kpi-val">+12.5%</h3>
+      <p class="kpi-label">Số lượng đơn hàng hoàn tất</p>
+      <h3 class="kpi-val">{validOrdersCount} đơn</h3>
     </div>
 
     <div class="kpi-card">
       <div class="kpi-top">
         <div class="kpi-icon purple"><span class="material-symbols-outlined">shopping_basket</span></div>
-        <span class="kpi-trend down"><span class="material-symbols-outlined">trending_down</span>0.5%</span>
+        <span class="kpi-trend down"><span class="material-symbols-outlined">trending_flat</span>--</span>
       </div>
       <p class="kpi-label">Giá trị đơn hàng trung bình</p>
-      <h3 class="kpi-val">4.500.000 ₫</h3>
+      <h3 class="kpi-val">{fmtCurrency(avgOrderValue)}</h3>
     </div>
 
     <div class="kpi-card">
       <div class="kpi-top">
         <div class="kpi-icon orange-light"><span class="material-symbols-outlined">inventory_2</span></div>
-        <span class="kpi-trend up"><span class="material-symbols-outlined">trending_up</span>8.2%</span>
+        <span class="kpi-trend up"><span class="material-symbols-outlined">trending_up</span>Tốt</span>
       </div>
       <p class="kpi-label">Tổng sản phẩm đã bán</p>
-      <h3 class="kpi-val">3.380 chiếc</h3>
+      <h3 class="kpi-val">{totalSalesQty} chiếc</h3>
     </div>
 
   </div>
@@ -182,7 +236,7 @@ const topProducts = [
               <td>
                 <div class="prod-cell">
                   <div class="prod-img">
-                    <img src={p.img} alt={p.name} />
+                    {p.img ? <img src={p.img} alt={p.name} /> : <div style="display:flex;align-items:center;justify-content:center;height:100%;"><span class="material-symbols-outlined" style="color:#64748b;font-size:20px;">image</span></div>}
                   </div>
                   <span class="prod-name">{p.name}</span>
                 </div>

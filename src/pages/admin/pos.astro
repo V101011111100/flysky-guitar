@@ -1,0 +1,618 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+// Lấy sản phẩm
+const { data: products } = await supabase
+  .from('products')
+  .select('id, name, sku, price, stock_quantity, gallery_images')
+  .eq('status', 'active')
+  .order('created_at', { ascending: false });
+
+// Lấy danh sách đơn hàng POS (Hóa đơn)
+const { data: orders } = await supabase
+  .from('orders')
+  .select('id, order_number, customer_name, total_amount, created_at, source, status, order_items(quantity, price_at_time, products(name, sku))')
+  .eq('source', 'pos')
+  .order('created_at', { ascending: false })
+  .limit(50);
+
+---
+
+<AdminLayout title="POS" subtitle="Bán hàng tại quầy" activeNav="pos">
+  <Fragment slot="head">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet" />
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+      .font-pos-sans { font-family: 'Inter', sans-serif; }
+      .font-pos-serif { font-family: 'Playfair Display', serif; }
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: var(--color-border-dark, #4a3a2a); border-radius: 10px; }
+      .btn-orange-gradient { background: linear-gradient(135deg, var(--color-accent-orange, #e67e22) 0%, #d35400 100%); }
+    </style>
+  </Fragment>
+
+  <style is:global>
+    .content-scroll:has(.pos-shell) { padding: 0 !important; overflow: hidden !important; }
+  </style>
+
+  <!-- Pass data to client -->
+  <script define:vars={{ products, orders }}>
+    window.posProducts = products || [];
+    window.posOrders = orders || [];
+  </script>
+
+  <script is:inline>
+    document.addEventListener('alpine:init', () => {
+      Alpine.data('posApp', () => ({
+        activeTab: new URLSearchParams(window.location.search).get('tab') || 'sales',
+        tabs: [
+          { id: 'sales', label: 'Bán hàng', icon: 'storefront' },
+          { id: 'invoices', label: 'Hóa đơn', icon: 'receipt_long' },
+          { id: 'reports', label: 'Báo cáo', icon: 'bar_chart' }
+        ],
+        search: '',
+        products: window.posProducts,
+        orders: window.posOrders,
+        orderSearch: '',
+        cart: [],
+        discountCode: '',
+        discountAmount: 0,
+        shippingFee: 0,
+        customerName: '',
+        customerPhone: '',
+        // In ấn: lưu trữ + modal
+        printType: localStorage.getItem('pos_print_type') || 'invoice_a4', // 'invoice_a4' | 'invoice_thermal'
+        showPrintModal: false,
+        pendingPrintOrderId: null,
+
+        get filteredOrders() {
+          if (!this.orderSearch.trim()) return this.orders;
+          const q = this.orderSearch.trim().toLowerCase();
+          return this.orders.filter(o =>
+            (o.order_number || '').toLowerCase().includes(q) ||
+            (o.customer_name || '').toLowerCase().includes(q) ||
+            (o.customer_phone || '').toLowerCase().includes(q)
+          );
+        },
+
+        get todayOrders() {
+          const today = new Date().toDateString();
+          return this.orders.filter(o => new Date(o.created_at).toDateString() === today);
+        },
+
+        get todayRevenue() {
+          return this.todayOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
+        },
+
+        get todayCustomersCount() {
+          const names = this.todayOrders.map(o => o.customer_name).filter(Boolean);
+          return new Set(names).size || this.todayOrders.length; 
+        },
+
+        get filteredProducts() {
+          if (!this.search) return this.products;
+          const q = this.search.toLowerCase();
+          return this.products.filter(p => (p.name && p.name.toLowerCase().includes(q)) || (p.sku && p.sku.toLowerCase().includes(q)));
+        },
+
+        get subtotal() {
+          return this.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+        },
+
+        get total() {
+          return Math.max(0, this.subtotal - this.discountAmount + this.shippingFee);
+        },
+
+        addToCart(product) {
+          if (product.stock_quantity <= 0) return alert('Sản phẩm đã hết hàng!');
+          const existing = this.cart.find(i => i.id === product.id);
+          if (existing) {
+            if (existing.qty < product.stock_quantity) existing.qty++;
+            else alert('Vượt quá số lượng trong kho!');
+          } else {
+            const imgUrl = product.gallery_images && product.gallery_images.length > 0 ? product.gallery_images[0] : null;
+            this.cart.push({ ...product, qty: 1, imgUrl });
+          }
+        },
+
+        updateQty(id, delta) {
+          const item = this.cart.find(i => i.id === id);
+          if (item) {
+            const newQty = item.qty + delta;
+            if (newQty <= 0) {
+              this.cart = this.cart.filter(i => i.id !== id);
+            } else if (newQty > item.stock_quantity) {
+              alert('Vượt số lượng tồn kho!');
+            } else {
+              item.qty = newQty;
+            }
+          }
+        },
+
+        formatCurrency(val) {
+          return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);
+        },
+
+        applyDiscount() {
+          if (!this.discountCode) {
+            this.discountAmount = 0;
+            return;
+          }
+          // Giả lập check discount. Logic thực sẽ fetch Supabase.
+          // Cho demo nếu nhập '10' giảm 10%
+          if (this.discountCode.toUpperCase() === 'VIP10') {
+             this.discountAmount = this.subtotal * 0.1;
+             alert('Áp dụng thành công mã VIP10!');
+          } else {
+             this.discountAmount = 0;
+             alert('Mã không hợp lệ hoặc đã hết hạn!');
+          }
+        },
+
+        async saveDraft() {
+          if (this.cart.length === 0) return alert('Giỏ hàng trống!');
+          try {
+            const res = await fetch('/api/pos/checkout', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                items: this.cart,
+                customerName: this.customerName || '', 
+                customerPhone: this.customerPhone || '',
+                subtotal: this.subtotal,
+                discountAmount: this.discountAmount,
+                shippingFee: this.shippingFee,
+                total: this.total,
+                status: 'pending'
+              })
+            });
+            const data = await res.json();
+            if (res.ok) {
+              alert('Đã lưu nháp thành công!');
+              this.cart = [];
+              this.discountCode = '';
+              this.discountAmount = 0;
+              setTimeout(() => {
+                window.location.href = '/admin/pos?tab=invoices';
+              }, 500);
+            } else {
+              alert('Lỗi: ' + data.error);
+            }
+          } catch (err) {
+            alert('Lỗi kết nối tới máy chủ!');
+          }
+        },
+
+        async payDraft(orderId) {
+          if (!confirm('Xác nhận thanh toán đơn nháp này?')) return;
+          try {
+            const res = await fetch('/api/orders/update-status', {
+               method: 'POST',
+               headers: {'Content-Type': 'application/json'},
+               body: JSON.stringify({id: orderId, status: 'completed'})
+            });
+            if (res.ok) {
+               this.pendingPrintOrderId = orderId;
+               this.showPrintModal = true;
+               // Reload xảy ra sau khi user nhấn In / Bỏ qua trong confirmPrint()
+            } else alert('Lỗi thanh toán');
+          } catch (e) { alert('Lỗi kết nối') }
+        },
+
+        async cancelDraft(orderId) {
+          if (!confirm('Bạn chắc chắn muốn hủy hóa đơn nháp này?')) return;
+          try {
+            const res = await fetch('/api/orders/update-status', {
+               method: 'POST',
+               headers: {'Content-Type': 'application/json'},
+               body: JSON.stringify({id: orderId, status: 'cancelled'})
+            });
+            if (res.ok) {
+               alert('Hủy thành công!');
+               location.reload();
+            } else alert('Lỗi hủy đơn');
+          } catch (e) { alert('Lỗi kết nối') }
+        },
+
+        async checkout() {
+          if (this.cart.length === 0) return alert('Giỏ hàng trống!');
+          try {
+            const res = await fetch('/api/pos/checkout', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                items: this.cart,
+                customerName: this.customerName || '', 
+                customerPhone: this.customerPhone || '',
+                subtotal: this.subtotal,
+                discountAmount: this.discountAmount,
+                shippingFee: this.shippingFee,
+                total: this.total
+              })
+            });
+            const data = await res.json();
+            if (res.ok) {
+              this.pendingPrintOrderId = data.orderId;
+              this.cart = [];
+              this.discountCode = '';
+              this.discountAmount = 0;
+              this.customerName = '';
+              this.customerPhone = '';
+              this.showPrintModal = true;
+            } else {
+              alert('Lỗi: ' + data.error);
+            }
+          } catch (err) {
+            alert('Lỗi kết nối tới máy chủ!');
+          }
+        },
+
+        openPrintWindow(orderId, type) {
+          const url = type === 'invoice_thermal'
+            ? `/admin/pos/thermal?id=${orderId}`
+            : `/admin/pos/invoice?id=${orderId}`;
+          window.open(url, '_blank');
+        },
+
+        confirmPrint() {
+          this.openPrintWindow(this.pendingPrintOrderId, this.printType);
+          this.showPrintModal = false;
+          this.pendingPrintOrderId = null;
+          setTimeout(() => location.reload(), 800);
+        },
+
+        savePrintDefault(type) {
+          this.printType = type;
+          localStorage.setItem('pos_print_type', type);
+        }
+      }));
+    });
+  </script>
+
+  <div class="pos-shell bg-[#221910] text-[#f1f5f9] h-full overflow-hidden font-pos-sans" x-data="posApp()">
+
+    <!-- PRINT TYPE MODAL -->
+    <div x-show="showPrintModal" x-transition.opacity class="fixed inset-0 z-[9999] flex items-center justify-center" style="background:rgba(0,0,0,0.7); display:none;">
+      <div class="bg-[#2d241e] border border-[#4a3a2a] rounded-2xl p-8 w-[380px] shadow-2xl">
+        <h3 class="text-lg font-bold text-white mb-2 flex items-center gap-2">
+          <span class="material-symbols-outlined text-[#e67e22]">print</span>
+          Chọn loại in hóa đơn
+        </h3>
+        <p class="text-slate-400 text-sm mb-5">Thanh toán thành công! Chọn loại mẫu in cho đơn hàng này:</p>
+
+        <div class="grid grid-cols-2 gap-3 mb-5">
+          <button @click="printType='invoice_a4'"
+            :class="printType==='invoice_a4' ? 'border-[#e67e22] bg-[#e67e22]/10 text-white' : 'border-[#3a2a1c] text-slate-400 hover:border-[#e67e22]/50'"
+            class="border-2 rounded-xl p-4 flex flex-col items-center gap-2 transition-all">
+            <span class="material-symbols-outlined text-3xl" :class="printType==='invoice_a4' ? 'text-[#e67e22]' : ''">receipt_long</span>
+            <span class="font-bold text-sm">Hóa đơn A4</span>
+            <span class="text-[10px] text-slate-500">Khổ A4 • Phóng to</span>
+          </button>
+          <button @click="printType='invoice_thermal'"
+            :class="printType==='invoice_thermal' ? 'border-[#e67e22] bg-[#e67e22]/10 text-white' : 'border-[#3a2a1c] text-slate-400 hover:border-[#e67e22]/50'"
+            class="border-2 rounded-xl p-4 flex flex-col items-center gap-2 transition-all">
+            <span class="material-symbols-outlined text-3xl" :class="printType==='invoice_thermal' ? 'text-[#e67e22]' : ''">receipt</span>
+            <span class="font-bold text-sm">Phíu nhiệt</span>
+            <span class="text-[10px] text-slate-500">Khổ 80mm • Máy in nhiệt</span>
+          </button>
+        </div>
+
+        <label class="flex items-center gap-2 text-sm text-slate-400 mb-5 cursor-pointer select-none">
+          <input type="checkbox" class="accent-[#e67e22] w-4 h-4" @change="savePrintDefault(printType)">
+          <span>Ghi nhớ lựa chọn này làm mặc định</span>
+        </label>
+
+        <div class="flex gap-3">
+          <button @click="confirmPrint()" class="flex-1 bg-gradient-to-r from-[#e67e22] to-[#d35400] text-white font-bold py-3 rounded-lg text-sm flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined text-[18px]">print</span>
+            In ngay
+          </button>
+          <button @click="showPrintModal=false" class="px-4 bg-[#1a1412] border border-[#3a2a1c] text-slate-400 font-semibold py-3 rounded-lg text-sm hover:text-white">
+            Bỏ qua
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <main class="flex h-full w-full">
+      <!-- SIDEBAR -->
+      <aside class="w-64 bg-wood-dark/70 backdrop-blur-sm border-r border-stone-800 flex flex-col">
+        <div class="p-6 border-b border-stone-800">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-accent-orange flex items-center justify-center text-wood-dark font-bold">
+              <span class="material-symbols-outlined">point_of_sale</span>
+            </div>
+            <div>
+              <div class="text-sm font-bold tracking-widest uppercase">FlySky POS</div>
+              <div class="text-[10px] text-gray-400 uppercase">Hệ thống bán hàng</div>
+            </div>
+          </div>
+        </div>
+
+        <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+          <template x-for="tab in tabs" :key="tab.id">
+            <button @click="activeTab = tab.id; window.history.replaceState(null, '', '?tab=' + tab.id)"
+              :class="activeTab === tab.id ? 'bg-accent-orange text-white shadow-lg shadow-orange-500/10' : 'text-gray-400 hover:bg-wood-medium/40 hover:text-white'"
+              class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-colors">
+              <span class="material-symbols-outlined" x-text="tab.icon"></span>
+              <span x-text="tab.label"></span>
+            </button>
+          </template>
+        </nav>
+
+        <div class="p-4 border-t border-stone-800">
+          <a href="/admin" class="flex items-center gap-2 px-4 py-3 rounded-lg text-gray-400 hover:text-white hover:bg-wood-medium/40 transition-colors text-sm font-semibold">
+            <span class="material-symbols-outlined" style="font-size:20px;">arrow_back</span>
+            Quay về Admin
+          </a>
+        </div>
+      </aside>
+
+      <!-- MAIN CONTENT -->
+      <!-- TAB: SALES -->
+      <section x-show="activeTab === 'sales'" class="flex-1 flex border-r border-stone-800">
+        <!-- Products Area -->
+        <div class="flex-1 flex flex-col border-r border-stone-800">
+          <div class="p-6 bg-wood-medium/50 backdrop-blur-sm border-b border-stone-800">
+              <div class="flex justify-between items-center mb-6">
+                <h1 class="text-sm font-bold tracking-widest text-accent-orange uppercase flex items-center">
+                  <span class="material-symbols-outlined mr-2">grid_view</span>
+                  Chọn sản phẩm
+                </h1>
+             </div>
+             <div class="relative w-full">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                  <span class="material-symbols-outlined text-xl">search</span>
+                </span>
+                <input x-model="search" class="block w-full pl-10 pr-3 py-3 bg-wood-dark border border-stone-700 rounded-lg focus:ring-accent-orange focus:border-accent-orange text-sm shadow-inner" placeholder="Tìm kiếm tên đàn hoặc mã SKU..." type="text" />
+             </div>
+          </div>
+          <div class="flex-1 overflow-y-auto p-6 grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 content-start">
+             <template x-for="product in filteredProducts" :key="product.id">
+                <div @click="addToCart(product)" class="bg-[#2d2218] p-3 rounded-lg border border-[#4a3a2a] hover:border-[#f48c25] hover:shadow-lg transition-all cursor-pointer group flex flex-col h-full">
+                   <div class="w-full h-32 shadow-inner rounded-md mb-3 bg-[#221910] overflow-hidden relative border border-[#4a3a2a]/50">
+                      <template x-if="product.gallery_images && product.gallery_images.length > 0">
+                        <img :src="product.gallery_images[0]" :alt="product.name" class="w-full h-full object-cover" />
+                      </template>
+                      <template x-if="!product.gallery_images || product.gallery_images.length === 0">
+                        <div class="w-full h-full flex items-center justify-center text-[#64748b]">
+                          <span class="material-symbols-outlined text-4xl opacity-50">image</span>
+                        </div>
+                      </template>
+                      <!-- Badge Sku -->
+                      <span class="absolute top-2 left-2 bg-black/60 backdrop-blur text-[10px] text-gray-300 px-2 py-1 rounded" x-text="product.sku || 'No SKU'"></span>
+                   </div>
+                   <h3 class="text-sm font-semibold line-clamp-2 text-[#f1f5f9] flex-1 leading-snug" :title="product.name" x-text="product.name"></h3>
+                   <div class="mt-2 flex items-end justify-between">
+                     <p class="text-[#f48c25] font-bold text-sm" x-text="formatCurrency(product.price)"></p>
+                     <p class="text-[11px] text-[#94a3b8] font-medium" :class="product.stock_quantity <= 0 ? 'text-red-400' : ''" x-text="'Kho: ' + product.stock_quantity"></p>
+                   </div>
+                </div>
+             </template>
+          </div>
+        </div>
+
+        <!-- Cart Area -->
+        <div class="w-[520px] max-w-[45%] flex flex-col bg-wood-dark">
+          <div class="p-4 border-b border-stone-800 bg-wood-medium/30 flex justify-between items-center">
+             <h2 class="text-sm font-bold tracking-widest text-gray-400 flex items-center">
+                <span class="material-symbols-outlined mr-2">shopping_cart</span>
+                GIỎ HÀNG (<span x-text="cart.length"></span>)
+             </h2>
+             <button @click="cart = []" class="text-xs text-red-400 hover:text-red-300">Xóa tất cả</button>
+          </div>
+          
+          <!-- Cart Items -->
+          <div class="flex-1 overflow-y-auto px-4 py-2 space-y-2">
+             <template x-if="cart.length === 0">
+               <div class="h-full flex flex-col items-center justify-center text-gray-600 space-y-3">
+                 <span class="material-symbols-outlined text-6xl opacity-20">production_quantity_limits</span>
+                 <p class="text-sm">Chưa có sản phẩm nào trong giỏ</p>
+               </div>
+             </template>
+             <template x-for="item in cart" :key="item.id">
+               <div class="flex items-center gap-3 p-3 bg-wood-medium/40 border border-stone-800 rounded-lg">
+                 <div class="w-12 h-12 rounded bg-black/40 overflow-hidden flex-shrink-0">
+                   <img x-show="item.imgUrl" :src="item.imgUrl" class="w-full h-full object-cover" />
+                 </div>
+                 <div class="flex-1 min-w-0">
+                   <h4 class="text-sm font-semibold truncate text-white" x-text="item.name"></h4>
+                   <p class="text-xs text-accent-orange font-bold" x-text="formatCurrency(item.price)"></p>
+                 </div>
+                 <!-- Quantity Controls -->
+                 <div class="flex items-center gap-2 bg-stone-900 rounded p-1">
+                   <button @click="updateQty(item.id, -1)" class="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-white bg-stone-800 rounded">-</button>
+                   <span class="w-6 text-center text-sm font-bold" x-text="item.qty"></span>
+                   <button @click="updateQty(item.id, 1)" class="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-white bg-stone-800 rounded">+</button>
+                 </div>
+               </div>
+             </template>
+          </div>
+
+          <!-- Checkout Panel -->
+          <div class="p-4 bg-wood-medium/50 border-t border-stone-800 shrink-0">
+             <!-- Customer Info -->
+             <div class="mb-4 grid grid-cols-2 gap-2">
+               <div>
+                 <label class="block text-[10px] text-gray-500 uppercase tracking-wider mb-1">Tên khách</label>
+                 <input x-model="customerName" type="text" placeholder="Nguyễn Văn A" class="w-full bg-[#1a1310] border border-stone-700 focus:border-accent-orange rounded-md px-3 py-2 text-sm text-white placeholder-stone-600 outline-none transition-colors" />
+               </div>
+               <div>
+                 <label class="block text-[10px] text-gray-500 uppercase tracking-wider mb-1">Số điện thoại</label>
+                 <input x-model="customerPhone" type="tel" placeholder="0987 654 321" class="w-full bg-[#1a1310] border border-stone-700 focus:border-accent-orange rounded-md px-3 py-2 text-sm text-white placeholder-stone-600 outline-none transition-colors" />
+               </div>
+             </div>
+             <div class="space-y-3 mb-4">
+                <div class="flex justify-between text-sm text-gray-400">
+                   <span>Tạm tính</span>
+                   <span x-text="formatCurrency(subtotal)"></span>
+                </div>
+                <div class="flex justify-between items-center text-sm">
+                   <span class="text-gray-400">Mã giảm giá</span>
+                   <div class="flex">
+                     <input x-model="discountCode" class="w-24 text-right bg-transparent border-b border-stone-700 focus:border-accent-orange focus:ring-0 text-accent-orange text-sm p-0 mr-2 uppercase" placeholder="Nhập mã" type="text" />
+                     <button @click="applyDiscount" class="text-xs text-stone-400 hover:text-white border px-1 rounded border-stone-700">Áp dụng</button>
+                   </div>
+                </div>
+                <div class="flex justify-between text-sm text-gray-400">
+                   <span>Chiết khấu</span>
+                   <span x-text="'- ' + formatCurrency(discountAmount)"></span>
+                </div>
+                <div class="flex justify-between text-xl font-bold text-white pt-3 border-t border-stone-700">
+                   <span>Tổng cộng</span>
+                   <span class="text-accent-orange" x-text="formatCurrency(total)"></span>
+                </div>
+             </div>
+             <div class="grid grid-cols-3 gap-3">
+               <button @click="cart = []; discountCode = ''; discountAmount = 0;" class="py-3 bg-stone-700 hover:bg-red-500/80 rounded-lg font-bold text-xs transition-colors">HỦY ĐƠN</button>
+               <button @click="saveDraft()" class="py-3 bg-wood-light hover:bg-stone-600 border border-stone-600 rounded-lg font-bold text-xs transition-colors">LƯU NHÁP</button>
+               <button @click="checkout()" class="py-3 btn-orange-gradient hover:opacity-90 text-white rounded-lg font-bold text-xs shadow-lg shadow-accent-orange/20 whitespace-nowrap">HOÀN TẤT & IN</button>
+             </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: INVOICES -->
+      <section x-show="activeTab === 'invoices'" class="flex-1 flex flex-col bg-wood-dark overflow-hidden">
+        <!-- Header -->
+        <div class="p-6 bg-wood-medium/50 backdrop-blur-sm border-b border-stone-800 shrink-0">
+          <div class="flex justify-between items-center mb-4">
+            <h1 class="text-sm font-bold tracking-widest text-accent-orange uppercase flex items-center">
+              <span class="material-symbols-outlined mr-2">receipt_long</span>
+              Lịch sử Hóa đơn POS
+            </h1>
+            <span class="text-xs text-gray-500" x-text="orders.length + ' đơn'"></span>
+          </div>
+          <!-- Search bar -->
+          <div class="relative w-full">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+              <span class="material-symbols-outlined text-xl">search</span>
+            </span>
+            <input x-model="orderSearch" type="text" placeholder="Tìm theo mã đơn, tên khách, số điện thoại..." class="block w-full pl-10 pr-3 py-3 bg-wood-dark border border-stone-700 rounded-lg focus:ring-accent-orange focus:border-accent-orange text-sm shadow-inner" />
+          </div>
+        </div>
+        <!-- Table -->
+        <div class="flex-1 overflow-y-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-stone-900 border-b border-stone-800 sticky top-0">
+              <tr>
+                <th class="p-4 text-[10px] font-bold tracking-widest text-gray-500 uppercase">Mã ĐH</th>
+                <th class="p-4 text-[10px] font-bold tracking-widest text-gray-500 uppercase">Khách hàng</th>
+                <th class="p-4 text-[10px] font-bold tracking-widest text-gray-500 uppercase">Sản phẩm</th>
+                <th class="p-4 text-[10px] font-bold tracking-widest text-gray-500 uppercase">Tổng tiền</th>
+                <th class="p-4 text-[10px] font-bold tracking-widest text-gray-500 uppercase">Trạng thái</th>
+                <th class="p-4 text-[10px] font-bold tracking-widest text-gray-500 uppercase">Thời gian</th>
+                <th class="p-4 text-[10px] font-bold tracking-widest text-gray-500 uppercase text-right">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-stone-800/70">
+              <template x-for="order in filteredOrders" :key="order.id">
+                <tr class="hover:bg-wood-medium/40 transition-colors">
+                  <td class="p-4 font-mono text-xs font-semibold text-accent-orange" x-text="order.order_number"></td>
+                  <td class="p-4">
+                    <div class="text-sm font-medium text-white" x-text="order.customer_name || 'Khách vãng lai'"></div>
+                    <div class="text-xs text-gray-500" x-show="order.customer_phone && order.customer_phone !== '0000000000'" x-text="order.customer_phone"></div>
+                  </td>
+                  <td class="p-4">
+                    <div class="text-xs text-gray-400 max-w-xs truncate" :title="order.order_items?.map(i => i.products?.name).join(', ')">
+                      <span class="text-gray-500" x-text="order.order_items?.length + ' Món: '"></span>
+                      <span x-text="order.order_items?.map(i => i.products?.name).join(', ')"></span>
+                    </div>
+                  </td>
+                  <td class="p-4 font-bold text-accent-orange" x-text="formatCurrency(order.total_amount)"></td>
+                  <td class="p-4">
+                    <template x-if="order.status === 'completed'">
+                      <span class="inline-flex items-center gap-1 px-2 py-1 bg-green-500/10 text-green-400 border border-green-500/20 rounded-md text-[10px] font-bold uppercase tracking-wider">Hoàn thành</span>
+                    </template>
+                    <template x-if="order.status === 'pending'">
+                      <span class="inline-flex items-center gap-1 px-2 py-1 bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 rounded-md text-[10px] font-bold uppercase tracking-wider">Náp</span>
+                    </template>
+                    <template x-if="order.status === 'cancelled'">
+                      <span class="inline-flex items-center gap-1 px-2 py-1 bg-red-500/10 text-red-400 border border-red-500/20 rounded-md text-[10px] font-bold uppercase tracking-wider">Hủy</span>
+                    </template>
+                  </td>
+                  <td class="p-4 text-gray-500 text-xs" x-text="new Date(order.created_at).toLocaleString('vi-VN')"></td>
+                  <td class="p-4 text-right">
+                    <div class="flex justify-end gap-1.5 items-center">
+                      <template x-if="order.status === 'pending'">
+                        <div class="flex gap-1.5">
+                          <button @click="payDraft(order.id)" class="px-3 py-1.5 bg-green-600/80 hover:bg-green-500 text-white rounded-md text-[11px] font-bold transition-colors flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[13px]">payments</span> Thu tiền
+                          </button>
+                          <button @click="cancelDraft(order.id)" class="px-2.5 py-1.5 bg-stone-800 hover:bg-red-500/70 text-gray-400 hover:text-white rounded-md text-[11px] transition-colors">Hủy</button>
+                        </div>
+                      </template>
+                      <template x-if="order.status === 'completed'">
+                        <div class="flex gap-1.5">
+                          <button @click="openPrintWindow(order.id, 'invoice_a4')" class="px-2.5 py-1.5 bg-stone-800 hover:bg-blue-600/70 text-gray-400 hover:text-white rounded-md text-[11px] font-bold transition-colors flex items-center gap-1" title="In A4">
+                            <span class="material-symbols-outlined text-[13px]">receipt_long</span> A4
+                          </button>
+                          <button @click="openPrintWindow(order.id, 'invoice_thermal')" class="px-2.5 py-1.5 bg-stone-800 hover:bg-orange-500/70 text-gray-400 hover:text-white rounded-md text-[11px] font-bold transition-colors flex items-center gap-1" title="Phếu nhiệt">
+                            <span class="material-symbols-outlined text-[13px]">receipt</span> Nhiệt
+                          </button>
+                        </div>
+                      </template>
+                    </div>
+                  </td>
+                </tr>
+              </template>
+              <template x-if="filteredOrders.length === 0">
+                <tr><td colspan="7" class="p-12 text-center text-gray-600 italic">Chưa có hóa đơn nào.</td></tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB: REPORTS -->
+      <section x-show="activeTab === 'reports'" class="flex-1 flex flex-col bg-wood-dark overflow-hidden">
+        <!-- Header -->
+        <div class="p-6 bg-wood-medium/50 backdrop-blur-sm border-b border-stone-800 shrink-0">
+          <h1 class="text-sm font-bold tracking-widest text-accent-orange uppercase flex items-center">
+            <span class="material-symbols-outlined mr-2">bar_chart</span>
+            Báo cáo POS Hôm nay
+          </h1>
+        </div>
+        <!-- Stat Cards -->
+        <div class="p-6 grid grid-cols-3 gap-4 shrink-0">
+          <div class="bg-wood-medium/40 p-5 rounded-xl border border-stone-800 flex items-center gap-4">
+            <div class="w-11 h-11 bg-green-500/15 text-green-400 rounded-lg flex items-center justify-center">
+              <span class="material-symbols-outlined">payments</span>
+            </div>
+            <div>
+              <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Doanh thu hôm nay</p>
+              <h3 class="text-xl font-bold text-white" x-text="formatCurrency(todayRevenue)"></h3>
+            </div>
+          </div>
+          <div class="bg-wood-medium/40 p-5 rounded-xl border border-stone-800 flex items-center gap-4">
+            <div class="w-11 h-11 bg-blue-500/15 text-blue-400 rounded-lg flex items-center justify-center">
+              <span class="material-symbols-outlined">shopping_bag</span>
+            </div>
+            <div>
+              <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Số đơn hôm nay</p>
+              <h3 class="text-xl font-bold text-white" x-text="todayOrders.length + ' đơn'"></h3>
+            </div>
+          </div>
+          <div class="bg-wood-medium/40 p-5 rounded-xl border border-stone-800 flex items-center gap-4">
+            <div class="w-11 h-11 bg-purple-500/15 text-purple-400 rounded-lg flex items-center justify-center">
+              <span class="material-symbols-outlined">person</span>
+            </div>
+            <div>
+              <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Khách phục vụ</p>
+              <h3 class="text-xl font-bold text-white" x-text="todayCustomersCount + ' người'"></h3>
+            </div>
+          </div>
+        </div>
+        <!-- Chart placeholder -->
+        <div class="flex-1 mx-6 mb-6 bg-wood-medium/20 rounded-xl border border-stone-800 flex flex-col items-center justify-center text-gray-600">
+          <span class="material-symbols-outlined text-5xl mb-3 opacity-30">area_chart</span>
+          <p class="text-sm">Biểu đồ thống kê đang được cập nhật</p>
+        </div>
+      </section>
+      
+    </main>
+  </div>
+</AdminLayout>
+

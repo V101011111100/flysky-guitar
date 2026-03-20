@@ -19,12 +19,7 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(JSON.stringify({ success: false, error: 'Thiếu thông tin bắt buộc' }), { status: 400 });
     }
 
-    // Try to add `items` column if missing (ignore errors)
-    try {
-      await supabase.rpc('exec_sql', {
-        sql_string: `ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS items jsonb DEFAULT '[]'::jsonb`
-      });
-    } catch (e) {}
+    // Bỏ qua bước tạo cột JSONB items vì cần insert vào bảng order_items chuẩn để chạy Triggers
 
     // Generate order number: FSG-YYMMDD-XXXX
     const now = new Date();
@@ -45,36 +40,63 @@ export const POST: APIRoute = async ({ request }) => {
       status: 'pending',
     };
 
-    // Add items as JSON if the column exists (ignore PostgREST schema cache timing)
     try {
       const { data, error } = await supabase
         .from('orders')
-        .insert([{ ...payload, items: items || [] }])
+        .insert([payload])
         .select('id, order_number')
         .single();
 
-      if (!error && data) {
-        return new Response(JSON.stringify({ success: true, order_number: data.order_number, id: data.id }), { status: 200 });
-      }
-
-      // If items column not found in schema cache, try without it
-      if (error?.message?.includes("'items'")) {
-        const { data: d2, error: e2 } = await supabase
-          .from('orders')
-          .insert([payload])
-          .select('id, order_number')
-          .single();
-
-        if (e2) throw e2;
-        return new Response(JSON.stringify({ success: true, order_number: d2.order_number, id: d2.id }), { status: 200 });
-      }
-
       if (error) throw error;
+
+      // Sau khi tạo order, insert các sản phẩm vào order_items (Để kích hoạt Trigger trừ kho)
+      if (items && Array.isArray(items) && items.length > 0) {
+        const isUUID = (str: string) => /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(str);
+        
+        // Tách ra những item bị lưu bằng slug
+        const idsAndSlugs = items.map((item: any) => item.id || item.product_id || '');
+        const slugsToFetch = idsAndSlugs.filter((id) => id && !isUUID(id));
+
+        const slugToIdMap = new Map();
+
+        if (slugsToFetch.length > 0) {
+          const { data: dbProducts } = await supabase
+            .from('products')
+            .select('id, slug')
+            .in('slug', slugsToFetch);
+
+          if (dbProducts) {
+             dbProducts.forEach(p => slugToIdMap.set(p.slug, p.id));
+          }
+        }
+
+        const orderItemsForDb = items.map((item: any) => {
+          const identifier = item.id || item.product_id || '';
+          let finalId = isUUID(identifier) ? identifier : slugToIdMap.get(identifier);
+          return {
+            order_id: data.id,
+            product_id: finalId || null,
+            quantity: item.quantity || item.qty || 1,
+            price_at_time: item.price || 0
+          };
+        }).filter(item => item.product_id !== null); // Chỉ giữ lại các item đã có UUID hợp lệ
+
+        if (orderItemsForDb.length > 0) {
+          const { error: itemsErr } = await supabase
+            .from('order_items')
+            .insert(orderItemsForDb);
+
+          if (itemsErr) {
+            console.error("Lỗi insert order_items:", itemsErr);
+          }
+        }
+      }
+
+      return new Response(JSON.stringify({ success: true, order_number: data.order_number, id: data.id }), { status: 200 });
+
     } catch (insertErr: any) {
       throw insertErr;
     }
-
-    return new Response(JSON.stringify({ success: false, error: 'Unknown error' }), { status: 500 });
 
   } catch (err: any) {
     console.error('Create Order Error:', err);

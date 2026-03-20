@@ -1,0 +1,161 @@
+---
+import { supabase } from '../../../lib/supabase';
+
+const orderId = Astro.url.searchParams.get('id');
+
+// Fetch active template for Thermal
+const { data: tplData } = await supabase
+  .from('print_templates')
+  .select('settings')
+  .eq('type', 'invoice_thermal')
+  .eq('is_active', true)
+  .single();
+
+const settings = tplData?.settings || {};
+const storeName = settings.invoice_store_name || 'FLYSKY GUITAR';
+const slogan = settings.invoice_slogan || 'Âm thanh - Chất lượng từ đam mê';
+const address = settings.invoice_address || '123 Đường Nhạc Cụ, Quận 1, TP. HCM';
+const phone = settings.invoice_phone || '090 123 4567';
+const website = settings.invoice_website || 'www.flyskyguitar.vn';
+const footerMsg = settings.invoice_footer_msg || 'Cảm ơn quý khách!';
+
+// Fetch order data
+let order: any = null;
+let orderItems: any[] = [];
+if (orderId) {
+  const { data: orderData } = await supabase
+    .from('orders')
+    .select('id, order_number, customer_name, customer_phone, total_amount, discount_amount, shipping_fee, created_at, payment_method')
+    .eq('id', orderId)
+    .single();
+  order = orderData;
+
+  const { data: items } = await supabase
+    .from('order_items')
+    .select('quantity, price_at_time, products(name, sku)')
+    .eq('order_id', orderId);
+  orderItems = items || [];
+}
+
+function fmt(val: number) {
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);
+}
+
+function fmtDate(d: string) {
+  if (!d) return '';
+  const dt = new Date(d);
+  return `${dt.getDate().toString().padStart(2,'0')}/${(dt.getMonth()+1).toString().padStart(2,'0')}/${dt.getFullYear()} ${dt.getHours().toString().padStart(2,'0')}:${dt.getMinutes().toString().padStart(2,'0')}`;
+}
+---
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phiếu In Nhiệt - {storeName}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { background: #f5f5f5; display: flex; justify-content: center; min-height: 100vh; padding: 20px; }
+    
+    .receipt {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      color: #000;
+      background: white;
+      width: 302px;
+      padding: 12px;
+      flex-shrink: 0;
+      height: fit-content;
+    }
+    .center { text-align: center; }
+    .right { text-align: right; }
+    .bold { font-weight: bold; }
+    .divider { border-top: 1px dashed #999; margin: 6px 0; }
+    .store-name { font-size: 15px; font-weight: bold; text-transform: uppercase; }
+    table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    th { text-align: left; padding: 3px 0; }
+    td { padding: 2px 0; }
+    .total-row td { font-weight: bold; font-size: 13px; padding-top: 4px; }
+    .no-print { display: flex; gap: 8px; justify-content: center; margin-top: 12px; }
+    .btn { padding: 8px 24px; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: bold; }
+    .btn-print { background: #1e293b; color: white; }
+    .btn-close { background: #e2e8f0; color: #1e293b; }
+    @media print {
+      html, body { background: white; padding: 0; display: block; }
+      .no-print { display: none; }
+      .receipt { width: 100%; padding: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <div class="receipt">
+      <!-- Store Header -->
+      <div class="center" style="margin-bottom: 6px;">
+        <div class="store-name">{storeName}</div>
+        <div style="font-size: 10px; color: #555; margin-top: 2px;">{address}</div>
+        <div style="font-size: 10px;">ĐT: {phone}</div>
+        <div style="font-size: 10px;">{website}</div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="center bold" style="font-size: 13px; margin: 5px 0; letter-spacing: 1px;">PHIẾU HÓA ĐƠN</div>
+      <div class="divider"></div>
+
+      {order ? (
+        <>
+          <table style="margin-bottom: 4px;">
+            <tr><td>Ngày:</td><td class="right bold">{fmtDate(order.created_at)}</td></tr>
+            <tr><td>Mã ĐH:</td><td class="right bold">{order.order_number || order.id?.slice(0, 8).toUpperCase()}</td></tr>
+            {order.customer_name && <tr><td>Khách:</td><td class="right">{order.customer_name}</td></tr>}
+            {order.customer_phone && <tr><td>SĐT:</td><td class="right">{order.customer_phone}</td></tr>}
+          </table>
+          <div class="divider"></div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Mặt hàng</th>
+                <th class="center">SL</th>
+                <th class="right">Tiền</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orderItems.map((item: any) => (
+                <tr>
+                  <td style="max-width:140px; word-break:break-word;">{item.products?.name || 'Sản phẩm'}</td>
+                  <td class="center">{item.quantity}</td>
+                  <td class="right">{fmt(item.price_at_time * item.quantity)}</td>
+                </tr>
+              ))}
+              <tr class="total-row">
+                <td colspan="2" class="bold">TỔNG CỘNG:</td>
+                <td class="right bold">{fmt(order.total_amount)}</td>
+              </tr>
+              {order.payment_method && (
+                <tr><td>Thanh toán:</td><td class="right" colspan="2">{order.payment_method}</td></tr>
+              )}
+            </tbody>
+          </table>
+        </>
+      ) : (
+        <div class="center" style="padding: 10px 0; color: #999; font-style: italic;">Không tìm thấy đơn hàng</div>
+      )}
+
+      <div class="divider"></div>
+      <div class="center" style="margin-top: 5px;">
+        <div class="bold" style="font-size: 11px;">{footerMsg}</div>
+        <div style="font-size: 10px; color: #555; margin-top: 2px;">{slogan}</div>
+        <div style="margin-top: 6px; letter-spacing: 3px; font-size: 10px; color: #bbb;">- - - - - - - - - - - - -</div>
+      </div>
+    </div>
+
+    <!-- Print Actions -->
+    <div class="no-print">
+      <button onclick="window.print()" class="btn btn-print">🖨️ In Phiếu</button>
+      <button onclick="window.close()" class="btn btn-close">✕ Đóng</button>
+    </div>
+  </div>
+</body>
+</html>

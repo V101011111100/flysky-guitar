@@ -4,6 +4,8 @@ import { supabase } from '../../lib/supabase';
 
 // Lấy filter từ URL param
 const statusFilter = Astro.url.searchParams.get('status') || 'all';
+const qRaw = Astro.url.searchParams.get('q') || '';
+const q = qRaw.trim();
 const page = parseInt(Astro.url.searchParams.get('page') || '1');
 const PAGE_SIZE = 15;
 
@@ -18,12 +20,26 @@ if (statusFilter !== 'all') {
   query = query.eq('status', statusFilter);
 }
 
+if (q) {
+  // Tránh ký tự có thể phá cú pháp .or() (PostgREST dùng dấu phẩy để phân tách)
+  const safe = q.replaceAll(',', ' ');
+  query = query.or(
+    `order_number.ilike.%${safe}%,customer_name.ilike.%${safe}%,customer_phone.ilike.%${safe}%,customer_email.ilike.%${safe}%`
+  );
+}
+
 const { data: ordersData, count, error } = await query;
 
 // Nếu bảng orders chưa tồn tại, error sẽ xuất hiện → hiện empty state
 const orders = ordersData || [];
 const totalOrders = count || 0;
 const totalPages = Math.ceil(totalOrders / PAGE_SIZE);
+
+// Thống kê nhanh theo trạng thái (trên trang hiện tại)
+const pendingCount = orders.filter(o => o.status === 'pending').length;
+const processingCount = orders.filter(o => o.status === 'processing').length;
+const completedCount = orders.filter(o => o.status === 'completed').length;
+const cancelledCount = orders.filter(o => o.status === 'cancelled').length;
 
 const statusMap: Record<string, { label: string; cls: string }> = {
   pending:    { label: 'Chờ xử lý',   cls: 'badge-amber' },
@@ -45,88 +61,170 @@ function fmtDate(d: string) {
   subtitle="Theo dõi, cập nhật và xuất dữ liệu đơn hàng nhạc cụ."
   activeNav="orders"
 >
-  <!-- ── HEADER ACTIONS ── -->
-  <div class="orders-header">
-    <div class="orders-header-actions">
-      <button class="btn-export" id="btn-export">
+  <!-- ── OVERVIEW & ACTIONS (giao diện mới) ── -->
+  <section class="orders-top">
+    <div class="orders-top-text">
+      <h2 class="orders-title">Quản lý Đơn hàng &amp; Yêu cầu</h2>
+      <p class="orders-subtitle">
+        Theo dõi và quản lý tập trung các yêu cầu và đơn hàng từ khách hàng.
+      </p>
+    </div>
+
+    <div class="orders-stat-grid">
+      <div class="stat-card">
+        <p class="stat-label">Tổng cộng</p>
+        <div class="stat-main">
+          <span class="stat-value">{totalOrders}</span>
+        </div>
+      </div>
+      <div class="stat-card stat-hot">
+        <p class="stat-label">Chờ xử lý</p>
+        <div class="stat-main">
+          <span class="stat-value">{pendingCount}</span>
+          <span class="stat-pill stat-pill-hot">HOT</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Đang xử lý</p>
+        <div class="stat-main">
+          <span class="stat-value">{processingCount}</span>
+        </div>
+      </div>
+      <div class="stat-card stat-success">
+        <p class="stat-label">Hoàn thành</p>
+        <div class="stat-main">
+          <span class="stat-value">{completedCount}</span>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ── FILTER TABS ── -->
+  <div class="tabs-bar">
+    <div class="filter-tabs no-scrollbar">
+      {[
+        { val: 'all',        label: 'Tất cả' },
+        { val: 'pending',    label: 'Chờ xử lý' },
+        { val: 'processing', label: 'Đang xử lý' },
+        { val: 'completed',  label: 'Hoàn thành' },
+        { val: 'cancelled',  label: 'Đã hủy' },
+      ].map(tab => (
+        <a
+          href={`/admin/orders?status=${tab.val}${q ? `&q=${encodeURIComponent(q)}` : ''}`}
+          class={`tab-btn ${statusFilter === tab.val ? 'tab-active' : ''}`}
+        >
+          {tab.label}
+        </a>
+      ))}
+    </div>
+
+    <div class="tabs-actions">
+      <form class="search-wrap" method="GET" action="/admin/orders">
+        <input type="hidden" name="status" value={statusFilter} />
+        <div class="search-input">
+          <span class="material-symbols-outlined search-ico">search</span>
+          <input
+            name="q"
+            value={qRaw}
+            placeholder="Tìm tên, SĐT hoặc ID..."
+            autocomplete="off"
+          />
+        </div>
+        <button class="btn-filter" type="submit">
+          <span class="material-symbols-outlined">filter_alt</span>
+          Lọc
+        </button>
+      </form>
+
+      <button class="btn-export" id="btn-export" type="button">
         <span class="material-symbols-outlined">download</span>
         Xuất Excel
       </button>
     </div>
   </div>
 
-  <!-- ── FILTER TABS ── -->
-  <div class="filter-tabs">
-    {[
-      { val: 'all',        label: 'Tất cả' },
-      { val: 'pending',    label: 'Chờ xử lý' },
-      { val: 'processing', label: 'Đang xử lý' },
-      { val: 'completed',  label: 'Hoàn thành' },
-      { val: 'cancelled',  label: 'Đã hủy' },
-    ].map(tab => (
-      <a
-        href={`/admin/orders?status=${tab.val}`}
-        class={`tab-btn ${statusFilter === tab.val ? 'tab-active' : ''}`}
-      >
-        {tab.label}
-      </a>
-    ))}
-  </div>
-
   <!-- ── TABLE ── -->
   <div class="table-wrap">
-    <div style="overflow-x:auto;">
+    <div class="orders-table-scroller">
       <table class="orders-table">
         <thead>
           <tr>
-            <th>Mã đơn</th>
+            <th>ID</th>
             <th>Khách hàng</th>
             <th>Sản phẩm</th>
-            <th style="text-align:right;">Tổng tiền</th>
+            <th style="text-align:right;">Giá trị</th>
             <th style="text-align:center;">Trạng thái</th>
-            <th>Ngày đặt</th>
-            <th style="text-align:center;">Thao tác</th>
+            <th>Ngày tạo</th>
+            <th style="text-align:right;">Thao tác</th>
           </tr>
         </thead>
         <tbody>
           {orders.length === 0 && (
-            <tr>
+            <tr class="row-shell">
               <td colspan="7" class="empty-row">
-                <span class="material-symbols-outlined" style="font-size:36px; opacity:0.3;">inbox</span>
-                <p style="margin-top:8px; color:#64748b;">
-                  {error ? 'Bảng orders chưa được tạo. Hãy đặt đơn hàng đầu tiên từ trang cửa hàng!' : 'Chưa có đơn hàng nào.'}
+                <span class="material-symbols-outlined empty-icon">inbox</span>
+                <p>
+                  {error
+                    ? 'Bảng orders chưa được tạo. Hãy đặt đơn hàng đầu tiên từ trang cửa hàng!'
+                    : 'Chưa có đơn hàng nào.'}
                 </p>
               </td>
             </tr>
           )}
+
           {orders.map(o => {
             const items: any[] = o.items || [];
             const firstItem = items[0];
             const moreCount = items.length - 1;
             const statusInfo = statusMap[o.status] || { label: o.status, cls: 'badge-amber' };
+            const initials =
+              (o.customer_name || '')
+                .split(' ')
+                .filter(Boolean)
+                .slice(-2)
+                .map(p => p[0])
+                .join('')
+                .toUpperCase() || 'KH';
+
             return (
-              <tr data-order-id={o.id}>
-                <td class="order-id">{o.order_number}</td>
-                <td>
-                  <div class="cus-name">{o.customer_name}</div>
-                  <div class="cus-email">{o.customer_phone}</div>
-                  {o.customer_email && <div class="cus-email">{o.customer_email}</div>}
-                  {o.shipping_address && <div class="cus-email" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;">{o.shipping_address}</div>}
+              <tr class="row-shell" data-order-id={o.id}>
+                <td class="cell-id">
+                  <span class="order-id">#{o.order_number}</span>
                 </td>
-                <td>
+                <td class="cell-customer">
+                  <div class="customer-chip">
+                    <div class="avatar-circle">
+                      <span>{initials}</span>
+                    </div>
+                    <div class="customer-meta">
+                      <p class="cus-name">{o.customer_name || 'Khách lẻ'}</p>
+                      {o.customer_phone && <p class="cus-email">{o.customer_phone}</p>}
+                      {o.customer_email && <p class="cus-email">{o.customer_email}</p>}
+                    </div>
+                  </div>
+                </td>
+                <td class="cell-product">
                   {firstItem ? (
                     <div class="prod-cell">
-                      <div class="prod-thumb" style={firstItem.image ? `background-image:url('${firstItem.image}')` : ''}></div>
+                      <div
+                        class="prod-thumb"
+                        style={firstItem.image ? `background-image:url('${firstItem.image}')` : ''}
+                      ></div>
                       <div>
                         <span class="prod-name">{firstItem.name}</span>
-                        {moreCount > 0 && <div class="prod-more">+{moreCount} sản phẩm khác</div>}
+                        {moreCount > 0 && (
+                          <div class="prod-more">+{moreCount} sản phẩm khác</div>
+                        )}
                       </div>
                     </div>
                   ) : (
-                    <span class="prod-name" style="color:#64748b;">—</span>
+                    <span class="prod-name prod-name-empty">—</span>
                   )}
                 </td>
-                <td class="total-col">{fmt(o.total_amount || 0)}</td>
+                <td class="total-col">
+                  <span>{fmt(o.total_amount || 0)}</span>
+                </td>
                 <td class="status-col">
                   <select
                     class={`status-select status-${o.status}`}
@@ -141,8 +239,12 @@ function fmtDate(d: string) {
                 </td>
                 <td class="date-col">{fmtDate(o.created_at)}</td>
                 <td class="action-col">
-                  <button class="act-btn btn-detail" data-order-id={o.id} title="Xem chi tiết">
-                    <span class="material-symbols-outlined">visibility</span>
+                  <button
+                    class="act-btn btn-detail"
+                    data-order-id={o.id}
+                    title="Xem chi tiết"
+                  >
+                    <span class="material-symbols-outlined">chevron_right</span>
                   </button>
                 </td>
               </tr>
@@ -155,24 +257,26 @@ function fmtDate(d: string) {
     <!-- Pagination -->
     <div class="pagination">
       <span class="page-info">
-        Tổng {totalOrders} đơn hàng
+        Hiển thị {orders.length} trong tổng {totalOrders} đơn hàng
         {totalOrders > 0 && ` — Trang ${page}/${totalPages}`}
       </span>
       {totalPages > 1 && (
         <div class="page-btns">
           {page > 1 && (
-            <a href={`/admin/orders?status=${statusFilter}&page=${page - 1}`} class="page-nav">
+            <a href={`/admin/orders?status=${statusFilter}&page=${page - 1}${q ? `&q=${encodeURIComponent(q)}` : ''}`} class="page-nav">
               <span class="material-symbols-outlined">chevron_left</span>
             </a>
           )}
           {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
             <a
-              href={`/admin/orders?status=${statusFilter}&page=${p}`}
+              href={`/admin/orders?status=${statusFilter}&page=${p}${q ? `&q=${encodeURIComponent(q)}` : ''}`}
               class={`page-num ${p === page ? 'page-active' : ''}`}
-            >{p}</a>
+            >
+              {p}
+            </a>
           ))}
           {page < totalPages && (
-            <a href={`/admin/orders?status=${statusFilter}&page=${page + 1}`} class="page-nav">
+            <a href={`/admin/orders?status=${statusFilter}&page=${page + 1}${q ? `&q=${encodeURIComponent(q)}` : ''}`} class="page-nav">
               <span class="material-symbols-outlined">chevron_right</span>
             </a>
           )}
@@ -181,18 +285,28 @@ function fmtDate(d: string) {
     </div>
   </div>
 
-  <!-- ── ORDER DETAIL MODAL ── -->
-  <div id="order-modal" class="modal-backdrop hidden">
-    <div class="modal-box">
-      <div class="modal-header">
-        <h3 class="modal-title">Chi tiết đơn hàng</h3>
-        <button id="modal-close" class="modal-close-btn">
-          <span class="material-symbols-outlined">close</span>
+  <!-- ── ORDER DETAIL DRAWER ── -->
+  <aside id="order-drawer" class="drawer drawer-closed">
+    <div class="drawer-header">
+      <h3 class="drawer-title">
+        Chi tiết đơn hàng <span id="drawer-order-code" class="drawer-title-code"></span>
+      </h3>
+      <button id="drawer-close" class="drawer-close-btn">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <div id="drawer-body" class="drawer-body"></div>
+    <div class="drawer-footer">
+      <div class="drawer-actions-main">
+        <button class="drawer-btn-primary" id="drawer-contact-btn">
+          Liên hệ ngay
         </button>
       </div>
-      <div id="modal-body" class="modal-body"></div>
+      <button class="drawer-btn-secondary" id="drawer-update-btn">
+        Cập nhật trạng thái
+      </button>
     </div>
-  </div>
+  </aside>
 
   <!-- Toast -->
   <div id="toast-wrap" style="position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;"></div>
@@ -244,11 +358,12 @@ function fmtDate(d: string) {
     });
   });
 
-  // ── Order detail modal ──
-  const modal = document.getElementById('order-modal')!;
-  const modalBody = document.getElementById('modal-body')!;
+  // ── Order detail drawer ──
+  const drawer = document.getElementById('order-drawer')!;
+  const drawerBody = document.getElementById('drawer-body')!;
+  const drawerOrderCode = document.getElementById('drawer-order-code')!;
 
-  function openModal(orderId: string) {
+  function openDrawer(orderId: string) {
     // Find row data from DOM
     const row = document.querySelector<HTMLElement>(`tr[data-order-id="${orderId}"]`);
     if (!row) return;
@@ -266,33 +381,39 @@ function fmtDate(d: string) {
       shipping: 'Đang giao', done: 'Hoàn thành', cancelled: 'Đã hủy'
     };
 
-    modalBody.innerHTML = `
-      <div class="detail-grid">
-        <div class="detail-section">
-          <h4 class="detail-section-title">Thông tin đơn hàng</h4>
-          <div class="detail-row"><span>Mã đơn</span><strong>${orderNum}</strong></div>
-          <div class="detail-row"><span>Ngày đặt</span><strong>${date}</strong></div>
-          <div class="detail-row"><span>Tổng tiền</span><strong style="color:#f48c25;">${total}</strong></div>
-          <div class="detail-row"><span>Trạng thái</span><strong>${statusLabels[status] || status}</strong></div>
-        </div>
-        <div class="detail-section">
-          <h4 class="detail-section-title">Thông tin khách hàng</h4>
+    drawerOrderCode.textContent = orderNum;
+    drawerBody.innerHTML = `
+      <section class="drawer-section">
+        <h4 class="detail-section-title">Thông tin khách hàng</h4>
+        <div class="detail-card">
           <div class="detail-row"><span>Họ tên</span><strong>${name}</strong></div>
           <div class="detail-row"><span>Điện thoại</span><strong>${phone}</strong></div>
           ${email ? `<div class="detail-row"><span>Email</span><strong>${email}</strong></div>` : ''}
         </div>
-      </div>
+      </section>
+      <section class="drawer-section">
+        <h4 class="detail-section-title">Thông tin đơn hàng</h4>
+        <div class="detail-card">
+          <div class="detail-row"><span>Mã đơn</span><strong>${orderNum}</strong></div>
+          <div class="detail-row"><span>Ngày tạo</span><strong>${date}</strong></div>
+          <div class="detail-row"><span>Giá trị</span><strong style="color:#f48c25;">${total}</strong></div>
+          <div class="detail-row"><span>Trạng thái</span><strong>${statusLabels[status] || status}</strong></div>
+        </div>
+      </section>
     `;
 
-    modal.classList.remove('hidden');
+    drawer.classList.remove('drawer-closed');
+    drawer.classList.add('drawer-open');
   }
 
   document.querySelectorAll<HTMLButtonElement>('.btn-detail').forEach(btn => {
-    btn.addEventListener('click', () => openModal(btn.dataset.orderId!));
+    btn.addEventListener('click', () => openDrawer(btn.dataset.orderId!));
   });
 
-  document.getElementById('modal-close')?.addEventListener('click', () => modal.classList.add('hidden'));
-  modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
+  document.getElementById('drawer-close')?.addEventListener('click', () => {
+    drawer.classList.remove('drawer-open');
+    drawer.classList.add('drawer-closed');
+  });
 
   // ── Export Excel ──
   document.getElementById('btn-export')?.addEventListener('click', () => {
@@ -301,13 +422,79 @@ function fmtDate(d: string) {
 </script>
 
 <style>
-  /* ── HEADER ── */
-  .orders-header {
+  /* ── TOP SECTION (title + stats + actions) ── */
+  .orders-top {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    margin-bottom: 24px;
+  }
+  .orders-top-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .orders-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #f9fafb;
+  }
+  .orders-subtitle {
+    font-size: 13px;
+    color: #9ca3af;
+  }
+
+  .orders-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .stat-card {
+    background: rgba(45,34,24,.4);
+    border-radius: 14px;
+    border: 1px solid #4a3a2a;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .stat-label {
+    font-size: 11px;
+    color: #9ca3af;
+  }
+  .stat-main {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #f9fafb;
+  }
+  .stat-pill {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
+  }
+  .stat-pill-hot {
+    background: rgba(248,113,113,.12);
+    color: #f97316;
+  }
+  .stat-hot .stat-value {
+    color: #f97316;
+  }
+  .stat-success .stat-value {
+    color: #22c55e;
+  }
+
+  .orders-header-actions {
     display: flex;
     justify-content: flex-end;
-    margin-bottom: 28px;
   }
-  .orders-header-actions { display: flex; gap: 12px; align-items: center; }
 
   .btn-export {
     display: flex; align-items: center; gap: 8px;
@@ -322,13 +509,22 @@ function fmtDate(d: string) {
   .btn-export .material-symbols-outlined { font-size: 18px; }
 
   /* ── FILTER TABS ── */
+  .tabs-bar{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:16px;
+    border-bottom: 1px solid rgba(74,58,42,.5);
+    margin-bottom: 20px;
+    padding-bottom: 2px;
+  }
   .filter-tabs {
     display: flex;
     gap: 0;
-    border-bottom: 1px solid rgba(74,58,42,.5);
-    margin-bottom: 20px;
     overflow-x: auto;
   }
+  .no-scrollbar::-webkit-scrollbar { display:none; }
+  .no-scrollbar { -ms-overflow-style:none; scrollbar-width:none; }
   .tab-btn {
     padding: 12px 20px;
     font-size: 13px; font-weight: 600;
@@ -344,6 +540,67 @@ function fmtDate(d: string) {
   .tab-btn:hover { color: #cbd5e1; }
   .tab-active { color: #f48c25; border-bottom-color: #f48c25; font-weight: 700; }
 
+  .tabs-actions{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    flex-shrink:0;
+    padding-bottom: 8px;
+  }
+  .search-wrap{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .search-input{
+    position:relative;
+    width: 420px;
+    max-width: 46vw;
+  }
+  .search-input input{
+    width:100%;
+    background: rgba(45,34,24,.35);
+    border: 1px solid rgba(74,58,42,.75);
+    color:#e5e7eb;
+    padding: 12px 14px 12px 46px;
+    border-radius: 16px;
+    font-size: 13px;
+    outline:none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .search-input input:focus{
+    border-color: rgba(244,140,37,.8);
+    box-shadow: 0 0 0 3px rgba(244,140,37,.15);
+  }
+  .search-ico{
+    position:absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 20px;
+    color:#9ca3af;
+    pointer-events:none;
+  }
+  .btn-filter{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding: 10px 16px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    background: rgba(45,34,24,.35);
+    border: 1px solid rgba(74,58,42,.75);
+    color:#e5e7eb;
+    cursor:pointer;
+    transition: background .15s, border-color .15s;
+    white-space:nowrap;
+  }
+  .btn-filter:hover{
+    background: rgba(74,58,42,.55);
+    border-color: rgba(244,140,37,.35);
+  }
+
   /* ── TABLE ── */
   .table-wrap {
     background: rgba(45,34,24,.4);
@@ -351,22 +608,57 @@ function fmtDate(d: string) {
     border-radius: 16px;
     overflow: hidden;
   }
-  .orders-table { width: 100%; border-collapse: collapse; text-align: left; }
-  .orders-table thead tr { background: rgba(45,34,24,.7); }
+  .orders-table-scroller {
+    overflow-x: auto;
+  }
+  .orders-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+    text-align: left;
+  }
+  .orders-table thead tr {
+    background: rgba(26,20,15,0.98);
+  }
   .orders-table th {
     padding: 16px 24px;
     font-size: 11px; font-weight: 700;
     text-transform: uppercase; letter-spacing: .1em;
     color: #94a3b8; white-space: nowrap;
   }
-  .orders-table tbody tr {
-    border-top: 1px solid #4a3a2a;
-    transition: background .15s;
+  .row-shell {
+    transition: background .15s, transform .15s, box-shadow .15s;
   }
-  .orders-table tbody tr:hover { background: rgba(74,58,42,.25); }
-  .orders-table td { padding: 18px 24px; vertical-align: middle; }
+  .orders-table tbody .row-shell td {
+    background: rgba(45,34,24,.65);
+    border-top: 1px solid rgba(75,56,34,.7);
+    border-bottom: 1px solid rgba(15,11,8,.9);
+  }
+  .orders-table tbody .row-shell td:first-child {
+    border-radius: 12px 0 0 12px;
+  }
+  .orders-table tbody .row-shell td:last-child {
+    border-radius: 0 12px 12px 0;
+  }
+  .orders-table tbody .row-shell:hover td {
+    background: rgba(74,58,42,.8);
+  }
+  .orders-table td {
+    padding: 14px 24px;
+    vertical-align: middle;
+  }
 
-  .empty-row { text-align: center; padding: 60px 24px; color: #64748b; }
+  .empty-row {
+    text-align: center;
+    padding: 60px 24px;
+    color: #64748b;
+  }
+  .empty-icon {
+    font-size: 36px;
+    opacity: 0.35;
+    display: block;
+    margin-bottom: 8px;
+  }
 
   .order-id {
     font-family: 'Courier New', monospace;
@@ -377,12 +669,31 @@ function fmtDate(d: string) {
   .cus-name  { font-size: 13.5px; font-weight: 700; color: #f9fafb; }
   .cus-email { font-size: 11px; color: #64748b; margin-top: 2px; }
 
+  .customer-chip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .avatar-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    background: rgba(248,113,22,.16);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #f97316;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
   .prod-cell { display: flex; align-items: center; gap: 12px; }
   .prod-thumb {
     width: 36px; height: 36px; border-radius: 6px;
     background: #4a3a2a center/cover no-repeat; flex-shrink: 0;
   }
   .prod-name { font-size: 13px; color: #e2e8f0; }
+  .prod-name-empty { color: #64748b; }
   .prod-more { font-size: 11px; color: #64748b; margin-top: 2px; }
 
   .total-col { text-align: right; font-size: 13px; font-weight: 700; color: #f9fafb; white-space: nowrap; }
@@ -448,32 +759,85 @@ function fmtDate(d: string) {
   .page-num:hover { background: #4a3a2a; }
   .page-active { background: #f48c25 !important; color: #221910 !important; border-radius: 8px; }
 
-  /* ── MODAL ── */
-  .modal-backdrop {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
-    z-index: 900; display: flex; align-items: center; justify-content: center;
+  /* ── DETAIL DRAWER (side panel) ── */
+  .drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 32%;
+    min-width: 320px;
+    max-width: 440px;
+    height: 100vh;
+    background: #1a140f;
+    border-left: 1px solid #4a3a2a;
+    box-shadow: -24px 0 80px rgba(0,0,0,.7);
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    z-index: 40;
   }
-  .modal-backdrop.hidden { display: none; }
-  .modal-box {
-    background: #2d2218; border: 1px solid #4a3a2a;
-    border-radius: 16px; width: 100%; max-width: 560px;
-    max-height: 80vh; overflow-y: auto;
-    box-shadow: 0 24px 48px rgba(0,0,0,.5);
+  .drawer-open {
+    transform: translateX(0);
+    transition: transform .25s ease-in-out;
   }
-  .modal-header {
+  .drawer-closed {
+    transform: translateX(100%);
+    transition: transform .25s ease-in-out;
+  }
+  .drawer-header {
     display: flex; align-items: center; justify-content: space-between;
     padding: 20px 24px; border-bottom: 1px solid #4a3a2a;
   }
-  .modal-title { font-size: 16px; font-weight: 700; color: #f9fafb; }
-  .modal-close-btn {
+  .drawer-title { font-size: 16px; font-weight: 700; color: #f9fafb; }
+  .drawer-title-code { color: #f97316; }
+  .drawer-close-btn {
     width: 32px; height: 32px; border-radius: 8px;
     background: none; border: none; cursor: pointer;
     color: #64748b; display: flex; align-items: center; justify-content: center;
     transition: all .15s;
   }
-  .modal-close-btn:hover { background: rgba(244,140,37,.1); color: #f48c25; }
-  .modal-body { padding: 24px; }
+  .drawer-close-btn:hover { background: rgba(244,140,37,.1); color: #f48c25; }
+  .drawer-body { padding: 24px; overflow-y: auto; flex: 1; }
+  .drawer-footer {
+    padding: 16px 24px 20px;
+    border-top: 1px solid #4a3a2a;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: rgba(26,20,15,0.95);
+  }
+  .drawer-actions-main {
+    display: flex;
+    gap: 8px;
+  }
+  .drawer-btn-primary {
+    flex: 1;
+    border-radius: 10px;
+    background: #f97316;
+    color: #111827;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 10px 14px;
+    border: none;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .drawer-btn-primary:hover { background: #ea580c; }
+  .drawer-btn-secondary {
+    width: 100%;
+    border-radius: 10px;
+    background: transparent;
+    border: 1px solid #4a3a2a;
+    color: #9ca3af;
+    font-size: 12px;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .drawer-btn-secondary:hover {
+    background: rgba(55,41,30,.9);
+    color: #e5e7eb;
+  }
 
   .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
   @media (max-width: 480px) { .detail-grid { grid-template-columns: 1fr; } }

@@ -232,6 +232,7 @@ if (!accessToken || !refreshToken) {
     .badge-processing{ background: rgba(59,130,246,.2);  color: #60a5fa; border-color: rgba(59,130,246,.3); }
     .badge-done      { background: rgba(11,218,22,.2);   color: #0bda16; border-color: rgba(11,218,22,.3); }
   </style>
+  <slot name="head" />
 </head>
 <body>
 {shouldRedirect ? (
@@ -256,6 +257,7 @@ if (!accessToken || !refreshToken) {
       <div class="nav-group">
         <span class="nav-group-label">Chính</span>
         <a href="/admin"            class={`nav-link ${activeNav==='dashboard'     ? 'active' : ''}`}><span class="material-symbols-outlined">dashboard</span>Bảng điều khiển</a>
+        <a href="/admin/pos"        class={`nav-link ${activeNav==='pos'           ? 'active' : ''}`}><span class="material-symbols-outlined">point_of_sale</span>POS (Bán hàng)</a>
         <a href="/admin/media"      class={`nav-link ${activeNav==='media'         ? 'active' : ''}`}><span class="material-symbols-outlined">perm_media</span>Thư viện Media</a>
         <a href="/admin/inventory"  class={`nav-link ${activeNav==='inventory'     ? 'active' : ''}`}><span class="material-symbols-outlined">inventory_2</span>Kho hàng</a>
         <a href="/admin/orders"     class={`nav-link ${activeNav==='orders'        ? 'active' : ''}`}><span class="material-symbols-outlined">shopping_cart</span>Đơn hàng</a>

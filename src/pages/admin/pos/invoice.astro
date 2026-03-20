@@ -1,0 +1,261 @@
+---
+import { supabase } from '../../../lib/supabase';
+
+const orderId = Astro.url.searchParams.get('id');
+
+// Fetch active template for Invoice A4
+const { data: tplData } = await supabase
+  .from('print_templates')
+  .select('settings')
+  .eq('type', 'invoice_a4')
+  .eq('is_active', true)
+  .single();
+
+const settings = tplData?.settings || {};
+const storeName = settings.invoice_store_name || 'FLYSKY GUITAR';
+const slogan = settings.invoice_slogan || 'Âm thanh từ tâm hồn - Chất lượng từ đam mê';
+const address = settings.invoice_address || 'Số 123 Đường Nhạc Cụ, Quận 1, TP. HCM';
+const phone = settings.invoice_phone || 'Hotline: 090 123 4567';
+const website = settings.invoice_website || 'Website: www.flyskyguitar.vn';
+const policy = settings.invoice_policy || 'Sản phẩm được đổi trả trong vòng 07 ngày nếu có lỗi từ nhà sản xuất.\nVui lòng giữ nguyên hóa đơn và tem bảo hành khi cần hỗ trợ.\nKhông áp dụng đổi trả với hàng đã qua sử dụng làm trầy xước.';
+const footerMsg = settings.invoice_footer_msg || 'Cảm ơn quý khách đã tin tưởng FlySky Guitar!';
+
+// Fetch order data
+let order: any = null;
+let orderItems: any[] = [];
+
+if (orderId) {
+  const { data: orderData } = await supabase
+    .from('orders')
+    .select('id, order_number, customer_name, customer_phone, total_amount, discount_amount, shipping_fee, created_at, payment_method, status')
+    .eq('id', orderId)
+    .single();
+  order = orderData;
+
+  const { data: items } = await supabase
+    .from('order_items')
+    .select('quantity, price_at_time, products(name, sku)')
+    .eq('order_id', orderId);
+  orderItems = items || [];
+}
+
+function fmt(val: number) {
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);
+}
+
+function fmtDate(d: string) {
+  if (!d) return '';
+  const dt = new Date(d);
+  return `${dt.getDate().toString().padStart(2,'0')}/${(dt.getMonth()+1).toString().padStart(2,'0')}/${dt.getFullYear()}`;
+}
+
+const subtotal = orderItems.reduce((sum: number, item: any) => sum + (item.price_at_time * item.quantity), 0);
+const discountAmount = order?.discount_amount || 0;
+const shippingFee = order?.shipping_fee || 0;
+---
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>In Hóa Đơn - {storeName}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { font-family: 'Inter', Arial, sans-serif; background: #f1f5f9; color: #334155; font-size: 14px; }
+
+    /* Action bar */
+    #action-bar { position: sticky; top: 0; z-index: 50; background: #1e293b; display: flex; align-items: center; justify-content: center; gap: 16px; padding: 12px 24px; }
+    #action-bar span { color: #cbd5e1; font-size: 13px; }
+    .btn { border: none; border-radius: 6px; padding: 8px 20px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .15s; }
+    .btn-print { background: #f97316; color: white; }
+    .btn-print:hover { background: #ea580c; }
+    .btn-close { background: #475569; color: white; }
+    .btn-close:hover { background: #334155; }
+
+    /* A4 wrapper */
+    .page { background: white; width: 820px; margin: 32px auto; padding: 48px; box-shadow: 0 10px 40px rgba(0,0,0,.12); }
+
+    /* Header */
+    .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; border-bottom: 3px solid #ea580c; }
+    .logo-wrap { display: flex; align-items: center; gap: 14px; }
+    .logo-icon { width: 52px; height: 52px; border-radius: 50%; background: #ea580c; color: white; font-size: 20px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+    .store-name { font-size: 22px; font-weight: 900; color: #1e293b; letter-spacing: .08em; text-transform: uppercase; }
+    .store-slogan { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+    .store-contact { text-align: right; font-size: 12px; color: #64748b; line-height: 1.7; }
+
+    /* Invoice meta */
+    .meta { display: flex; justify-content: space-between; margin: 28px 0 20px; }
+    .invoice-title { font-size: 22px; font-weight: 800; color: #1e293b; text-transform: uppercase; margin-bottom: 8px; }
+    .meta-row { font-size: 12px; margin-bottom: 4px; }
+    .meta-label { font-weight: 600; }
+    .customer-box { text-align: right; font-size: 12px; }
+    .customer-label { font-weight: 700; color: #1e293b; margin-bottom: 4px; font-size: 12px; }
+    .customer-name { font-weight: 600; color: #1e293b; }
+    .customer-detail { color: #64748b; }
+
+    /* Table */
+    table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 20px; }
+    thead tr { background: #f8fafc; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; }
+    th { padding: 10px 8px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #64748b; }
+    .th-center { text-align: center; }
+    .th-right { text-align: right; }
+    td { padding: 14px 8px; border-bottom: 1px solid #f1f5f9; }
+    .td-center { text-align: center; color: #64748b; }
+    .td-right { text-align: right; }
+    .td-stt { color: #94a3b8; text-align: center; }
+    .td-name { font-weight: 500; color: #1e293b; }
+    .td-sku { font-style: italic; color: #94a3b8; }
+    .td-price { color: #64748b; text-align: right; }
+    .td-total { font-weight: 600; color: #1e293b; text-align: right; }
+
+    /* Summary */
+    .summary-wrap { display: flex; justify-content: flex-end; margin-top: 8px; border-top: 1px solid #e2e8f0; padding-top: 20px; margin-bottom: 32px; }
+    .summary-box { width: 300px; }
+    .sum-row { display: flex; justify-content: space-between; font-size: 12px; color: #64748b; margin-bottom: 8px; }
+    .sum-row span:last-child { font-weight: 500; color: #1e293b; }
+    .sum-total { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 12px; margin-top: 4px; }
+    .sum-total-label { font-size: 13px; font-weight: 700; color: #1e293b; text-transform: uppercase; }
+    .sum-total-value { font-size: 20px; font-weight: 800; color: #ea580c; }
+
+    /* Footer */
+    .footer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding-top: 24px; border-top: 1px solid #f1f5f9; margin-bottom: 60px; }
+    .policy-title { font-size: 11px; font-weight: 700; color: #1e293b; margin-bottom: 8px; text-transform: uppercase; }
+    .policy-list { list-style: disc; padding-left: 16px; line-height: 1.8; font-size: 11px; color: #64748b; }
+    .sig-wrap { display: flex; justify-content: space-evenly; text-align: center; }
+    .sig-box { }
+    .sig-label { font-size: 11px; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
+    .sig-sub { font-size: 10px; font-style: italic; color: #94a3b8; }
+    .end-note { text-align: center; padding-top: 24px; border-top: 1px solid #f1f5f9; }
+    .end-msg { font-size: 14px; font-weight: 600; color: #1e293b; margin-bottom: 4px; }
+    .end-legal { font-size: 10px; color: #94a3b8; }
+
+    /* Error state */
+    .error-wrap { text-align: center; padding: 80px 20px; color: #94a3b8; }
+
+    @media print {
+      html, body { background: white; }
+      #action-bar { display: none; }
+      .page { width: 100%; margin: 0; padding: 12mm; box-shadow: none; }
+      @page { size: A4 portrait; margin: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div id="action-bar">
+    <span>Xem bản in hóa đơn FlySky Guitar</span>
+    <button class="btn btn-print" onclick="window.print()">🖨️ In Hóa Đơn</button>
+    <button class="btn btn-close" onclick="window.close()">✕ Đóng</button>
+  </div>
+
+  <div class="page">
+    {!order && (
+      <div class="error-wrap">
+        <p style="font-size:2rem;margin-bottom:8px;">⚠️</p>
+        <p style="font-size:16px;font-weight:600;color:#475569;">Không tìm thấy đơn hàng</p>
+        <p style="font-size:12px;margin-top:4px;">ID: {orderId || 'không có'}</p>
+      </div>
+    )}
+
+    {order && (
+      <>
+        <!-- Header -->
+        <header class="header">
+          <div class="logo-wrap">
+            <div class="logo-icon">{storeName.charAt(0)}</div>
+            <div>
+              <div class="store-name">{storeName}</div>
+              <div class="store-slogan">{slogan}</div>
+            </div>
+          </div>
+          <div class="store-contact" set:html={[address, phone, website].join('<br/>')}></div>
+        </header>
+
+        <!-- Invoice Meta -->
+        <div class="meta">
+          <div>
+            <div class="invoice-title">Hóa Đơn Bán Hàng</div>
+            <div class="meta-row"><span class="meta-label">Mã hóa đơn:</span> #{order.order_number}</div>
+            <div class="meta-row"><span class="meta-label">Ngày xuất:</span> {fmtDate(order.created_at)}</div>
+            {order.payment_method && <div class="meta-row"><span class="meta-label">Thanh toán:</span> {order.payment_method}</div>}
+          </div>
+          <div class="customer-box">
+            <div class="customer-label">Thông tin khách hàng:</div>
+            <div class="customer-name">{order.customer_name || 'Khách vãng lai'}</div>
+            {order.customer_phone && order.customer_phone !== '0000000000' && <div class="customer-detail">{order.customer_phone}</div>}
+          </div>
+        </div>
+
+        <!-- Product Table -->
+        <table>
+          <thead>
+            <tr>
+              <th style="width:40px;">STT</th>
+              <th>Tên Sản Phẩm</th>
+              <th style="width:120px;">SKU</th>
+              <th class="th-center" style="width:70px;">Số Lượng</th>
+              <th class="th-right" style="width:110px;">Đơn Giá</th>
+              <th class="th-right" style="width:120px;">Thành Tiền</th>
+            </tr>
+          </thead>
+          <tbody>
+            {orderItems.map((item: any, idx: number) => (
+              <tr>
+                <td class="td-stt">{String(idx + 1).padStart(2, '0')}</td>
+                <td class="td-name">{item.products?.name || 'Sản phẩm'}</td>
+                <td class="td-sku">{item.products?.sku || '-'}</td>
+                <td class="td-center">{String(item.quantity).padStart(2, '0')}</td>
+                <td class="td-price">{fmt(item.price_at_time)}</td>
+                <td class="td-total">{fmt(item.price_at_time * item.quantity)}</td>
+              </tr>
+            ))}
+            {orderItems.length === 0 && (
+              <tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:24px;">Không có sản phẩm</td></tr>
+            )}
+          </tbody>
+        </table>
+
+        <!-- Summary -->
+        <div class="summary-wrap">
+          <div class="summary-box">
+            <div class="sum-row"><span>Tạm tính:</span><span>{fmt(subtotal)}</span></div>
+            {discountAmount > 0 && <div class="sum-row"><span>Chiết khấu:</span><span style="color:#ef4444;">- {fmt(discountAmount)}</span></div>}
+            <div class="sum-row"><span>Phí vận chuyển:</span><span>{shippingFee > 0 ? fmt(shippingFee) : 'Miễn phí'}</span></div>
+            <div class="sum-total">
+              <span class="sum-total-label">Tổng cộng:</span>
+              <span class="sum-total-value">{fmt(order.total_amount)}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer-grid">
+          <div>
+            <div class="policy-title">Chính sách đổi trả:</div>
+            <ul class="policy-list">
+              {policy.split('\n').filter((p: string) => p.trim()).map((p: string, i: number) => <li key={i}>{p}</li>)}
+            </ul>
+          </div>
+          <div class="sig-wrap">
+            <div class="sig-box">
+              <div class="sig-label">Nhân viên bán hàng</div>
+              <div class="sig-sub">(Ký và ghi rõ họ tên)</div>
+            </div>
+            <div class="sig-box">
+              <div class="sig-label">Khách hàng</div>
+              <div class="sig-sub">(Ký và ghi rõ họ tên)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- End Note -->
+        <div class="end-note">
+          <div class="end-msg">{footerMsg}</div>
+          <div class="end-legal">Đây là chứng từ xác nhận thanh toán hợp lệ.</div>
+        </div>
+      </>
+    )}
+  </div>
+</body>
+</html>

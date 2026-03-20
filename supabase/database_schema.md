@@ -18,6 +18,7 @@ erDiagram
     PRODUCTS {
         uuid id PK
         uuid category_id FK
+        string sku "Mã SKU (In hóa đơn POS)"
         string name "Tên sản phẩm"
         string slug "SEO Slug"
         text description "Mô tả chi tiết"
@@ -32,16 +33,30 @@ erDiagram
     ORDERS {
         uuid id PK
         string order_number "Mã đơn hàng (VD: FSG-12345)"
+        string source "Nguồn: online / pos"
+        uuid staff_id "Nhân viên tạo đơn (POS)"
         string customer_name "Tên khách hàng"
         string customer_phone "Số điện thoại"
         string customer_email "Email (Tùy chọn)"
-        text shipping_address "Địa chỉ giao hàng"
+        text shipping_address "Địa chỉ (Không bắt buộc cho POS)"
         text note "Ghi chú của khách"
         string payment_method "bank / cash / installment"
         string status "pending / processing / completed / cancelled"
+        numeric shipping_fee "Phí CSS"
+        uuid discount_id "Link mã giảm giá"
+        string discount_code "Tên mã đã dùng"
+        numeric discount_amount "Số tiền đã giảm"
         numeric total_amount "Tổng tiền"
         datetime created_at
         datetime updated_at
+    }
+
+    DISCOUNTS {
+        uuid id PK
+        string code "Mã giảm giá"
+        string discount_type "percent / fixed"
+        numeric discount_value "Giá trị"
+        integer used_count "Số lượt đã dùng"
     }
 
     ORDER_ITEMS {
@@ -73,6 +88,7 @@ erDiagram
     CATEGORIES ||--o{ PRODUCTS : "contains"
     ORDERS ||--|{ ORDER_ITEMS : "has"
     PRODUCTS ||--o{ ORDER_ITEMS : "included_in"
+    ORDERS ||--o{ DISCOUNTS : "uses"
 ```
 
 ## 2. Chi tiết các bảng (Tables)
@@ -145,3 +161,10 @@ create trigger handle_updated_at_orders
 Vì chúng ta đang code ứng dụng có trang Admin tĩnh kết hợp Client-side, RLS trên Supabase là cách tốt nhất để bảo vệ Data:
 - **Products / Categories:** `SELECT` (Ai cũng xem được), `INSERT/UPDATE/DELETE` (Chỉ cho phép tài khoản Admin thực hiện).
 - **Orders / Contact Messages:** `INSERT` (Ai cũng có thể gửi đơn hàng/liên hệ), `SELECT/UPDATE/DELETE` (Chỉ Admin mới có quyền xem và đổi trạng thái).
+
+## 5. Các Triggers Tự Động Hóa (Cập Nhật Thêm)
+
+Đã bổ sung các Triggers cho quy trình POS và Bán hàng:
+- `trigger_deduct_inventory`: Trừ sản phẩm (`products.stock_quantity`) ngay sau khi chi tiết đơn hàng được lưu.
+- `trigger_restore_inventory`: Cộng lại tồn kho nếu Admin thay đổi trạng thái hóa đơn (`orders`) sang `cancelled`.
+- `trigger_increment_discount`: Tăng lượt đếm số người đã dùng (`discounts.used_count`) khi đơn được tạo có đính kèm `discount_id`.

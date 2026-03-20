@@ -7,6 +7,12 @@
   --color-card-dark: #342618;
   --color-border-dark: #493622;
   --color-text-muted: #cbad90;
+  --color-wood-dark: #1a1412;
+  --color-wood-medium: #2d241e;
+  --color-wood-light: #3e322b;
+  --color-accent-orange: #e67e22;
+  --font-sans: "Inter", sans-serif;
+  --font-serif: "Playfair Display", serif;
   --font-display: "Manrope", sans-serif;
 }
 
