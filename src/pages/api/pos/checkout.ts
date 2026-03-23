@@ -4,7 +4,7 @@ import { supabase } from '../../../lib/supabase';
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
-    const { items, customerName, customerPhone, subtotal, discountAmount, shippingFee, total, status } = body;
+    const { items, customerName, customerPhone, subtotal, discountAmount, discountCode, discountId, shippingFee, total, status } = body;
 
     if (!items || items.length === 0) {
       return new Response(JSON.stringify({ error: 'Giỏ hàng trống!' }), { status: 400 });
@@ -30,8 +30,10 @@ export const POST: APIRoute = async ({ request }) => {
         customer_name: name,
         customer_phone: phone,
         total_amount: total,
-        discount_amount: discountAmount,
-        shipping_fee: shippingFee,
+        discount_amount: discountAmount || 0,
+        discount_code: discountCode || null,
+        discount_id: discountId || null,
+        shipping_fee: shippingFee || 0,
         source: 'pos',
         status: status || 'completed', // POS orders can be 'completed' or 'pending' (draft)
         payment_method: 'cash'

@@ -1,4 +1,4 @@
----
+﻿---
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import { supabase } from '../../lib/supabase';
 
@@ -47,6 +47,9 @@ const { data: orders } = await supabase
     document.addEventListener('alpine:init', () => {
       Alpine.data('posApp', () => ({
         activeTab: new URLSearchParams(window.location.search).get('tab') || 'sales',
+        reportPeriod: 'today',
+        startDate: '',
+        endDate: '',
         tabs: [
           { id: 'sales', label: 'Bán hàng', icon: 'storefront' },
           { id: 'invoices', label: 'Hóa đơn', icon: 'receipt_long' },
@@ -58,6 +61,7 @@ const { data: orders } = await supabase
         orderSearch: '',
         cart: [],
         discountCode: '',
+        discountId: null,
         discountAmount: 0,
         shippingFee: 0,
         customerName: '',
@@ -77,6 +81,83 @@ const { data: orders } = await supabase
           );
         },
 
+        get periodOrders() {
+          const now = new Date();
+          let startDate = new Date();
+          let endDate = new Date();
+          
+          switch (this.reportPeriod) {
+            case 'today':
+              startDate.setHours(0, 0, 0, 0);
+              endDate = now;
+              break;
+            case 'week':
+              startDate.setDate(now.getDate() - 7);
+              endDate = now;
+              break;
+            case 'month':
+              startDate.setMonth(now.getMonth());
+              endDate = now;
+              break;
+            case 'quarter':
+              startDate.setMonth(Math.floor(now.getMonth() / 3) * 3);
+              endDate = now;
+              break;
+            case 'year':
+              startDate.setMonth(0);
+              endDate = now;
+              break;
+            case 'custom':
+              startDate = this.startDate ? new Date(this.startDate) : new Date();
+              endDate = this.endDate ? new Date(this.endDate) : new Date();
+              break;
+            default:
+              startDate.setHours(0, 0, 0, 0);
+              endDate = now;
+              break;
+          }
+          
+          return this.orders.filter(o => {
+            const orderDate = new Date(o.created_at);
+            return orderDate >= startDate && orderDate <= endDate;
+          });
+        },
+
+        get periodRevenue() {
+          return this.periodOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
+        },
+
+        get periodOrderCount() {
+          return this.periodOrders.length;
+        },
+
+        get periodProductsSold() {
+          const productMap = {};
+          this.periodOrders.forEach(order => {
+            if (order.order_items) {
+              order.order_items.forEach(item => {
+                const productId = item.products?.id || 'unknown';
+                productMap[productId] = (productMap[productId] || 0) + (item.quantity || 0);
+              });
+            }
+          });
+          return Object.values(productMap).reduce((sum, qty) => sum + qty, 0);
+        },
+
+        get periodUniqueProducts() {
+          const products = new Set();
+          this.periodOrders.forEach(order => {
+            if (order.order_items) {
+              order.order_items.forEach(item => {
+                if (item.products?.id) {
+                  products.add(item.products.id);
+                }
+              });
+            }
+          });
+          return products.size;
+        },
+
         get todayOrders() {
           const today = new Date().toDateString();
           return this.orders.filter(o => new Date(o.created_at).toDateString() === today);
@@ -89,6 +170,109 @@ const { data: orders } = await supabase
         get todayCustomersCount() {
           const names = this.todayOrders.map(o => o.customer_name).filter(Boolean);
           return new Set(names).size || this.todayOrders.length; 
+        },
+
+        get topProducts() {
+          let productMap = {};
+          this.periodOrders.forEach(order => {
+            if (order.order_items) {
+              order.order_items.forEach(item => {
+                const productId = item.products?.id || 'unknown';
+                const productName = item.products?.name || 'Unknown Product';
+                const quantity = item.quantity || 0;
+                const revenue = (item.price_at_time || 0) * quantity;
+                
+                if (!productMap[productId]) {
+                  productMap[productId] = {
+                    id: productId,
+                    name: productName,
+                    quantity: 0,
+                    revenue: 0,
+                    image: null
+                  };
+                }
+                
+                productMap[productId].quantity += quantity;
+                productMap[productId].revenue += revenue;
+              });
+            }
+          });
+          
+          // Get product images from the products data
+          const productsData = window.posProducts || [];
+          productMap = Object.fromEntries(
+            Object.entries(productMap).map(([id, data]) => [
+              id,
+              {
+                ...data,
+                image: productsData.find(p => p.id === id)?.gallery_images?.[0] || null
+              }
+            ])
+          );
+          
+          return Object.values(productMap)
+            .sort((a, b) => b.revenue - a.revenue)
+            .slice(0, 10);
+        },
+
+        get hourlySales() {
+          const hourlyData = [];
+          for (let i = 0; i < 24; i++) {
+            const hourOrders = this.periodOrders.filter(order => {
+              const orderHour = new Date(order.created_at).getHours();
+              return orderHour === i;
+            });
+            
+            const hourRevenue = hourOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
+            const maxRevenue = Math.max(...this.periodOrders.map(o => o.total_amount || 0));
+            
+            hourlyData.push({
+              hour: i,
+              revenue: hourRevenue,
+              percentage: maxRevenue > 0 ? (hourRevenue / maxRevenue) * 100 : 0
+            });
+          }
+          return hourlyData;
+        },
+
+        get paymentMethods() {
+          const methods = {
+            'cash': { type: 'cash', label: 'Tiền mặt', count: 0, color: 'text-green-400' },
+            'bank': { type: 'bank', label: 'Chuyển khoản', count: 0, color: 'text-blue-400' },
+            'card': { type: 'card', label: 'Thẻ tín dụng', count: 0, color: 'text-purple-400' }
+          };
+          
+          this.periodOrders.forEach(order => {
+            if (methods[order.payment_method]) {
+              methods[order.payment_method].count++;
+            }
+          });
+          
+          return Object.values(methods);
+        },
+
+        get periodNewCustomers() {
+          const customers = new Set();
+          this.periodOrders.forEach(order => {
+            if (order.customer_name) {
+              customers.add(order.customer_name);
+            }
+          });
+          return customers.size;
+        },
+
+        get periodReturningCustomers() {
+          const customerOrders = {};
+          this.periodOrders.forEach(order => {
+            if (order.customer_name) {
+              if (!customerOrders[order.customer_name]) {
+                customerOrders[order.customer_name] = 0;
+              }
+              customerOrders[order.customer_name]++;
+            }
+          });
+          
+          return Object.values(customerOrders).filter(count => count > 1).length;
         },
 
         get filteredProducts() {
@@ -135,19 +319,36 @@ const { data: orders } = await supabase
           return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);
         },
 
-        applyDiscount() {
+        async applyDiscount() {
           if (!this.discountCode) {
             this.discountAmount = 0;
+            this.discountId = null;
             return;
           }
-          // Giả lập check discount. Logic thực sẽ fetch Supabase.
-          // Cho demo nếu nhập '10' giảm 10%
-          if (this.discountCode.toUpperCase() === 'VIP10') {
-             this.discountAmount = this.subtotal * 0.1;
-             alert('Áp dụng thành công mã VIP10!');
-          } else {
-             this.discountAmount = 0;
-             alert('Mã không hợp lệ hoặc đã hết hạn!');
+          try {
+            const res = await fetch('/api/pos/check-discount', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                code: this.discountCode,
+                subtotal: this.subtotal
+              })
+            });
+            const data = await res.json();
+            if (res.ok) {
+              this.discountId = data.discountId;
+              this.discountCode = data.discountCode; // Chuẩn hóa chữ hoa
+              this.discountAmount = data.discountAmount;
+              alert(data.message);
+            } else {
+              this.discountAmount = 0;
+              this.discountId = null;
+              alert('Lỗi: ' + data.error);
+            }
+          } catch (e) {
+            alert('Lỗi khi kiểm tra mã giảm giá!');
+            this.discountAmount = 0;
+            this.discountId = null;
           }
         },
 
@@ -162,6 +363,8 @@ const { data: orders } = await supabase
                 customerName: this.customerName || '', 
                 customerPhone: this.customerPhone || '',
                 subtotal: this.subtotal,
+                discountCode: this.discountAmount > 0 ? this.discountCode : '',
+                discountId: this.discountAmount > 0 ? this.discountId : null,
                 discountAmount: this.discountAmount,
                 shippingFee: this.shippingFee,
                 total: this.total,
@@ -173,6 +376,7 @@ const { data: orders } = await supabase
               alert('Đã lưu nháp thành công!');
               this.cart = [];
               this.discountCode = '';
+              this.discountId = null;
               this.discountAmount = 0;
               setTimeout(() => {
                 window.location.href = '/admin/pos?tab=invoices';
@@ -227,6 +431,8 @@ const { data: orders } = await supabase
                 customerName: this.customerName || '', 
                 customerPhone: this.customerPhone || '',
                 subtotal: this.subtotal,
+                discountCode: this.discountAmount > 0 ? this.discountCode : '',
+                discountId: this.discountAmount > 0 ? this.discountId : null,
                 discountAmount: this.discountAmount,
                 shippingFee: this.shippingFee,
                 total: this.total
@@ -237,6 +443,7 @@ const { data: orders } = await supabase
               this.pendingPrintOrderId = data.orderId;
               this.cart = [];
               this.discountCode = '';
+              this.discountId = null;
               this.discountAmount = 0;
               this.customerName = '';
               this.customerPhone = '';
@@ -266,7 +473,79 @@ const { data: orders } = await supabase
         savePrintDefault(type) {
           this.printType = type;
           localStorage.setItem('pos_print_type', type);
-        }
+        },
+
+        exportReport(format) {
+          try {
+            let data, filename, mimeType;
+            
+            if (format === 'excel') {
+              // Excel export data
+              data = this.generateExcelData();
+              filename = `pos-report-${this.reportPeriod}-${new Date().toISOString().split('T')[0]}.xlsx`;
+              mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+            } else if (format === 'pdf') {
+              // PDF export data
+              data = this.generatePdfData();
+              filename = `pos-report-${this.reportPeriod}-${new Date().toISOString().split('T')[0]}.pdf`;
+              mimeType = 'application/pdf';
+            } else {
+              alert('Định dạng xuất không hợp lệ!');
+              return;
+            }
+            
+            // Create blob and download
+            const blob = new Blob([data], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            alert(`Đã xuất báo cáo ${format.toUpperCase()} thành công!`);
+          } catch (error) {
+            console.error('Export error:', error);
+            alert('Lỗi khi xuất báo cáo. Vui lòng thử lại!');
+          }
+        },
+
+        generateExcelData() {
+          const headers = ['STT', 'Mã đơn', 'Khách hàng', 'Sản phẩm', 'Số lượng', 'Thành tiền', 'Phương thức', 'Thời gian'];
+          const rows = this.periodOrders.map((order, index) => [
+            index + 1,
+            order.order_number || '',
+            order.customer_name || '',
+            order.order_items?.map(item => item.products?.name).join(', ') || '',
+            order.order_items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0,
+            this.formatCurrency(order.total_amount) || '',
+            order.payment_method || '',
+            new Date(order.created_at).toLocaleString('vi-VN')
+          ]);
+          
+          return [headers, ...rows];
+        },
+
+        generatePdfData() {
+          // Simple PDF generation (would need a PDF library for production)
+          const title = `BÁO CÁO POS - ${this.reportPeriod.toUpperCase()}`;
+          const content = `
+            BÁO CÁO HỆ THỐNG POS
+            Kỳ báo cáo: ${this.reportPeriod}
+            Ngày xuất: ${new Date().toLocaleString('vi-VN')}
+            
+            TỔNG DOANH THU: ${this.formatCurrency(this.periodRevenue)}
+            SỐ ĐƠN HÀNG: ${this.periodOrderCount}
+            
+            CHI TIẾT THEO PHƯƠNG THÁNH TOÁN:
+            ${this.paymentMethods().map(m => `- ${m.label}: ${m.count} đơn`).join('\n')}
+          `;
+          
+          // For demo purposes, return as text. In production, use jsPDF or similar
+          return content;
+        },
       }));
     });
   </script>
@@ -381,8 +660,7 @@ const { data: orders } = await supabase
                           <span class="material-symbols-outlined text-4xl opacity-50">image</span>
                         </div>
                       </template>
-                      <!-- Badge Sku -->
-                      <span class="absolute top-2 left-2 bg-black/60 backdrop-blur text-[10px] text-gray-300 px-2 py-1 rounded" x-text="product.sku || 'No SKU'"></span>
+                     
                    </div>
                    <h3 class="text-sm font-semibold line-clamp-2 text-[#f1f5f9] flex-1 leading-snug" :title="product.name" x-text="product.name"></h3>
                    <div class="mt-2 flex items-end justify-between">
@@ -568,47 +846,201 @@ const { data: orders } = await supabase
 
       <!-- TAB: REPORTS -->
       <section x-show="activeTab === 'reports'" class="flex-1 flex flex-col bg-wood-dark overflow-hidden">
-        <!-- Header -->
+        <!-- Header with Date Range Selector -->
         <div class="p-6 bg-wood-medium/50 backdrop-blur-sm border-b border-stone-800 shrink-0">
-          <h1 class="text-sm font-bold tracking-widest text-accent-orange uppercase flex items-center">
-            <span class="material-symbols-outlined mr-2">bar_chart</span>
-            Báo cáo POS Hôm nay
-          </h1>
-        </div>
-        <!-- Stat Cards -->
-        <div class="p-6 grid grid-cols-3 gap-4 shrink-0">
-          <div class="bg-wood-medium/40 p-5 rounded-xl border border-stone-800 flex items-center gap-4">
-            <div class="w-11 h-11 bg-green-500/15 text-green-400 rounded-lg flex items-center justify-center">
-              <span class="material-symbols-outlined">payments</span>
-            </div>
-            <div>
-              <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Doanh thu hôm nay</p>
-              <h3 class="text-xl font-bold text-white" x-text="formatCurrency(todayRevenue)"></h3>
-            </div>
-          </div>
-          <div class="bg-wood-medium/40 p-5 rounded-xl border border-stone-800 flex items-center gap-4">
-            <div class="w-11 h-11 bg-blue-500/15 text-blue-400 rounded-lg flex items-center justify-center">
-              <span class="material-symbols-outlined">shopping_bag</span>
-            </div>
-            <div>
-              <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Số đơn hôm nay</p>
-              <h3 class="text-xl font-bold text-white" x-text="todayOrders.length + ' đơn'"></h3>
-            </div>
-          </div>
-          <div class="bg-wood-medium/40 p-5 rounded-xl border border-stone-800 flex items-center gap-4">
-            <div class="w-11 h-11 bg-purple-500/15 text-purple-400 rounded-lg flex items-center justify-center">
-              <span class="material-symbols-outlined">person</span>
-            </div>
-            <div>
-              <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Khách phục vụ</p>
-              <h3 class="text-xl font-bold text-white" x-text="todayCustomersCount + ' người'"></h3>
+          <div class="flex justify-between items-center mb-4">
+            <h1 class="text-sm font-bold tracking-widest text-accent-orange uppercase flex items-center">
+              <span class="material-symbols-outlined mr-2">analytics</span>
+              Báo cáo & Thống kê
+            </h1>
+            <div class="flex items-center gap-3">
+              <select x-model="reportPeriod" class="bg-wood-dark border border-stone-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-accent-orange focus:border-accent-orange outline-none">
+                <option value="today">Hôm nay</option>
+                <option value="week">Tuần này</option>
+                <option value="month">Tháng này</option>
+                <option value="quarter">Quý này</option>
+                <option value="year">Năm nay</option>
+                <option value="custom">Tùy chỉnh</option>
+              </select>
+              <template x-if="reportPeriod === 'custom'">
+                <input type="date" x-model="startDate" class="bg-wood-dark border border-stone-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-accent-orange focus:border-accent-orange outline-none mr-2">
+                <span class="text-gray-400">đến</span>
+                <input type="date" x-model="endDate" class="bg-wood-dark border border-stone-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-accent-orange focus:border-accent-orange outline-none ml-2">
+              </template>
             </div>
           </div>
         </div>
-        <!-- Chart placeholder -->
-        <div class="flex-1 mx-6 mb-6 bg-wood-medium/20 rounded-xl border border-stone-800 flex flex-col items-center justify-center text-gray-600">
-          <span class="material-symbols-outlined text-5xl mb-3 opacity-30">area_chart</span>
-          <p class="text-sm">Biểu đồ thống kê đang được cập nhật</p>
+
+        <!-- Main Reports Grid -->
+        <div class="flex-1 overflow-y-auto p-6">
+          <!-- Top Performance Metrics -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+            <!-- Revenue Card -->
+            <div class="bg-gradient-to-br from-green-600/20 to-green-500/10 p-6 rounded-xl border border-green-500/30">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                  <span class="material-symbols-outlined text-green-400">trending_up</span>
+                  Doanh thu
+                </h3>
+                <span class="text-xs text-green-400 bg-green-500/20 px-2 py-1 rounded" x-text="reportPeriod">Hôm nay</span>
+              </div>
+              <div class="space-y-2">
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-400 text-sm">Tổng doanh thu</span>
+                  <span class="text-2xl font-bold text-white" x-text="formatCurrency(periodRevenue)"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-400 text-sm">Đơn hàng</span>
+                  <span class="text-lg font-semibold text-white" x-text="periodOrderCount"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-400 text-sm">Giá trị trung bình</span>
+                  <span class="text-lg font-semibold text-white" x-text="periodOrderCount > 0 ? formatCurrency(periodRevenue / periodOrderCount) : '0₫'"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Products Sold Card -->
+            <div class="bg-gradient-to-br from-blue-600/20 to-blue-500/10 p-6 rounded-xl border border-blue-500/30">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                  <span class="material-symbols-outlined text-blue-400">inventory</span>
+                  Sản phẩm bán
+                </h3>
+                <span class="text-xs text-blue-400 bg-blue-500/20 px-2 py-1 rounded" x-text="reportPeriod">Hôm nay</span>
+              </div>
+              <div class="space-y-2">
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-400 text-sm">Số lượng SP</span>
+                  <span class="text-2xl font-bold text-white" x-text="periodProductsSold"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-400 text-sm">Loại khác</span>
+                  <span class="text-lg font-semibold text-white" x-text="periodUniqueProducts"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Customers Card -->
+            <div class="bg-gradient-to-br from-purple-600/20 to-purple-500/10 p-6 rounded-xl border border-purple-500/30">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                  <span class="material-symbols-outlined text-purple-400">people</span>
+                  Khách hàng
+                </h3>
+                <span class="text-xs text-purple-400 bg-purple-500/20 px-2 py-1 rounded" x-text="reportPeriod">Hôm nay</span>
+              </div>
+              <div class="space-y-2">
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-400 text-sm">Khách mới</span>
+                  <span class="text-2xl font-bold text-white" x-text="periodNewCustomers"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-400 text-sm">Khách quay lại</span>
+                  <span class="text-lg font-semibold text-white" x-text="periodReturningCustomers"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Detailed Reports Section -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Sales by Product -->
+            <div class="bg-wood-medium/40 p-6 rounded-xl border border-stone-800">
+              <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <span class="material-symbols-outlined text-accent-orange">sell</span>
+                Top sản phẩm bán chạy
+              </h3>
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead class="border-b border-stone-700">
+                    <tr>
+                      <th class="text-left p-2 text-gray-400 font-semibold">Sản phẩm</th>
+                      <th class="text-right p-2 text-gray-400 font-semibold">SL</th>
+                      <th class="text-right p-2 text-gray-400 font-semibold">Doanh thu</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-stone-700/50">
+                    <template x-for="product in topProducts.slice(0, 5)" :key="product.id">
+                      <tr class="hover:bg-wood-medium/20">
+                        <td class="p-2">
+                          <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded bg-black/20 overflow-hidden">
+                              <img x-show="product.image" :src="product.image" :alt="product.name" class="w-full h-full object-cover" />
+                              <template x-if="!product.image">
+                                <div class="w-full h-full flex items-center justify-center">
+                                  <span class="material-symbols-outlined text-gray-500">image</span>
+                                </div>
+                              </template>
+                            </div>
+                            <span class="text-white font-medium" x-text="product.name"></span>
+                          </div>
+                        </td>
+                        <td class="p-2 text-right font-mono text-white" x-text="product.quantity"></td>
+                        <td class="p-2 text-right font-mono text-accent-orange" x-text="formatCurrency(product.revenue)"></td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Sales by Hour -->
+            <div class="bg-wood-medium/40 p-6 rounded-xl border border-stone-800">
+              <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <span class="material-symbols-outlined text-accent-orange">schedule</span>
+                Doanh thu theo giờ
+              </h3>
+              <div class="space-y-2">
+                <template x-for="hour in hourlySales" :key="hour.hour">
+                  <div class="flex items-center justify-between p-2 rounded-lg bg-wood-medium/20">
+                    <span class="text-sm text-gray-400" x-text="hour.hour + ':00'"></span>
+                    <div class="flex items-center gap-2">
+                      <div class="w-24 bg-stone-700 rounded-full h-2">
+                        <div class="bg-accent-orange h-2 rounded-full transition-all duration-500" :style="`width: ${hour.percentage}%`"></div>
+                      </div>
+                      <span class="text-sm font-mono text-white" x-text="formatCurrency(hour.revenue)"></span>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+
+          <!-- Payment Methods Breakdown -->
+          <div class="bg-wood-medium/40 p-6 rounded-xl border border-stone-800 lg:col-span-2">
+            <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+              <span class="material-symbols-outlined text-accent-orange">payments</span>
+              Phương thức thanh toán
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <template x-for="method in paymentMethods" :key="method.type">
+                <div class="bg-wood-medium/20 p-4 rounded-lg border border-stone-700 text-center">
+                  <div class="text-2xl font-bold mb-2" :class="method.color" x-text="method.count"></div>
+                  <div class="text-xs text-gray-400 uppercase tracking-wider" x-text="method.label"></div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+
+        <!-- Export Options -->
+        <div class="p-6 bg-wood-medium/50 border-t border-stone-800">
+          <div class="flex justify-between items-center">
+            <div class="flex items-center gap-4">
+              <button @click="exportReport('excel')" class="flex items-center gap-2 bg-green-600/80 hover:bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                <span class="material-symbols-outlined">table_chart</span>
+                Xuất Excel
+              </button>
+              <button @click="exportReport('pdf')" class="flex items-center gap-2 bg-red-600/80 hover:bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                <span class="material-symbols-outlined">picture_as_pdf</span>
+                Xuất PDF
+              </button>
+            </div>
+            <div class="text-xs text-gray-500">
+              Cập nhật lần cuối: <span x-text="new Date().toLocaleString('vi-VN')"></span>
+            </div>
+          </div>
         </div>
       </section>
       

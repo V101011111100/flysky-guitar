@@ -18,9 +18,24 @@ const contactEmail = getSetting('flysky_contactEmail', 'hello@flyskyguitar.com')
 const storeAddress = getSetting('flysky_storeAddress', '37 Lê Thiện Trị, Phường Ngũ Hành Sơn, Thành phố Đà Nẵng');
 const contactPhone = getSetting('flysky_contactPhone', '0987 654 321');
 const socialUrl = getSetting('flysky_socialUrl', 'https://facebook.com/flyskyguitar');
+
+// Social Media Links
+const zaloUrl = getSetting('flysky_zaloUrl', 'https://zalo.me/0987654321');
+const facebookUrl = getSetting('flysky_facebookUrl', 'https://facebook.com/flyskyguitar');
+const whatsappUrl = getSetting('flysky_whatsappUrl', 'https://wa.me/84987654321');
+const instagramUrl = getSetting('flysky_instagramUrl', 'https://instagram.com/flyskyguitar');
+
 const brandColor = getSetting('flysky_brandColor', '#F48C25');
 const heroH1 = getSetting('flysky_heroH1', 'Đánh Thức Đam Mê Âm Nhạc Của Bạn');
 const heroSub = getSetting('flysky_heroSub', 'Khám phá bộ sưu tập nhạc cụ cao cấp, được tinh chỉnh hoàn hảo để mang lại cảm hứng sáng tạo bất tận cho mọi nghệ sĩ.');
+
+// Payment Settings
+const bankName = getSetting('flysky_bankName', 'BIDV');
+const bankAccountName = getSetting('flysky_bankAccountName', 'CÔNG TY TNHH FLYSKY GUITAR');
+const bankAccountNumber = getSetting('flysky_bankAccountNumber', '1234567890');
+const momoPartnerCode = getSetting('flysky_momoPartnerCode', '');
+const momoAccessKey = getSetting('flysky_momoAccessKey', '');
+const momoSecretKey = getSetting('flysky_momoSecretKey', '');
 ---
 
 <AdminLayout
@@ -40,6 +55,7 @@ const heroSub = getSetting('flysky_heroSub', 'Khám phá bộ sưu tập nhạc 
   <div class="stg-tabs">
     <button class="stg-tab" onclick="switchTab('general', this)">Cài đặt chung</button>
     <button class="stg-tab" onclick="switchTab('appearance', this)">Giao diện</button>
+    <button class="stg-tab" onclick="switchTab('payment', this)">Thanh toán</button>
     <button class="stg-tab" onclick="switchTab('notifications', this)">Thông báo</button>
     <button class="stg-tab stg-tab-active" onclick="switchTab('security', this)">Bảo mật &amp; Tài khoản</button>
   </div>
@@ -113,8 +129,20 @@ const heroSub = getSetting('flysky_heroSub', 'Khám phá bộ sưu tập nhạc 
             <input type="text" id="stg-contact-phone" class="form-input inp-with-icon" value={contactPhone} />
           </div>
           <div class="icon-input-wrap" style="margin-top:12px;">
-            <span class="material-symbols-outlined inp-icon">public</span>
-            <input type="text" id="stg-social-url" class="form-input inp-with-icon" value={socialUrl} />
+            <span class="material-symbols-outlined inp-icon">chat</span>
+            <input type="text" id="stg-zalo-url" class="form-input inp-with-icon" placeholder="https://zalo.me/..." value={zaloUrl} />
+          </div>
+          <div class="icon-input-wrap" style="margin-top:12px;">
+            <span class="material-symbols-outlined inp-icon">groups</span>
+            <input type="text" id="stg-facebook-url" class="form-input inp-with-icon" placeholder="https://facebook.com/..." value={facebookUrl} />
+          </div>
+          <div class="icon-input-wrap" style="margin-top:12px;">
+            <span class="material-symbols-outlined inp-icon">send</span>
+            <input type="text" id="stg-whatsapp-url" class="form-input inp-with-icon" placeholder="https://wa.me/..." value={whatsappUrl} />
+          </div>
+          <div class="icon-input-wrap" style="margin-top:12px;">
+            <span class="material-symbols-outlined inp-icon">photo_camera</span>
+            <input type="text" id="stg-instagram-url" class="form-input inp-with-icon" placeholder="https://instagram.com/..." value={instagramUrl} />
           </div>
         </div>
       </section>
@@ -261,6 +289,68 @@ const heroSub = getSetting('flysky_heroSub', 'Khám phá bộ sưu tập nhạc 
           <span class="material-symbols-outlined">save</span>
           Lưu cấu hình
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: THANH TOÁN ── -->
+  <div id="tab-payment" class="tab-pane" style="display:none;">
+    <div class="stg-content">
+      <section class="stg-section">
+        <div class="section-head">
+          <div>
+            <h3 class="section-title">Chuyển khoản Ngân hàng</h3>
+            <p class="section-desc">Thông tin tài khoản nhận tiền chuyển khoản mua hàng (phục vụ tạo mã VietQR tự động).</p>
+          </div>
+          <button class="btn-save" onclick="saveSettings()">
+            <span class="material-symbols-outlined">save</span>
+            Lưu thay đổi
+          </button>
+        </div>
+        <div class="form-grid">
+          <div class="form-group form-full">
+            <label class="form-label">Tên Ngân hàng (Viết tắt ngân hàng, VD: BIDV, Vietcombank)</label>
+            <input type="text" id="stg-bank-name" class="form-input" value={bankName} />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tên chủ tài khoản</label>
+            <input type="text" id="stg-bank-acc-name" class="form-input" value={bankAccountName} />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Số tài khoản</label>
+            <input type="text" id="stg-bank-acc-num" class="form-input" value={bankAccountNumber} />
+          </div>
+        </div>
+      </section>
+
+      <hr class="stg-divider" />
+
+      <section class="stg-section">
+        <div class="section-head">
+          <div>
+            <h3 class="section-title">Tra cứu MoMo (BETA)</h3>
+            <p class="section-desc">Thiết lập kết nối với ví MoMo để nhận thông báo thanh toán.</p>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group form-full">
+            <label class="form-label">Partner Code</label>
+            <input type="text" id="stg-momo-partner" class="form-input" value={momoPartnerCode} />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Access Key</label>
+            <input type="password" id="stg-momo-access" class="form-input" value={momoAccessKey} />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Secret Key</label>
+            <input type="password" id="stg-momo-secret" class="form-input" value={momoSecretKey} />
+          </div>
+        </div>
+      </section>
+
+      <div class="bottom-actions">
+        <button class="btn-cancel">Hủy bỏ</button>
+        <button class="btn-update" onclick="saveSettings()">Cập nhật tất cả</button>
       </div>
     </div>
   </div>
@@ -507,32 +597,9 @@ const heroSub = getSetting('flysky_heroSub', 'Khám phá bộ sưu tập nhạc 
       <div class="sec-card">
         <h2 class="sec-section-title" style="padding:24px 24px 16px;">Quản lý phiên đăng nhập</h2>
         <div class="session-list">
-          <div class="session-item">
-            <div class="session-icon green-bg">
-              <span class="material-symbols-outlined">laptop_mac</span>
-            </div>
-            <div class="session-info">
-              <p class="session-name">MacBook Pro - Chrome</p>
-              <p class="session-ip">Địa chỉ IP: 113.161.x.x • TP. Hồ Chí Minh, VN</p>
-              <span class="session-badge current-badge">
-                <span class="badge-dot"></span> Phiên hiện tại
-              </span>
-            </div>
-            <button class="session-logout"><span class="material-symbols-outlined">logout</span></button>
-          </div>
-          <div class="session-item session-divider">
-            <div class="session-icon grey-bg">
-              <span class="material-symbols-outlined">smartphone</span>
-            </div>
-            <div class="session-info">
-              <p class="session-name">iPhone 14 Pro - Safari</p>
-              <p class="session-ip">Địa chỉ IP: 27.72.x.x • Hà Nội, VN</p>
-              <p class="session-last">Hoạt động lần cuối: 2 giờ trước</p>
-            </div>
-            <button class="session-logout"><span class="material-symbols-outlined">logout</span></button>
-          </div>
-          <button class="btn-logout-all">Đăng xuất khỏi tất cả các thiết bị khác</button>
+          <!-- Sessions will be dynamically loaded here -->
         </div>
+        <button class="btn-logout-all" onclick="logoutAllSessions()">Đăng xuất khỏi tất cả các thiết bị khác</button>
       </div>
 
       <!-- ═══ PHẦN 4: TỰ ĐỘNG ĐĂNG XUẤT ═══ -->
@@ -593,10 +660,19 @@ const heroSub = getSetting('flysky_heroSub', 'Khám phá bộ sưu tập nhạc 
       { id: 'stg-contact-email', key: 'flysky_contactEmail' },
       { id: 'stg-store-address', key: 'flysky_storeAddress' },
       { id: 'stg-contact-phone', key: 'flysky_contactPhone' },
-      { id: 'stg-social-url', key: 'flysky_socialUrl' },
+      { id: 'stg-zalo-url', key: 'flysky_zaloUrl' },
+      { id: 'stg-facebook-url', key: 'flysky_facebookUrl' },
+      { id: 'stg-whatsapp-url', key: 'flysky_whatsappUrl' },
+      { id: 'stg-instagram-url', key: 'flysky_instagramUrl' },
       { id: 'stg-brand-color', key: 'flysky_brandColor' },
       { id: 'stg-hero-h1', key: 'flysky_heroH1' },
-      { id: 'stg-hero-sub', key: 'flysky_heroSub' }
+      { id: 'stg-hero-sub', key: 'flysky_heroSub' },
+      { id: 'stg-bank-name', key: 'flysky_bankName' },
+      { id: 'stg-bank-acc-name', key: 'flysky_bankAccountName' },
+      { id: 'stg-bank-acc-num', key: 'flysky_bankAccountNumber' },
+      { id: 'stg-momo-partner', key: 'flysky_momoPartnerCode' },
+      { id: 'stg-momo-access', key: 'flysky_momoAccessKey' },
+      { id: 'stg-momo-secret', key: 'flysky_momoSecretKey' }
     ];
 
     const settingsToSave: any[] = [];
@@ -624,6 +700,150 @@ const heroSub = getSetting('flysky_heroSub', 'Khám phá bộ sưu tập nhạc 
     }
   }
   (window as any).saveSettings = saveSettings;
+
+  // Session Management Functions
+  async function loadActiveSessions() {
+    try {
+      const response = await fetch('/api/admin/sessions');
+      const data = await response.json();
+      if (data.success) {
+        renderSessions(data.sessions);
+      }
+    } catch (error) {
+      console.error('Error loading sessions:', error);
+    }
+  }
+
+  function renderSessions(sessions: any[]) {
+    const sessionList = document.querySelector('.session-list');
+    if (!sessionList) return;
+    
+    sessionList.innerHTML = sessions.map((session: any) => `
+      <div class="session-item ${session.isCurrent ? 'current-session' : ''}">
+        <div class="session-icon ${session.deviceType === 'desktop' ? 'green-bg' : session.deviceType === 'mobile' ? 'blue-bg' : 'grey-bg'}">
+          <span class="material-symbols-outlined">
+            ${session.deviceType === 'desktop' ? 'laptop_mac' : session.deviceType === 'mobile' ? 'smartphone' : 'devices'}
+          </span>
+        </div>
+        <div class="session-info">
+          <p class="session-name">${session.deviceName} - ${session.browser}</p>
+          <p class="session-ip">Địa chỉ IP: ${session.ipAddress} • ${session.location}</p>
+          <p class="session-last">Hoạt động lần cuối: ${formatLastActivity(session.lastActivity)}</p>
+          ${session.isCurrent ? '<span class="session-badge current-badge"><span class="badge-dot"></span> Phiên hiện tại</span>' : ''}
+        </div>
+        ${!session.isCurrent ? `<button class="session-terminate" onclick="terminateSession('${session.sessionId}')">
+          <span class="material-symbols-outlined">logout</span>
+          Kết thúc phiên
+        </button>` : ''}
+      </div>
+    `).join('');
+  }
+
+  function formatLastActivity(timestamp: string) {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) {
+      return 'Vừa xong';
+    } else if (diffMins < 60) {
+      return `${diffMins} phút trước`;
+    } else if (diffHours < 24) {
+      return `${diffHours} giờ ${diffMins % 60} phút trước`;
+    } else {
+      return `${diffDays} ngày ${diffHours % 24} giờ trước`;
+    }
+  }
+
+  async function terminateSession(sessionId: string) {
+    if (!confirm('Bạn có chắc chắn muốn kết thúc phiên này?')) return;
+    
+    try {
+      const response = await fetch('/api/admin/sessions/terminate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId })
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        alert('Đã kết thúc phiên thành công!');
+        loadActiveSessions(); // Reload sessions
+      } else {
+        alert('Lỗi khi kết thúc phiên: ' + data.error);
+      }
+    } catch (error: any) {
+      alert('Lỗi kết nối: ' + error.message);
+    }
+  }
+
+  async function logoutAllSessions() {
+    if (!confirm('Bạn có chắc chắn muốn đăng xuất khỏi tất cả các thiết bị khác?')) return;
+    
+    try {
+      const response = await fetch('/api/admin/sessions/logout-all', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        alert('Đã đăng xuất khỏi tất cả các thiết bị thành công!');
+        window.location.href = '/admin/login';
+      } else {
+        alert('Lỗi khi đăng xuất: ' + data.error);
+      }
+    } catch (error: any) {
+      alert('Lỗi kết nối: ' + error.message);
+    }
+  }
+
+  // Auto-logout timeout functionality
+  async function updateAutoLogoutTimeout() {
+    const timeoutSelect = document.querySelector('.timeout-select') as HTMLSelectElement | null;
+    const saveBtn = document.querySelector('.btn-save-sm-orange') as HTMLButtonElement | null;
+    
+    if (!timeoutSelect || !saveBtn) return;
+    
+    try {
+      const response = await fetch('/api/admin/settings/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          settings: [{ key: 'flysky_autoLogoutTimeout', value: timeoutSelect?.value || '' }]
+        })
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        alert('Đã cập nhật thời gian tự động đăng xuất thành công!');
+      } else {
+        alert('Lỗi cập nhật: ' + data.error);
+      }
+    } catch (error: any) {
+      alert('Lỗi kết nối: ' + error.message);
+    }
+  }
+
+  // Initialize session management on page load
+  document.addEventListener('DOMContentLoaded', () => {
+    loadActiveSessions();
+    
+    // Expose functions to window for onclick handlers
+    (window as any).logoutAllSessions = logoutAllSessions;
+    (window as any).terminateSession = terminateSession;
+    
+    // Add event listener for auto-logout timeout
+    const timeoutSelect = document.querySelector('.timeout-select') as HTMLSelectElement | null;
+    const saveBtn = document.querySelector('.btn-save-sm-orange') as HTMLButtonElement | null;
+    if (timeoutSelect && saveBtn) {
+      timeoutSelect.addEventListener('change', updateAutoLogoutTimeout);
+      saveBtn.addEventListener('click', updateAutoLogoutTimeout);
+    }
+  });
 
   const logoInput = document.getElementById('logo-upload-input');
   const previewImg = document.getElementById('logo-preview-img');

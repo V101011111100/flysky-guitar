@@ -74,9 +74,11 @@ import Footer from '../components/Footer.astro';
                     name="phone"
                     type="tel"
                     required
+                    pattern="^(0|\+84)[3-9][0-9]{8}$"
                     placeholder="0901 234 567"
                     class="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-3 text-white placeholder-text-muted text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
                   />
+                  <p class="text-text-muted text-xs mt-1">Format: 0901234567 hoặc +84901234567</p>
                 </div>
               </div>
 
@@ -86,9 +88,11 @@ import Footer from '../components/Footer.astro';
                   id="email"
                   name="email"
                   type="email"
+                  pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
                   placeholder="email@example.com"
                   class="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-3 text-white placeholder-text-muted text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
                 />
+                <p class="text-text-muted text-xs mt-1">Format: email@domain.com</p>
               </div>
 
               <div>
@@ -98,9 +102,11 @@ import Footer from '../components/Footer.astro';
                   name="address"
                   type="text"
                   required
+                  pattern="^[\d\s]*[^\d]+[\s\S]*$"
                   placeholder="123 Đường Lê Lợi, Quận 1, TP. Hồ Chí Minh"
                   class="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-3 text-white placeholder-text-muted text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
                 />
+                <p class="text-text-muted text-xs mt-1">Format: Số nhà + Tên đường, Quận/Huyện, Tỉnh/TP</p>
               </div>
 
               <div>
@@ -119,14 +125,14 @@ import Footer from '../components/Footer.astro';
                 <label class="block text-sm font-semibold text-white/80 mb-3">Phương thức thanh toán</label>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {[
-                    { id: 'bank', icon: 'account_balance', label: 'Chuyển khoản ngân hàng' },
+                    { id: 'bank', icon: 'account_balance', label: 'Chuyển khoản / Visa / MoMo' },
                     { id: 'cash', icon: 'payments', label: 'Tiền mặt khi nhận hàng' },
                     { id: 'installment', icon: 'credit_score', label: 'Trả góp 0%' },
                   ].map((m, i) => (
-                    <label class={`payment-method flex items-center gap-3 bg-background-dark border-2 rounded-xl px-4 py-3 cursor-pointer transition-all ${i === 0 ? 'border-primary bg-primary/5' : 'border-border-dark hover:border-border-dark/80'}`}>
-                      <input type="radio" name="payment" value={m.id} checked={i === 0} class="sr-only" />
-                      <span class={`material-symbols-outlined text-[20px] ${i === 0 ? 'text-primary' : 'text-text-muted'}`}>{m.icon}</span>
-                      <span class={`text-xs font-semibold leading-tight ${i === 0 ? 'text-white' : 'text-text-muted'}`}>{m.label}</span>
+                    <label class="payment-method flex items-center gap-3 bg-background-dark border-2 rounded-xl px-4 py-3 cursor-pointer transition-all border-border-dark hover:border-border-dark/80">
+                      <input type="radio" name="payment" value={m.id} class="sr-only" />
+                      <span class="material-symbols-outlined text-[20px] text-text-muted">{m.icon}</span>
+                      <span class="text-xs font-semibold leading-tight text-text-muted">{m.label}</span>
                     </label>
                   ))}
                 </div>
@@ -152,10 +158,36 @@ import Footer from '../components/Footer.astro';
           <div class="bg-card-dark border border-border-dark rounded-2xl p-6 lg:sticky lg:top-24">
             <h2 class="text-white font-bold text-lg mb-5">Tóm tắt yêu cầu</h2>
 
+            <!-- Discount Code Section -->
+            <div class="mb-5">
+              <div class="flex gap-2">
+                <div class="flex-1 relative">
+                  <input
+                    id="discount-code"
+                    type="text"
+                    placeholder="Nhập mã giảm giá"
+                    class="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-3 text-white placeholder-text-muted text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all pr-24"
+                  />
+                  <button
+                    id="apply-discount"
+                    type="button"
+                    class="absolute right-2 top-1/2 -translate-y-1/2 bg-primary hover:bg-primary/90 text-background-dark font-semibold px-3 py-2 rounded-lg text-xs transition-all"
+                  >
+                    Áp dụng
+                  </button>
+                </div>
+              </div>
+              <div id="discount-message" class="mt-2 text-xs hidden"></div>
+            </div>
+
             <div class="flex flex-col gap-3 text-sm mb-5">
               <div class="flex justify-between">
                 <span class="text-text-muted">Giá tham khảo</span>
                 <span class="text-white font-semibold" id="summary-subtotal">—</span>
+              </div>
+              <div id="discount-row" class="flex justify-between hidden">
+                <span class="text-green-400 font-semibold">Giảm giá</span>
+                <span class="text-green-400 font-semibold" id="summary-discount">—</span>
               </div>
               <div class="flex justify-between">
                 <span class="text-text-muted">Vận chuyển</span>
@@ -213,9 +245,12 @@ import Footer from '../components/Footer.astro';
 <script>
   import { getCart, removeFromCart, updateQuantity, formatPrice, getCartTotal, clearCart } from '../lib/cart';
 
+  // Discount state
+  let appliedDiscount = { code: '', amount: 0, type: 'fixed' }; // type: 'fixed' or 'percentage'
+
   function renderCart() {
     const cart = getCart();
-    const total = getCartTotal();
+    let total = getCartTotal();
 
     const emptyEl = document.getElementById('cart-empty')!;
     const contentEl = document.getElementById('cart-content')!;
@@ -223,6 +258,8 @@ import Footer from '../components/Footer.astro';
     const countLabel = document.getElementById('cart-count-label')!;
     const subtotalEl = document.getElementById('summary-subtotal')!;
     const totalEl = document.getElementById('summary-total')!;
+    const discountRow = document.getElementById('discount-row')!;
+    const discountEl = document.getElementById('summary-discount')!;
 
     if (cart.length === 0) {
       emptyEl.classList.remove('hidden');
@@ -235,8 +272,33 @@ import Footer from '../components/Footer.astro';
 
     const totalItems = cart.reduce((s, c) => s + c.quantity, 0);
     countLabel.textContent = `${totalItems} sản phẩm`;
-    subtotalEl.textContent = formatPrice(total);
-    totalEl.textContent = formatPrice(total);
+    
+    const subtotal = total;
+    subtotalEl.textContent = formatPrice(subtotal);
+
+    // Apply discount if any
+    let discountAmount = 0;
+    if (appliedDiscount.code) {
+      if (appliedDiscount.type === 'percentage') {
+        discountAmount = subtotal * (appliedDiscount.amount / 100);
+      } else {
+        discountAmount = appliedDiscount.amount;
+      }
+      // Don't allow discount to exceed subtotal
+      discountAmount = Math.min(discountAmount, subtotal);
+    }
+
+    const finalTotal = subtotal - discountAmount;
+    
+    // Update discount display
+    if (appliedDiscount.code) {
+      discountRow.classList.remove('hidden');
+      discountEl.textContent = `-${formatPrice(discountAmount)}`;
+    } else {
+      discountRow.classList.add('hidden');
+    }
+
+    totalEl.textContent = formatPrice(finalTotal);
 
     listEl.innerHTML = cart.map((item) => `
       <div class="flex items-center gap-4 px-6 py-5" data-id="${item.id}">
@@ -282,6 +344,100 @@ import Footer from '../components/Footer.astro';
     });
   }
 
+  // Real-time validation
+  function validateField(field: HTMLInputElement): { isValid: boolean; message: string } {
+    const value = field.value.trim();
+    const fieldId = field.id;
+    
+    switch (fieldId) {
+      case 'phone':
+        const phonePattern = /^(0|\+84)[3-9][0-9]{8}$/;
+        if (!value) {
+          return { isValid: false, message: 'Vui lòng nhập số điện thoại' };
+        }
+        if (!phonePattern.test(value)) {
+          return { isValid: false, message: 'Số điện thoại không hợp lệ. Format: 0901234567 hoặc +84901234567' };
+        }
+        return { isValid: true, message: '' };
+        
+      case 'email':
+        const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (value && !emailPattern.test(value)) {
+          return { isValid: false, message: 'Email không hợp lệ. Format: email@domain.com' };
+        }
+        return { isValid: true, message: '' };
+        
+      case 'address':
+        const addressPattern = /^[\d\s]*[^\d]+[\s\S]*$/;
+        if (!value) {
+          return { isValid: false, message: 'Vui lòng nhập địa chỉ giao hàng' };
+        }
+        if (!addressPattern.test(value)) {
+          return { isValid: false, message: 'Địa chỉ không hợp lệ. Format: Số nhà + Tên đường, Quận/Huyện, Tỉnh/TP' };
+        }
+        if (value.length < 10) {
+          return { isValid: false, message: 'Địa chỉ quá ngắn, vui lòng nhập đầy đủ thông tin' };
+        }
+        return { isValid: true, message: '' };
+        
+      default:
+        return { isValid: true, message: '' };
+    }
+  }
+
+  function showFieldError(field: HTMLInputElement, message: string) {
+    field.classList.add('border-red-500', 'ring-2', 'ring-red-500');
+    
+    // Find or create error message element
+    let errorEl = field.parentNode?.querySelector('.field-error') as HTMLElement;
+    if (!errorEl) {
+      errorEl = document.createElement('p');
+      errorEl.className = 'field-error text-red-400 text-xs mt-1';
+      field.parentNode?.insertBefore(errorEl, field.nextSibling);
+    }
+    errorEl.textContent = message;
+  }
+
+  function clearFieldError(field: HTMLInputElement) {
+    field.classList.remove('border-red-500', 'ring-2', 'ring-red-500');
+    const errorEl = field.parentNode?.querySelector('.field-error') as HTMLElement;
+    if (errorEl) {
+      errorEl.remove();
+    }
+  }
+
+  // Add real-time validation listeners
+  const phoneField = document.getElementById('phone') as HTMLInputElement;
+  const emailField = document.getElementById('email') as HTMLInputElement;
+  const addressField = document.getElementById('address') as HTMLInputElement;
+
+  phoneField?.addEventListener('input', () => {
+    const validation = validateField(phoneField);
+    if (validation.isValid) {
+      clearFieldError(phoneField);
+    } else {
+      showFieldError(phoneField, validation.message);
+    }
+  });
+
+  emailField?.addEventListener('input', () => {
+    const validation = validateField(emailField);
+    if (validation.isValid) {
+      clearFieldError(emailField);
+    } else {
+      showFieldError(emailField, validation.message);
+    }
+  });
+
+  addressField?.addEventListener('input', () => {
+    const validation = validateField(addressField);
+    if (validation.isValid) {
+      clearFieldError(addressField);
+    } else {
+      showFieldError(addressField, validation.message);
+    }
+  });
+
   // Payment method selection
   document.querySelectorAll<HTMLInputElement>('input[name="payment"]').forEach((radio) => {
     radio.addEventListener('change', () => {
@@ -301,6 +457,99 @@ import Footer from '../components/Footer.astro';
     });
   });
 
+  // Discount code application
+  const discountInput = document.getElementById('discount-code') as HTMLInputElement;
+  const applyBtn = document.getElementById('apply-discount') as HTMLButtonElement;
+  const discountMessage = document.getElementById('discount-message')!;
+
+  // Sample discount codes (in real app, these would come from API/database)
+  const validDiscounts: { [key: string]: { amount: number; type: string; description: string } } = {
+    'FLY10': { amount: 10, type: 'percentage', description: 'Giảm 10%' },
+    'FLY100': { amount: 100000, type: 'fixed', description: 'Giảm 100,000đ' },
+    'FLY200': { amount: 200000, type: 'fixed', description: 'Giảm 200,000đ' },
+    'WELCOME': { amount: 15, type: 'percentage', description: 'Giảm 15% cho khách hàng mới' },
+  };
+
+  function showDiscountMessage(message: string, isError: boolean = false) {
+    discountMessage.textContent = message;
+    discountMessage.classList.remove('hidden', 'text-red-400', 'text-green-400');
+    discountMessage.classList.add(isError ? 'text-red-400' : 'text-green-400');
+    
+    // Auto hide after 3 seconds
+    setTimeout(() => {
+      discountMessage.classList.add('hidden');
+    }, 3000);
+  }
+
+  function applyDiscount() {
+    const code = discountInput.value.trim().toUpperCase();
+    
+    if (!code) {
+      showDiscountMessage('Vui lòng nhập mã giảm giá', true);
+      return;
+    }
+
+    if (appliedDiscount.code === code) {
+      showDiscountMessage('Mã giảm giá này đã được áp dụng', true);
+      return;
+    }
+
+    const discount = validDiscounts[code];
+    if (!discount) {
+      showDiscountMessage('Mã giảm giá không hợp lệ', true);
+      return;
+    }
+
+    // Apply discount
+    appliedDiscount = {
+      code: code,
+      amount: discount.amount,
+      type: discount.type
+    };
+
+    // Update UI
+    discountInput.value = code;
+    discountInput.disabled = true;
+    applyBtn.textContent = 'Đã áp dụng';
+    applyBtn.disabled = true;
+    applyBtn.classList.remove('bg-primary', 'hover:bg-primary/90');
+    applyBtn.classList.add('bg-green-600', 'cursor-not-allowed');
+    
+    showDiscountMessage(`Đã áp dụng ${discount.description}`, false);
+    renderCart();
+  }
+
+  function removeDiscount() {
+    appliedDiscount = { code: '', amount: 0, type: 'fixed' };
+    
+    // Reset UI
+    discountInput.value = '';
+    discountInput.disabled = false;
+    applyBtn.textContent = 'Áp dụng';
+    applyBtn.disabled = false;
+    applyBtn.classList.remove('bg-green-600', 'cursor-not-allowed');
+    applyBtn.classList.add('bg-primary', 'hover:bg-primary/90');
+    
+    renderCart();
+  }
+
+  applyBtn?.addEventListener('click', applyDiscount);
+  
+  // Allow Enter key to apply discount
+  discountInput?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' && !discountInput.disabled) {
+      applyDiscount();
+    }
+  });
+
+  // Double-click on applied discount to remove it
+  discountInput?.addEventListener('dblclick', () => {
+    if (discountInput.disabled) {
+      removeDiscount();
+      showDiscountMessage('Đã xóa mã giảm giá', false);
+    }
+  });
+
   // Submit
   const btn = document.getElementById('btn-submit') as HTMLButtonElement;
   btn?.addEventListener('click', async () => {
@@ -310,9 +559,17 @@ import Footer from '../components/Footer.astro';
     const email = (document.getElementById('email') as HTMLInputElement).value.trim();
     const note = (document.getElementById('note') as HTMLTextAreaElement).value.trim();
     const paymentRadio = document.querySelector<HTMLInputElement>('input[name="payment"]:checked');
-    const payment_method = paymentRadio?.value || 'bank';
+    const payment_method = paymentRadio?.value;
 
-    if (!name || !phone || !address) {
+    if (!name || !phone || !address || !payment_method) {
+      if (!payment_method) {
+        const pmContainer = document.querySelector('.payment-method')?.parentElement;
+        if (pmContainer) {
+          pmContainer.classList.add('ring-2', 'ring-red-500', 'rounded-xl', 'p-2');
+          setTimeout(() => pmContainer.classList.remove('ring-2', 'ring-red-500', 'rounded-xl', 'p-2'), 2000);
+        }
+        alert('Vui lòng chọn phương thức thanh toán.');
+      }
       [document.getElementById('full-name'), document.getElementById('phone'), document.getElementById('address')].forEach(el => {
         if (el && !(el as HTMLInputElement).value.trim()) {
           el.classList.add('ring-2', 'ring-red-500', 'border-red-500');
@@ -322,8 +579,27 @@ import Footer from '../components/Footer.astro';
       return;
     }
 
+    let finalNote = note;
+    if (payment_method === 'cash') {
+       finalNote = finalNote ? `${finalNote}\n\n[Phương thức thanh toán: Tiền mặt khi nhận hàng]` : `[Phương thức thanh toán: Tiền mặt khi nhận hàng]`;
+    } else if (payment_method === 'installment') {
+       finalNote = finalNote ? `${finalNote}\n\n[Phương thức thanh toán: Trả góp 0%]` : `[Phương thức thanh toán: Trả góp 0%]`;
+    }
+
     const cart = getCart();
-    const total = getCartTotal();
+    const subtotal = getCartTotal();
+    
+    // Calculate final total with discount
+    let discountAmount = 0;
+    if (appliedDiscount.code) {
+      if (appliedDiscount.type === 'percentage') {
+        discountAmount = subtotal * (appliedDiscount.amount / 100);
+      } else {
+        discountAmount = appliedDiscount.amount;
+      }
+      discountAmount = Math.min(discountAmount, subtotal);
+    }
+    const total = subtotal - discountAmount;
 
     // Loading state
     btn.disabled = true;
@@ -338,8 +614,10 @@ import Footer from '../components/Footer.astro';
           customer_phone: phone,
           customer_email: email || null,
           customer_address: address,
-          note: note || null,
+          note: finalNote || null,
           payment_method,
+          discount_code: appliedDiscount.code || null,
+          discount_amount: discountAmount,
           items: cart.map(item => ({
             id: item.id,
             name: item.name,
@@ -358,12 +636,18 @@ import Footer from '../components/Footer.astro';
         // Store order info for success page
         sessionStorage.setItem('flysky_order', JSON.stringify({
           orderNum: data.order_number,
+          id: data.id,
           name, phone, email, address,
           cart,
           total,
         }));
         clearCart();
-        window.location.href = '/order-success';
+        
+        if (payment_method === 'bank') {
+          window.location.href = `/payment?order=${data.order_number}`;
+        } else {
+          window.location.href = '/order-success';
+        }
       } else {
         throw new Error(data.error || 'Lỗi không xác định');
       }

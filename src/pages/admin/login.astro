@@ -1,5 +1,6 @@
 ---
 import { supabase } from '../../lib/supabase';
+import { SessionManager } from '../../lib/session-manager';
 
 const accessToken = Astro.cookies.get("sb-access-token");
 const refreshToken = Astro.cookies.get("sb-refresh-token");
@@ -27,6 +28,7 @@ if (Astro.request.method === "POST") {
     const data = await Astro.request.formData();
     const email = data.get("email")?.toString();
     const password = data.get("password")?.toString();
+    const rememberMe = data.get("remember")?.toString() === "on";
 
     if (email && password) {
       const { data: authData, error } = await supabase.auth.signInWithPassword({
@@ -36,18 +38,50 @@ if (Astro.request.method === "POST") {
 
       if (error) {
         errorMessage = error.message;
-      } else if (authData.session) {
+      } else if (authData.session && authData.user) {
+        // Set Supabase session cookies
         Astro.cookies.set("sb-access-token", authData.session.access_token, {
           path: "/",
           httpOnly: true,
-          secure: true,
+          sameSite: 'lax',
+          maxAge: rememberMe ? 30 * 24 * 60 * 60 : undefined, // 30 days if remember me
         });
         Astro.cookies.set("sb-refresh-token", authData.session.refresh_token, {
           path: "/",
           httpOnly: true,
-          secure: true,
+          sameSite: 'lax',
+          maxAge: rememberMe ? 30 * 24 * 60 * 60 : undefined, // 30 days if remember me
         });
+
+        // Lấy thông tin request để lưu session
+        const userAgent = Astro.request.headers.get("user-agent") || '';
+        const clientIP = Astro.request.headers.get("x-forwarded-for") || 
+                       Astro.request.headers.get("x-real-ip") || 
+                       '127.0.0.1';
+        
+        const deviceInfo = SessionManager.parseUserAgent(userAgent);
+
+        // Lưu session vào custom table nếu remember me được check
+        if (rememberMe) {
+          const sessionData = {
+            device_name: deviceInfo.deviceName,
+            device_type: deviceInfo.deviceType,
+            browser: deviceInfo.browser,
+            ip_address: clientIP,
+            location: 'TP. Hồ Chí Minh, VN', // Có dùng geolocation API nếu cần
+            user_agent: userAgent,
+            refresh_token: authData.session.refresh_token
+          };
+
+          const savedSession = await SessionManager.createSession(authData.user.id, sessionData);
+          if (savedSession) {
+            console.log('Session saved to database:', savedSession.id);
+          }
+        }
+
         return Astro.redirect("/admin");
+      } else {
+        errorMessage = "Vui lòng nhập Email và Mật khẩu.";
       }
     } else {
       errorMessage = "Vui lòng nhập Email và Mật khẩu.";

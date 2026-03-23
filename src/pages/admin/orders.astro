@@ -12,7 +12,7 @@ const PAGE_SIZE = 15;
 // Build query
 let query = supabase
   .from('orders')
-  .select('*', { count: 'exact' })
+  .select('*, items:order_items(*, product:products(name, gallery_images))', { count: 'exact' })
   .order('created_at', { ascending: false })
   .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
 
@@ -31,7 +31,27 @@ if (q) {
 const { data: ordersData, count, error } = await query;
 
 // Nếu bảng orders chưa tồn tại, error sẽ xuất hiện → hiện empty state
-const orders = ordersData || [];
+const orders = (ordersData || []).map((o: any) => ({
+  ...o,
+  items: (o.items || []).map((it: any) => {
+    let img = '/images/default-guitar.webp';
+    try {
+      if (it.product && it.product.gallery_images && it.product.gallery_images.length > 0) {
+        img = typeof it.product.gallery_images === 'string' 
+          ? JSON.parse(it.product.gallery_images)[0] 
+          : it.product.gallery_images[0];
+      }
+    } catch(e) {}
+    
+    return {
+      product_id: it.product_id,
+      price: it.price_at_time || 0,
+      quantity: it.quantity || 1,
+      name: it.product?.name || 'Sản phẩm không xác định',
+      image: img
+    };
+  })
+}));
 const totalOrders = count || 0;
 const totalPages = Math.ceil(totalOrders / PAGE_SIZE);
 
@@ -239,6 +259,9 @@ function fmtDate(d: string) {
                 </td>
                 <td class="date-col">{fmtDate(o.created_at)}</td>
                 <td class="action-col">
+                  <div class="hidden cus-note" style="display:none;">{o.note || ''}</div>
+                  <div class="hidden cus-pm" style="display:none;">{o.payment_method || ''}</div>
+                  <div class="hidden cus-items" style="display:none;">{JSON.stringify(o.items || [])}</div>
                   <button
                     class="act-btn btn-detail"
                     data-order-id={o.id}
@@ -375,10 +398,21 @@ function fmtDate(d: string) {
     const total = row.querySelector('.total-col')?.textContent || '';
     const date = row.querySelector('.date-col')?.textContent || '';
     const status = row.querySelector<HTMLSelectElement>('.status-select')?.value || '';
+    const note = row.querySelector('.cus-note')?.textContent || '';
+    const pm = row.querySelector('.cus-pm')?.textContent || '';
+    const itemsRaw = row.querySelector('.cus-items')?.textContent || '[]';
+    let items = [];
+    try { items = JSON.parse(itemsRaw); } catch(e){}
 
     const statusLabels: Record<string, string> = {
-      pending: 'Chờ xử lý', confirmed: 'Đã xác nhận',
-      shipping: 'Đang giao', done: 'Hoàn thành', cancelled: 'Đã hủy'
+      pending: 'Chờ xử lý', processing: 'Đang xử lý',
+      completed: 'Hoàn thành', cancelled: 'Đã hủy'
+    };
+
+    const pmLabels: Record<string, string> = {
+      bank: 'Chuyển khoản / VietQR',
+      cash: 'Tiền mặt khi nhận hàng',
+      installment: 'Trả góp 0%'
     };
 
     drawerOrderCode.textContent = orderNum;
@@ -396,8 +430,26 @@ function fmtDate(d: string) {
         <div class="detail-card">
           <div class="detail-row"><span>Mã đơn</span><strong>${orderNum}</strong></div>
           <div class="detail-row"><span>Ngày tạo</span><strong>${date}</strong></div>
+          <div class="detail-row"><span>Hình thức TT</span><strong>${pmLabels[pm] || pm}</strong></div>
           <div class="detail-row"><span>Giá trị</span><strong style="color:#f48c25;">${total}</strong></div>
           <div class="detail-row"><span>Trạng thái</span><strong>${statusLabels[status] || status}</strong></div>
+          ${note ? `<div class="detail-row" style="flex-direction: column; align-items: flex-start; gap: 4px;"><span>Ghi chú</span><strong style="line-height: 1.4; white-space: pre-wrap;">${note}</strong></div>` : ''}
+        </div>
+      </section>
+      <section class="drawer-section">
+        <h4 class="detail-section-title">Sản phẩm đã mua</h4>
+        <div class="detail-card" style="display:flex; flex-direction:column; gap:12px;">
+          ${items.map((it: any) => `
+             <div style="display:flex; gap:12px; align-items:center;">
+                <img src="${it.image || '/images/default-guitar.webp'}" style="width:40px;height:40px;border-radius:6px;object-fit:cover; background:#221910;" />
+                <div style="flex:1;">
+                   <div style="font-size:13.5px; font-weight:700; color:#f9fafb; line-height:1.2; margin-bottom:4px;">${it.name}</div>
+                   <div style="font-size:11px; font-weight:600; color:#f48c25;">
+                     SL: ${it.quantity || 1} <span style="color:#64748b; margin:0 4px;">x</span> ${new Intl.NumberFormat('vi-VN', {style:'currency',currency:'VND'}).format(it.price || 0)}
+                   </div>
+                </div>
+             </div>
+          `).join('<div style="height:1px; background:rgba(74,58,42,.5); margin:4px 0;"></div>')}
         </div>
       </section>
     `;
@@ -839,19 +891,24 @@ function fmtDate(d: string) {
     color: #e5e7eb;
   }
 
-  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-  @media (max-width: 480px) { .detail-grid { grid-template-columns: 1fr; } }
-  .detail-section-title {
+  :global(.detail-grid) { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 480px) { :global(.detail-grid) { grid-template-columns: 1fr; } }
+  :global(.drawer-section) { margin-bottom: 24px; }
+  :global(.detail-section-title) {
     font-size: 11px; font-weight: 700; text-transform: uppercase;
     letter-spacing: .1em; color: rgba(244,140,37,.6); margin-bottom: 12px;
   }
-  .detail-row {
+  :global(.detail-card) {
+    background: rgba(45,34,24,.4); border: 1px solid #4a3a2a; border-radius: 12px; padding: 12px 16px;
+  }
+  :global(.detail-row) {
     display: flex; justify-content: space-between; align-items: center;
     padding: 8px 0; border-bottom: 1px solid rgba(74,58,42,.4);
     font-size: 13px;
   }
-  .detail-row span { color: #64748b; }
-  .detail-row strong { color: #f1f5f9; font-weight: 600; }
+  :global(.detail-row:last-child) { border-bottom: none; }
+  :global(.detail-row span) { color: #64748b; }
+  :global(.detail-row strong) { color: #f1f5f9; font-weight: 600; text-align: right; }
 
   /* ── TOAST ── */
   .ord-toast {

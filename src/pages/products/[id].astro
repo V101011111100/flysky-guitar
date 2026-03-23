@@ -25,6 +25,28 @@ const { data: dbRelated } = await supabase
   .neq('id', dbProduct.id)
   .limit(3);
 
+// Lấy danh sách đánh giá
+const { data: dbReviews, error: _revErr } = await supabase
+  .from('reviews')
+  .select('*')
+  .eq('product_id', dbProduct.id)
+  .eq('status', 'approved')
+  .order('created_at', { ascending: false });
+
+const reviews = dbReviews || [];
+const totalReviews = reviews.length;
+const averageRating = totalReviews > 0 ? (reviews.reduce((acc, r) => acc + r.rating, 0) / totalReviews) : 0;
+
+// Thống kê sao
+const starCounts = [0, 0, 0, 0, 0, 0];
+reviews.forEach(r => {
+  starCounts[r.rating] = (starCounts[r.rating] || 0) + 1;
+});
+const ratingStats = [5, 4, 3, 2, 1].map(stars => ({
+  stars,
+  pct: totalReviews > 0 ? Math.round((starCounts[stars] / totalReviews) * 100) : 0
+}));
+
 const product = {
   id: dbProduct.slug,
   name: dbProduct.name,
@@ -37,8 +59,8 @@ const product = {
     (dbProduct.gallery_images && dbProduct.gallery_images.length > 0) ? dbProduct.gallery_images[0] : '/images/default-guitar.webp',
     ...(Array.isArray(dbProduct.gallery_images) ? dbProduct.gallery_images.slice(1) : [])
   ],
-  rating: 5,
-  reviews: Math.floor(Math.random() * 50) + 10,
+  rating: averageRating,
+  reviews: totalReviews,
   badge: dbProduct.is_featured ? 'Nổi bật' : (dbProduct.status === 'out_of_stock' ? 'Hết hàng' : null),
   features: [
     'Chất liệu được chọn lọc kỹ càng',
@@ -144,13 +166,13 @@ const related = (dbRelated || []).map(rp => ({
             <div class="flex items-center gap-0.5">
               {Array.from({ length: 5 }).map((_, i) => (
                 <span
-                  class={`material-symbols-outlined text-[18px] ${i < product.rating ? 'text-primary' : 'text-border-dark'}`}
+                  class={`material-symbols-outlined text-[18px] ${i < Math.round(product.rating) ? 'text-primary' : 'text-border-dark'}`}
                   style="font-variation-settings: 'FILL' 1"
                 >star</span>
               ))}
             </div>
-            <span class="text-white font-semibold text-sm">{product.rating}.0</span>
-            <span class="text-text-muted text-sm">({product.reviews} đánh giá)</span>
+            <span class="text-white font-semibold text-sm">{product.rating.toFixed(1)}</span>
+            <span class="text-text-muted text-sm cursor-pointer hover:underline" onclick="document.querySelector('[data-tab=\\'reviews\\']').click(); document.getElementById('tab-reviews').scrollIntoView({behavior: 'smooth'})">({product.reviews} đánh giá)</span>
           </div>
 
           <!-- Price -->
@@ -278,22 +300,16 @@ const related = (dbRelated || []).map(rp => ({
       <div id="tab-reviews" class="tab-content hidden">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
           <!-- Rating summary -->
-          <div class="bg-card-dark rounded-2xl border border-border-dark p-8 text-center">
-            <div class="text-primary text-6xl font-extrabold">{(product.rating * 0.96).toFixed(1)}</div>
+          <div class="bg-card-dark rounded-2xl border border-border-dark p-8 text-center flex flex-col">
+            <div class="text-primary text-6xl font-extrabold">{product.rating.toFixed(1)}</div>
             <div class="flex justify-center gap-1 my-3">
               {Array.from({ length: 5 }).map((_, i) => (
-                <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1">star</span>
+                <span class={`material-symbols-outlined ${i < Math.round(product.rating) ? 'text-primary' : 'text-border-dark'}`} style="font-variation-settings: 'FILL' 1">star</span>
               ))}
             </div>
             <p class="text-text-muted text-sm">Dựa trên {product.reviews} đánh giá</p>
-            <div class="mt-6 flex flex-col gap-2 text-left">
-              {[
-                { stars: 5, pct: 78 },
-                { stars: 4, pct: 15 },
-                { stars: 3, pct: 4 },
-                { stars: 2, pct: 2 },
-                { stars: 1, pct: 1 },
-              ].map((row) => (
+            <div class="mt-6 flex flex-col gap-2 text-left mb-8">
+              {ratingStats.map((row) => (
                 <div class="flex items-center gap-2 text-xs text-text-muted">
                   <span class="w-3">{row.stars}</span>
                   <span class="material-symbols-outlined text-primary text-[12px]" style="font-variation-settings: 'FILL' 1">star</span>
@@ -304,27 +320,29 @@ const related = (dbRelated || []).map(rp => ({
                 </div>
               ))}
             </div>
+            <button id="btn-write-review" class="mt-auto bg-primary text-background-dark font-bold py-3 rounded-xl transition-all hover:-translate-y-1 hover:shadow-lg w-full">Viết đánh giá</button>
+            <p class="text-[10px] text-text-muted mt-2 mt-2 leading-relaxed">Chỉ khách hàng đã mua sản phẩm (được hệ thống nhận diện từ SĐT/Email lúc đặt hàng) mới có quyền đánh giá.</p>
           </div>
           <!-- Sample reviews -->
           <div class="md:col-span-2 flex flex-col gap-5">
-            {[
-              { name: 'Nguyễn Minh Tuấn', stars: 5, date: '15/01/2026', text: 'Tuyệt vời! Âm thanh ấm và rõ ràng hơn mong đợi. Chất lượng chế tác thủ công thực sự đỉnh cao. Tôi đã chơi nhiều loại đàn nhưng FlySky thực sự khác biệt.' },
-              { name: 'Trần Thị Thu Hà', stars: 5, date: '28/12/2025', text: 'Giao hàng nhanh, đóng gói kỹ. Cây đàn đẹp từ hình ảnh đến thực tế. Âm thanh cực kỳ trong sáng, cần đàn trơn tru dễ chơi. Xứng đáng với giá tiền!' },
-              { name: 'Lê Hoàng Nam', stars: 4, date: '10/12/2025', text: 'Nói chung là rất tốt. Âm thanh hay, thân đàn làm đẹp. Chỉ tiếc một điều là dây đàn mặc định không phải hàng cao cấp nhất nhưng đổi dây là ổn ngay.' },
-            ].map((review) => (
+            {reviews.length === 0 ? (
+               <div class="bg-card-dark rounded-xl border border-border-dark p-12 text-center text-text-muted">
+                 Chưa có đánh giá nào cho sản phẩm này. Trở thành người đầu tiên!
+               </div>
+            ) : reviews.map((review) => (
               <div class="bg-card-dark rounded-xl border border-border-dark p-6">
                 <div class="flex items-start justify-between mb-3">
                   <div>
-                    <p class="text-white font-semibold">{review.name}</p>
-                    <p class="text-text-muted text-xs">{review.date}</p>
+                    <p class="text-white font-semibold">{review.reviewer_name}</p>
+                    <p class="text-text-muted text-xs">{new Date(review.created_at).toLocaleDateString('vi-VN')}</p>
                   </div>
                   <div class="flex gap-0.5">
                     {Array.from({ length: 5 }).map((_, i) => (
-                      <span class={`material-symbols-outlined text-[14px] ${i < review.stars ? 'text-primary' : 'text-border-dark'}`} style="font-variation-settings: 'FILL' 1">star</span>
+                      <span class={`material-symbols-outlined text-[14px] ${i < review.rating ? 'text-primary' : 'text-border-dark'}`} style="font-variation-settings: 'FILL' 1">star</span>
                     ))}
                   </div>
                 </div>
-                <p class="text-text-muted text-sm leading-relaxed">{review.text}</p>
+                <p class="text-text-muted text-sm leading-relaxed">{review.comment}</p>
               </div>
             ))}
           </div>
@@ -382,6 +400,54 @@ const related = (dbRelated || []).map(rp => ({
   )}
 
   <Footer />
+
+  <!-- Review Modal -->
+  <div id="review-modal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+    <div class="bg-background-dark border border-border-dark rounded-2xl w-full max-w-lg p-6 lg:p-8 transform scale-95 transition-transform duration-300" id="review-modal-content">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-white text-xl font-bold">Viết Đánh Giá</h3>
+        <button id="close-review-modal" class="text-text-muted hover:text-white transition-colors">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <form id="review-form" class="space-y-4">
+        <input type="hidden" id="rv-product-id" value={dbProduct.id} />
+        
+        <div class="flex flex-col gap-2 relative">
+          <label class="text-text-muted text-sm">Chất lượng sản phẩm <span class="text-red-500">*</span></label>
+          <div class="flex gap-1" id="star-rating">
+            {[1, 2, 3, 4, 5].map((s) => (
+              <button type="button" class="star-btn material-symbols-outlined text-border-dark text-3xl hover:-translate-y-1 transition-transform" data-rating={s} style="font-variation-settings: 'FILL' 1">star</button>
+            ))}
+          </div>
+          <input type="hidden" id="rv-rating" required />
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="flex flex-col gap-1">
+             <label class="text-text-muted text-sm">Tên của bạn <span class="text-red-500">*</span></label>
+             <input type="text" id="rv-name" required class="bg-card-dark border border-border-dark rounded-xl px-4 py-3 text-white outline-none focus:border-primary transition-colors" placeholder="Nguyễn Văn A" />
+          </div>
+          <div class="flex flex-col gap-1">
+             <label class="text-text-muted text-sm">SĐT / Email lúc đặt hàng <span class="text-red-500">*</span></label>
+             <input type="text" id="rv-contact" required class="bg-card-dark border border-border-dark rounded-xl px-4 py-3 text-white outline-none focus:border-primary transition-colors" placeholder="0901234567" />
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-1">
+           <label class="text-text-muted text-sm">Nội dung đánh giá</label>
+           <textarea id="rv-comment" rows="4" class="bg-card-dark border border-border-dark rounded-xl px-4 py-3 text-white outline-none focus:border-primary transition-colors resize-none" placeholder="Chia sẻ cảm nhận của bạn về sản phẩm này..."></textarea>
+        </div>
+
+        <div id="review-alert" class="hidden rounded-xl p-3 text-sm"></div>
+
+        <button type="submit" id="rv-submit-btn" class="w-full bg-primary hover:bg-primary/90 text-background-dark font-bold py-3.5 rounded-xl transition-colors flex justify-center items-center gap-2">
+           Gửi đánh giá
+        </button>
+      </form>
+    </div>
+  </div>
 </Layout>
 
 <script>
@@ -447,15 +513,107 @@ const related = (dbRelated || []).map(rp => ({
       image: productImage,
     });
 
-    // UI feedback
-    const orig = cartBtn.innerHTML;
-    cartBtn.innerHTML = '<span class="material-symbols-outlined">check</span> Đã thêm! <a href="/cart" class="underline ml-1 font-extrabold">Xem giỏ →</a>';
-    cartBtn.classList.add('bg-green-600');
-    cartBtn.classList.remove('bg-primary');
     setTimeout(() => {
       cartBtn.innerHTML = orig;
       cartBtn.classList.remove('bg-green-600');
       cartBtn.classList.add('bg-primary');
     }, 3000);
   });
+
+  // Review Modal Logic
+  const rvModal = document.getElementById('review-modal');
+  const rvModalContent = document.getElementById('review-modal-content');
+  const rvBtn = document.getElementById('btn-write-review');
+  const rvCloseBtn = document.getElementById('close-review-modal');
+  
+  const toggleModal = (show: boolean) => {
+    if (show) {
+      rvModal?.classList.remove('opacity-0', 'pointer-events-none');
+      rvModalContent?.classList.remove('scale-95');
+    } else {
+      rvModal?.classList.add('opacity-0', 'pointer-events-none');
+      rvModalContent?.classList.add('scale-95');
+    }
+  };
+
+  rvBtn?.addEventListener('click', () => toggleModal(true));
+  rvCloseBtn?.addEventListener('click', () => toggleModal(false));
+  rvModal?.addEventListener('click', (e) => {
+    if (e.target === rvModal) toggleModal(false);
+  });
+
+  // Star Rating Logic
+  const starBtns = document.querySelectorAll<HTMLButtonElement>('.star-btn');
+  const rvRatingInput = document.getElementById('rv-rating') as HTMLInputElement;
+
+  starBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const rating = Number(btn.dataset.rating);
+      rvRatingInput.value = rating.toString();
+      starBtns.forEach(b => {
+        const bRating = Number(b.dataset.rating);
+        b.classList.toggle('text-primary', bRating <= rating);
+        b.classList.toggle('text-border-dark', bRating > rating);
+      });
+    });
+  });
+
+  // Form Submit Logic
+  const rvForm = document.getElementById('review-form') as HTMLFormElement;
+  const rvAlert = document.getElementById('review-alert');
+  const rvSubmitBtn = document.getElementById('rv-submit-btn') as HTMLButtonElement;
+
+  function showAlert(msg: string, type: 'error'|'success') {
+    if(!rvAlert) return;
+    rvAlert.className = `rounded-xl p-3 text-sm mb-4 ${type === 'error' ? 'bg-red-500/10 border border-red-500/20 text-red-500' : 'bg-green-500/10 border border-green-500/20 text-green-500'}`;
+    rvAlert.textContent = msg;
+    rvAlert.classList.remove('hidden');
+  }
+
+  rvForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if(!rvAlert || !rvSubmitBtn || !rvRatingInput) return;
+    
+    if (!rvRatingInput.value) {
+      showAlert('Vui lòng chọn số sao đánh giá.', 'error');
+      return;
+    }
+
+    rvAlert.classList.add('hidden');
+    rvSubmitBtn.disabled = true;
+    rvSubmitBtn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Đang gửi...';
+
+    const productId = (document.getElementById('rv-product-id') as HTMLInputElement).value;
+    const reviewerName = (document.getElementById('rv-name') as HTMLInputElement).value;
+    const reviewerContact = (document.getElementById('rv-contact') as HTMLInputElement).value;
+    const comment = (document.getElementById('rv-comment') as HTMLTextAreaElement).value;
+
+    try {
+      const res = await fetch('/api/reviews/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId, rating: rvRatingInput.value, comment, reviewerName, reviewerContact })
+      });
+      const data = await res.json();
+      
+      if (!res.ok || data.error) throw new Error(data.error);
+      
+      showAlert(data.message, 'success');
+      rvForm.reset();
+      starBtns.forEach(b => {
+          b.classList.remove('text-primary');
+          b.classList.add('text-border-dark');
+      });
+      rvRatingInput.value = '';
+      
+      setTimeout(() => toggleModal(false), 3000);
+      
+    } catch (err: any) {
+      showAlert(err.message || 'Lỗi hệ thống', 'error');
+    } finally {
+      rvSubmitBtn.disabled = false;
+      rvSubmitBtn.innerHTML = 'Gửi đánh giá';
+    }
+  });
+
 </script>

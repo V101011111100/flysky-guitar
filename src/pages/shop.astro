@@ -14,25 +14,31 @@ const categories = [
 // Lấy sản phẩm từ DB — chỉ hiển thị sản phẩm active & out_of_stock (không hiện draft)
 const { data: prodData } = await supabase
   .from('products')
-  .select(`*, categories(name, slug)`)
+  .select(`*, categories(name, slug), reviews(rating, status)`)
   .in('status', ['active', 'out_of_stock'])
   .order('is_featured', { ascending: false })
   .order('created_at', { ascending: false });
 
-const products = (prodData || []).map(p => ({
-  id: p.slug, // using slug as id for URL
-  category: p.categories?.slug || 'other',
-  categoryLabel: p.categories?.name || 'Khác',
-  name: p.name,
-  description: p.description ? (p.description.length > 100 ? p.description.substring(0, 100) + '...' : p.description) : 'Nhạc cụ chất lượng cao, chế tác tỉ mỉ.',
-  price: p.price,
-  priceFormatted: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p.price || 0),
-  image: (p.gallery_images && p.gallery_images.length > 0) ? p.gallery_images[0] : '/images/default-guitar.webp',
-  rating: 5,
-  reviews: Math.floor(Math.random() * 50) + 10,
-  inStock: p.status === 'active',
-  badge: p.is_featured ? 'Nổi bật' : (p.status === 'out_of_stock' ? 'Hết hàng' : null)
-}));
+const products = (prodData || []).map(p => {
+  const approvedReviews = p.reviews?.filter((r: any) => r.status === 'approved') || [];
+  const reviewCount = approvedReviews.length;
+  const avgRating = reviewCount > 0 ? (approvedReviews.reduce((acc: number, r: any) => acc + r.rating, 0) / reviewCount) : 0;
+
+  return {
+    id: p.slug, // using slug as id for URL
+    category: p.categories?.slug || 'other',
+    categoryLabel: p.categories?.name || 'Khác',
+    name: p.name,
+    description: p.description ? (p.description.length > 100 ? p.description.substring(0, 100) + '...' : p.description) : 'Nhạc cụ chất lượng cao, chế tác tỉ mỉ.',
+    price: p.price,
+    priceFormatted: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p.price || 0),
+    image: (p.gallery_images && p.gallery_images.length > 0) ? p.gallery_images[0] : '/images/default-guitar.webp',
+    rating: avgRating,
+    reviews: reviewCount,
+    inStock: p.status === 'active',
+    badge: p.is_featured ? 'Nổi bật' : (p.status === 'out_of_stock' ? 'Hết hàng' : null)
+  };
+});
 ---
 
 <Layout title="Cửa hàng Guitar | FlySky" description="Khám phá bộ sưu tập guitar điện, acoustic và bass cao cấp tại FlySky. Chất lượng thủ công, âm thanh đỉnh cao.">
@@ -118,7 +124,10 @@ const products = (prodData || []).map(p => ({
               <!-- Stars -->
               <div class="flex items-center gap-1 mt-1">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <span class={`material-symbols-outlined text-[14px] ${i < product.rating ? 'text-primary' : 'text-border-dark'}`} style="font-variation-settings: 'FILL' 1">star</span>
+                  <span
+                    class={`material-symbols-outlined text-[14px] ${i < Math.round(product.rating) ? 'text-primary' : 'text-border-dark'}`}
+                    style="font-variation-settings: 'FILL' 1"
+                  >star</span>
                 ))}
                 <span class="text-text-muted text-xs ml-1">({product.reviews})</span>
               </div>

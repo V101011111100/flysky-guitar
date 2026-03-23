@@ -1,0 +1,318 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+// Fetch tất cả reviews
+const { data: reviewsArray, error } = await supabase
+  .from('reviews')
+  .select(`
+    *,
+    products ( id, name, slug, gallery_images )
+  `)
+  .order('created_at', { ascending: false });
+
+const reviews = reviewsArray || [];
+
+// Thống kê
+const total = reviews.length;
+const pending = reviews.filter((r: any) => r.status === 'pending').length;
+const approved = reviews.filter((r: any) => r.status === 'approved').length;
+
+// Lấy danh sách sản phẩm để tiện viết Đánh giá Seed
+const { data: products } = await supabase
+  .from('products')
+  .select('id, name')
+  .order('name', { ascending: true });
+---
+
+<AdminLayout title="Quản lý Đánh giá" activeNav="reviews">
+  <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+    <div>
+      <h2 class="text-3xl font-extrabold tracking-tight text-white">Quản lý Đánh giá</h2>
+      <p class="text-slate-500 mt-1">Duyệt và kiểm soát các đánh giá sản phẩm từ khách hàng</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <button id="btn-seed-review" class="px-5 py-2.5 rounded-lg bg-primary text-background-dark font-bold text-sm hover:opacity-90 transition-opacity flex items-center gap-2 cursor-pointer border-none shadow-[0_4px_16px_rgba(244,140,37,0.25)]">
+        <span class="material-symbols-outlined text-[20px]">add_comment</span>
+        Tạo Đánh Giá
+      </button>
+    </div>
+  </header>
+
+  <!-- Stats -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-primary/5 border border-primary/10 rounded-xl p-6 relative overflow-hidden">
+      <div class="relative z-10">
+        <p class="text-slate-400 text-sm font-bold uppercase tracking-widest mb-1">Tổng cộng</p>
+        <p class="text-3xl font-black text-white">{total}</p>
+      </div>
+      <span class="material-symbols-outlined absolute -right-4 -bottom-4 text-7xl text-primary/5 select-none text-[80px]">forum</span>
+    </div>
+    <div class="bg-amber-500/5 border border-amber-500/10 rounded-xl p-6 relative overflow-hidden">
+      <div class="relative z-10">
+        <p class="text-amber-500/70 text-sm font-bold uppercase tracking-widest mb-1">Chờ duyệt</p>
+        <p class="text-3xl font-black text-amber-500">{pending}</p>
+      </div>
+    </div>
+    <div class="bg-emerald-500/5 border border-emerald-500/10 rounded-xl p-6 relative overflow-hidden">
+      <div class="relative z-10">
+        <p class="text-emerald-500/70 text-sm font-bold uppercase tracking-widest mb-1">Đã duyệt</p>
+        <p class="text-3xl font-black text-emerald-500">{approved}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reviews Table -->
+  <div class="bg-primary/5 border border-primary/10 rounded-xl overflow-hidden shadow-xl">
+     <div class="overflow-x-auto">
+      <table class="w-full text-left line-height-[1.5]">
+        <thead>
+          <tr class="border-b border-primary/10 bg-black/20">
+            <th class="py-4 px-6 text-[10px] font-bold uppercase tracking-wider text-slate-400">Khách Hàng</th>
+            <th class="py-4 px-6 text-[10px] font-bold uppercase tracking-wider text-slate-400">Sản Phẩm</th>
+            <th class="py-4 px-6 text-[10px] font-bold uppercase tracking-wider text-slate-400">Số Sao & Bình Luận</th>
+            <th class="py-4 px-6 text-[10px] font-bold uppercase tracking-wider text-slate-400 text-center">Trạng Thái</th>
+            <th class="py-4 px-6 text-[10px] font-bold uppercase tracking-wider text-slate-400 text-right">Hành Động</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-primary/5">
+          {reviews.length === 0 ? (
+            <tr>
+              <td colspan="5" class="py-12 text-center text-slate-500 text-sm">Chưa có đánh giá nào.</td>
+            </tr>
+          ) : reviews.map((rev: any) => (
+            <tr class="hover:bg-primary/5 transition-colors group">
+              <td class="py-4 px-6 align-top">
+                <p class="text-white font-bold text-sm mb-0.5">{rev.reviewer_name}</p>
+                <div class="flex items-center gap-1.5 text-xs text-slate-500">
+                  <span class="material-symbols-outlined text-[14px]">contact_mail</span>
+                  {rev.reviewer_contact}
+                </div>
+                <div class="text-[10px] text-slate-600 mt-1">{new Date(rev.created_at).toLocaleDateString('vi-VN')}</div>
+              </td>
+              <td class="py-4 px-6 align-top">
+                {rev.products ? (
+                  <div class="flex items-start gap-3">
+                    <img src={(rev.products.gallery_images && rev.products.gallery_images.length > 0) ? (typeof rev.products.gallery_images === 'string' ? JSON.parse(rev.products.gallery_images)[0] : rev.products.gallery_images[0]) : '/images/default-guitar.webp'} alt={rev.products.name} class="w-10 h-10 rounded border border-primary/20 object-cover bg-background-dark/80" />
+                    <div>
+                      <a href={`/products/${rev.products.slug}`} target="_blank" class="text-sm font-semibold text-primary hover:underline line-clamp-2 leading-tight">
+                        {rev.products.name}
+                      </a>
+                    </div>
+                  </div>
+                ) : (
+                  <span class="text-slate-500 italic text-sm">Sản phẩm bị xóa</span>
+                )}
+              </td>
+              <td class="py-4 px-6 align-top max-w-sm">
+                <div class="flex items-center gap-0.5 mb-2">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <span class={`material-symbols-outlined text-[14px] ${s <= rev.rating ? 'text-amber-400' : 'text-slate-700'}`} style="font-variation-settings: 'FILL' 1">star</span>
+                  ))}
+                  <span class="ml-2 text-xs font-bold text-white leading-none">{rev.rating}</span>
+                </div>
+                <p class="text-sm text-slate-300 line-clamp-3 leading-relaxed">{rev.comment}</p>
+              </td>
+              <td class="py-4 px-6 align-top text-center">
+                {rev.status === 'pending' ? (
+                  <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 uppercase tracking-wider">Chờ Duyệt</span>
+                ) : (
+                  <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 uppercase tracking-wider">Đã Duyệt</span>
+                )}
+              </td>
+              <td class="py-4 px-6 align-top text-right">
+                <div class="flex items-center justify-end gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
+                  {rev.status === 'pending' && (
+                    <button class="btn-approve px-3 py-1.5 rounded bg-emerald-500 text-white text-xs font-bold border-none cursor-pointer hover:bg-emerald-600 transition-colors flex items-center gap-1" data-id={rev.id}>
+                      <span class="material-symbols-outlined text-[14px]">check</span> Duyệt
+                    </button>
+                  )}
+                  <button class="btn-delete px-3 py-1.5 rounded bg-red-500/10 text-red-500 text-xs font-bold border-none cursor-pointer hover:bg-red-500 hover:text-white transition-colors flex items-center gap-1" data-id={rev.id}>
+                    <span class="material-symbols-outlined text-[14px]">delete</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+     </div>
+  </div>
+
+  <!-- Seed Review Modal -->
+  <div id="seed-modal" class="fixed inset-0 bg-black/80 z-[9999] flex justify-center items-center opacity-0 pointer-events-none transition-opacity duration-300">
+    <div class="bg-background-dark border border-primary/20 rounded-2xl w-full max-w-lg p-8 transform scale-95 transition-transform duration-300" id="seed-modal-content">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-white font-bold text-xl">Tạo Đánh Giá Trực Tiếp</h3>
+        <button id="close-seed-modal" class="text-slate-500 hover:text-white transition-colors bg-transparent border-none cursor-pointer">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <form id="seed-form" class="space-y-4">
+        <div>
+          <label class="text-xs font-bold uppercase tracking-widest text-primary/70 mb-2 block">Sản phẩm</label>
+          <select id="seed-product" required class="w-full bg-black/20 border border-primary/20 rounded-lg py-3 px-4 focus:ring-1 focus:ring-primary outline-none text-sm text-slate-200 cursor-pointer transition-colors">
+            <option value="">-- Chọn sản phẩm --</option>
+            {products?.map((p) => (
+              <option value={p.id}>{p.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label class="text-xs font-bold uppercase tracking-widest text-primary/70 mb-2 block">Tên người đánh giá</label>
+          <input type="text" id="seed-name" required class="w-full bg-black/20 border border-primary/20 rounded-lg py-3 px-4 focus:ring-1 focus:ring-primary outline-none text-sm text-slate-100 placeholder-slate-600 transition-colors" placeholder="Trần Trọng Nam" />
+        </div>
+
+        <!-- Mặc định admin review thì để "Khách hàng mua qua Admin" hoặc để trống (tùy ý), API vẫn pass vì có cookie Admin -->
+        <input type="hidden" id="seed-contact" value="admin-seed" />
+
+        <div>
+          <label class="text-xs font-bold uppercase tracking-widest text-primary/70 mb-2 block">Số Sao</label>
+          <div class="flex gap-1" id="seed-stars">
+             {[1, 2, 3, 4, 5].map((s) => (
+              <button type="button" class="seed-star-btn material-symbols-outlined text-border-dark text-3xl hover:-translate-y-1 transition-transform cursor-pointer bg-transparent border-none" data-rating={s} style="font-variation-settings: 'FILL' 1">star</button>
+             ))}
+          </div>
+          <input type="hidden" id="seed-rating" required />
+        </div>
+
+        <div>
+           <label class="text-xs font-bold uppercase tracking-widest text-primary/70 mb-2 block">Nội dung</label>
+           <textarea id="seed-comment" rows="4" class="w-full bg-black/20 border border-primary/20 rounded-lg p-4 focus:ring-1 focus:ring-primary outline-none text-sm text-slate-200 resize-none placeholder-slate-600 transition-colors" placeholder="Đàn mới mua đánh rất hay..."></textarea>
+        </div>
+
+        <button type="submit" id="btn-submit-seed" class="w-full bg-primary text-background-dark font-bold py-3 rounded-lg hover:opacity-90 transition-opacity border-none cursor-pointer mt-4">
+          Tạo Đánh Giá & Tự Động Duyệt
+        </button>
+      </form>
+    </div>
+  </div>
+
+</AdminLayout>
+
+<script>
+  // Actions: Approve / Delete
+  document.querySelectorAll('.btn-approve').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const id = (e.currentTarget as HTMLElement).dataset.id;
+      if (!id) return;
+      
+      const el = e.currentTarget as HTMLButtonElement;
+      el.disabled = true;
+      el.innerHTML = '<span class="material-symbols-outlined text-[14px] animate-spin">sync</span>';
+
+      try {
+        const res = await fetch('/api/admin/reviews/action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, action: 'approve' })
+        });
+        const data = await res.json();
+        if(res.ok && data.success) {
+          window.location.reload();
+        } else {
+          alert('Lỗi: ' + data.error);
+        }
+      } catch (err) {
+        alert('Lỗi hệ thống');
+      }
+    });
+  });
+
+  document.querySelectorAll('.btn-delete').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const id = (e.currentTarget as HTMLElement).dataset.id;
+      if (!id || !confirm('Bạn chắc chắn muốn XÓA đánh giá này?')) return;
+      
+      const el = e.currentTarget as HTMLButtonElement;
+      el.disabled = true;
+
+      try {
+        const res = await fetch('/api/admin/reviews/action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, action: 'delete' })
+        });
+        const data = await res.json();
+        if(res.ok && data.success) {
+          window.location.reload();
+        } else {
+          alert('Lỗi: ' + data.error);
+          el.disabled = false;
+        }
+      } catch (err) {
+        alert('Lỗi hệ thống');
+        el.disabled = false;
+      }
+    });
+  });
+
+  // Modals for Seed
+  const modal = document.getElementById('seed-modal');
+  const modalContent = document.getElementById('seed-modal-content');
+  
+  document.getElementById('btn-seed-review')?.addEventListener('click', () => {
+    modal?.classList.remove('opacity-0', 'pointer-events-none');
+    modalContent?.classList.remove('scale-95');
+  });
+
+  document.getElementById('close-seed-modal')?.addEventListener('click', () => {
+    modal?.classList.add('opacity-0', 'pointer-events-none');
+    modalContent?.classList.add('scale-95');
+  });
+
+  // Seed form stars
+  const starBtns = document.querySelectorAll('.seed-star-btn');
+  const ratingInput = document.getElementById('seed-rating') as HTMLInputElement;
+
+  starBtns.forEach((btn: any) => {
+    btn.addEventListener('click', () => {
+      const rating = Number(btn.dataset.rating);
+      ratingInput.value = rating.toString();
+      starBtns.forEach((b: any) => {
+        b.classList.toggle('text-amber-400', Number(b.dataset.rating) <= rating);
+        b.classList.toggle('text-border-dark', Number(b.dataset.rating) > rating);
+      });
+    });
+  });
+
+  // Seed form Submit
+  document.getElementById('seed-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if(!ratingInput.value) {
+      alert("Vui lòng chọn số sao");
+      return;
+    }
+    const btn = document.getElementById('btn-submit-seed') as HTMLButtonElement;
+    btn.disabled = true;
+    btn.innerHTML = 'Đang xử lý...';
+
+    const productId = (document.getElementById('seed-product') as HTMLSelectElement).value;
+    const reviewerName = (document.getElementById('seed-name') as HTMLInputElement).value;
+    const reviewerContact = (document.getElementById('seed-contact') as HTMLInputElement).value;
+    const comment = (document.getElementById('seed-comment') as HTMLTextAreaElement).value;
+
+    try {
+      const res = await fetch('/api/reviews/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId, rating: ratingInput.value, comment, reviewerName, reviewerContact })
+      });
+      const data = await res.json();
+      if(data.success) {
+         window.location.reload();
+      } else {
+        alert('Lỗi: ' + data.error);
+        btn.disabled = false;
+        btn.innerHTML = 'Tạo Đánh Giá & Tự Động Duyệt';
+      }
+    } catch (err) {
+      alert('Lỗi khi submit review');
+      btn.disabled = false;
+      btn.innerHTML = 'Tạo Đánh Giá & Tự Động Duyệt';
+    }
+  });
+
+</script>

@@ -1,4 +1,22 @@
 ---
+import { supabase } from '../lib/supabase';
+
+// Fetch social media settings from database
+const { data: settingsData } = await supabase
+  .from('site_settings')
+  .select('*');
+
+// Helper to get setting value
+const getSetting = (key: string, _default: string) => {
+  const item = settingsData?.find((s: any) => s.key === key);
+  return item ? item.value : _default;
+};
+
+// Social media links
+const zaloUrl = getSetting('flysky_zaloUrl', 'https://zalo.me/0987654321');
+const facebookUrl = getSetting('flysky_facebookUrl', 'https://facebook.com/flyskyguitar');
+const whatsappUrl = getSetting('flysky_whatsappUrl', 'https://wa.me/84987654321');
+const instagramUrl = getSetting('flysky_instagramUrl', 'https://instagram.com/flyskyguitar');
 ---
 
 <!-- ============================
@@ -116,27 +134,28 @@
   <!-- Chat toggle button "Gửi tin nhắn" -->
   <button
     id="chat-toggle"
-    class="flex items-center gap-2.5 bg-primary hover:bg-primary/90 text-background-dark font-bold text-sm
-           px-5 py-3 rounded-full shadow-lg transition-all duration-300 group
-           hover:shadow-[0_0_24px_rgba(244,140,37,0.6)] hover:scale-105 active:scale-95"
+    class="flex items-center justify-center w-10 h-10 bg-primary hover:bg-primary/90 text-background-dark font-bold text-sm
+           rounded-full shadow-lg transition-all duration-300 group
+           hover:shadow-[0_0_24px_rgba(244,140,37,0.6)] hover:scale-110 active:scale-95"
     style="box-shadow: 0 0 16px rgba(244,140,37,0.35);"
     aria-label="Gửi tin nhắn tư vấn"
   >
-    <span class="material-symbols-outlined text-[20px] group-hover:rotate-12 transition-transform" id="chat-icon">chat_bubble</span>
-    <span id="chat-label">Gửi tin nhắn</span>
+    <span class="material-symbols-outlined text-[18px] group-hover:rotate-12 transition-transform" id="chat-icon">chat_bubble</span>
   </button>
 
   <!-- Social links stack -->
   <div class="flex flex-col items-center gap-2" id="social-stack">
     {[
-      { label: 'Facebook', short: 'f', icon: 'groups', href: '#', color: 'hover:bg-[#1877F2]' },
-      { label: 'Instagram', short: 'ig', icon: 'photo_camera', href: '#', color: 'hover:bg-gradient-to-br hover:from-[#833ab4] hover:to-[#fd1d1d]' },
-      { label: 'YouTube', short: 'yt', icon: 'smart_display', href: '#', color: 'hover:bg-[#FF0000]' },
-      { label: 'TikTok', short: 'tt', icon: 'music_video', href: '#', color: 'hover:bg-black' },
+      { label: 'Zalo', short: 'za', icon: 'chat', href: zaloUrl, color: 'hover:bg-[#0068FF]' },
+      { label: 'Facebook', short: 'f', icon: 'groups', href: facebookUrl, color: 'hover:bg-[#1877F2]' },
+      { label: 'WhatsApp', short: 'wa', icon: 'send', href: whatsappUrl, color: 'hover:bg-[#25D366]' },
+      { label: 'Instagram', short: 'ig', icon: 'photo_camera', href: instagramUrl, color: 'hover:bg-gradient-to-br hover:from-[#833ab4] hover:to-[#fd1d1d]' },
     ].map((s, i) => (
       <a
         href={s.href}
         title={s.label}
+        target="_blank"
+        rel="noopener noreferrer"
         class={`social-btn w-10 h-10 rounded-full bg-card-dark border border-border-dark text-text-muted
                flex items-center justify-center transition-all duration-300 opacity-0
                hover:text-white hover:border-transparent hover:scale-110 hover:shadow-lg ${s.color}`}
@@ -192,7 +211,6 @@
   const panel = document.getElementById('chat-panel')!;
   const closeBtn = document.getElementById('close-chat')!;
   const chatIcon = document.getElementById('chat-icon')!;
-  const chatLabel = document.getElementById('chat-label')!;
   const form = document.getElementById('chat-form') as HTMLFormElement;
   const successEl = document.getElementById('chat-success')!;
 
@@ -202,14 +220,12 @@
     panel.classList.remove('hidden');
     requestAnimationFrame(() => panel.classList.add('visible'));
     chatIcon.textContent = 'close';
-    chatLabel.textContent = 'Đóng';
     isOpen = true;
   }
   function closeChat() {
     panel.classList.remove('visible');
     setTimeout(() => panel.classList.add('hidden'), 180);
     chatIcon.textContent = 'chat_bubble';
-    chatLabel.textContent = 'Gửi tin nhắn';
     isOpen = false;
   }
 
