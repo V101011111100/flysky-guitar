@@ -608,4 +608,8 @@ const outOfStock = items.filter(i => i.status === 'out').length;
   @media (max-width: 1100px) {
     .inv-stats { grid-template-columns: 1fr 1fr; }
   }
+  @media (max-width: 640px) {
+    .inv-stats { grid-template-columns: 1fr; gap: 12px; }
+    .inv-stat-card { padding: 16px; }
+  }
 </style>

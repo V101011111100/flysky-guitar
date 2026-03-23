@@ -80,11 +80,40 @@
           <span class="sr-only">Quản trị</span>
           <span class="absolute -bottom-10 right-0 hidden group-hover:block bg-card-dark border border-border-dark text-[10px] text-white px-2 py-1 rounded whitespace-nowrap">Quản trị</span>
         </a>
-        <button class="lg:hidden flex items-center justify-center rounded-lg size-10 text-white hover:bg-border-dark transition-colors">
+        <button class="lg:hidden flex items-center justify-center rounded-lg size-10 text-white hover:bg-border-dark transition-colors" id="mobile-menu-btn">
           <span class="material-symbols-outlined">menu</span>
         </button>
       </div>
     </div>
+  </div>
+
+  <!-- Mobile Menu -->
+  <div id="mobile-menu" class="lg:hidden fixed inset-0 z-50 pointer-events-none">
+    <div class="absolute inset-0 bg-black/60 opacity-0 transition-opacity duration-300" id="mobile-menu-overlay"></div>
+    <nav class="absolute right-0 top-0 h-full w-72 bg-background-dark border-l border-border-dark transform translate-x-full transition-transform duration-300 flex flex-col" id="mobile-menu-panel">
+      <div class="flex items-center justify-between p-4 border-b border-border-dark">
+        <h3 class="text-white font-bold text-lg">Menu</h3>
+        <button id="mobile-menu-close" class="text-white hover:text-primary transition-colors">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="flex-1 overflow-y-auto p-4">
+        <a href="/" class="block py-3 px-4 text-white hover:bg-border-dark/50 hover:text-primary rounded-lg transition-colors font-semibold">Trang chủ</a>
+        <a href="/shop" class="block py-3 px-4 text-white hover:bg-border-dark/50 hover:text-primary rounded-lg transition-colors font-semibold">Cửa hàng</a>
+        <a href="/about" class="block py-3 px-4 text-white hover:bg-border-dark/50 hover:text-primary rounded-lg transition-colors font-semibold">Câu chuyện thương hiệu</a>
+        <a href="/blog" class="block py-3 px-4 text-white hover:bg-border-dark/50 hover:text-primary rounded-lg transition-colors font-semibold">Blog</a>
+        <a href="/contact" class="block py-3 px-4 text-white hover:bg-border-dark/50 hover:text-primary rounded-lg transition-colors font-semibold">Liên hệ</a>
+        <div class="border-t border-border-dark my-4"></div>
+        <a href="/cart" class="block py-3 px-4 text-primary hover:bg-primary/10 rounded-lg transition-colors font-bold flex items-center gap-2">
+          <span class="material-symbols-outlined">shopping_cart</span>
+          Giỏ hàng
+        </a>
+        <a href="/admin/login" class="block py-3 px-4 text-text-muted hover:bg-border-dark/50 hover:text-white rounded-lg transition-colors font-semibold flex items-center gap-2">
+          <span class="material-symbols-outlined">admin_panel_settings</span>
+          Quản trị
+        </a>
+      </div>
+    </nav>
   </div>
 </header>
 
@@ -105,4 +134,33 @@
 
   updateBadge();
   window.addEventListener('cart-updated', updateBadge);
+
+  // Mobile menu toggle
+  const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+  const mobileMenu = document.getElementById('mobile-menu');
+  const mobileMenuOverlay = document.getElementById('mobile-menu-overlay');
+  const mobileMenuPanel = document.getElementById('mobile-menu-panel');
+  const mobileMenuClose = document.getElementById('mobile-menu-close');
+
+  function openMobileMenu() {
+    mobileMenu?.classList.remove('pointer-events-none');
+    mobileMenu?.classList.add('pointer-events-auto');
+    setTimeout(() => {
+      mobileMenuOverlay?.classList.remove('opacity-0');
+      mobileMenuPanel?.classList.remove('translate-x-full');
+    }, 10);
+  }
+
+  function closeMobileMenu() {
+    mobileMenuOverlay?.classList.add('opacity-0');
+    mobileMenuPanel?.classList.add('translate-x-full');
+    setTimeout(() => {
+      mobileMenu?.classList.add('pointer-events-none');
+      mobileMenu?.classList.remove('pointer-events-auto');
+    }, 300);
+  }
+
+  mobileMenuBtn?.addEventListener('click', openMobileMenu);
+  mobileMenuClose?.addEventListener('click', closeMobileMenu);
+  mobileMenuOverlay?.addEventListener('click', closeMobileMenu);
 </script>

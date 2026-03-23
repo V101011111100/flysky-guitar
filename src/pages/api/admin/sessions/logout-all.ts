@@ -20,31 +20,19 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
     
-    // Lấy current session ID để giữ lại
+    // Terminate ALL sessions (including current) for this user
     const sessions = await SessionManager.getUserSessions(user.id);
-    const currentSession = sessions.find(s => s.is_active);
-    const currentSessionId = currentSession?.id;
     
-    if (!currentSessionId) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'No active session found'
-      }), {
-        status: 400,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        }
-      });
+    let allSuccess = true;
+    for (const session of sessions) {
+      const result = await SessionManager.terminateSession(session.id);
+      if (!result) allSuccess = false;
     }
     
-    // Sử dụng SessionManager để terminate tất cả sessions khác
-    const success = await SessionManager.terminateAllOtherSessions(user.id, currentSessionId);
-    
-    if (success) {
+    if (allSuccess || sessions.length === 0) {
       return new Response(JSON.stringify({
         success: true,
-        message: 'Đã đăng xuất khỏi tất cả các thiết bị khác thành công'
+        message: 'Đã đăng xuất khỏi tất cả các thiết bị thành công'
       }), {
         status: 200,
         headers: {

@@ -519,4 +519,10 @@ const recentOrders = orders
   @media (max-width: 900px) {
     .stats-grid { grid-template-columns: 1fr 1fr; }
   }
+  @media (max-width: 640px) {
+    .stats-grid { grid-template-columns: 1fr; gap: 12px; }
+    .stat-card { padding: 20px; }
+    .chart-card, .cat-card, .table-card { padding: 20px; }
+    .revenue-stats { grid-template-columns: 1fr; gap: 12px; }
+  }
 </style>

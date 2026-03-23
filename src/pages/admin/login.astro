@@ -22,6 +22,7 @@ if (accessToken && refreshToken) {
 }
 
 let errorMessage = "";
+let needsMfa = false;
 
 if (Astro.request.method === "POST") {
   try {
@@ -44,13 +45,13 @@ if (Astro.request.method === "POST") {
           path: "/",
           httpOnly: true,
           sameSite: 'lax',
-          maxAge: rememberMe ? 30 * 24 * 60 * 60 : undefined, // 30 days if remember me
+          maxAge: rememberMe ? 30 * 24 * 60 * 60 : undefined,
         });
         Astro.cookies.set("sb-refresh-token", authData.session.refresh_token, {
           path: "/",
           httpOnly: true,
           sameSite: 'lax',
-          maxAge: rememberMe ? 30 * 24 * 60 * 60 : undefined, // 30 days if remember me
+          maxAge: rememberMe ? 30 * 24 * 60 * 60 : undefined,
         });
 
         // Lấy thông tin request để lưu session
@@ -68,7 +69,7 @@ if (Astro.request.method === "POST") {
             device_type: deviceInfo.deviceType,
             browser: deviceInfo.browser,
             ip_address: clientIP,
-            location: 'TP. Hồ Chí Minh, VN', // Có dùng geolocation API nếu cần
+            location: 'TP. Hồ Chí Minh, VN',
             user_agent: userAgent,
             refresh_token: authData.session.refresh_token
           };
@@ -79,7 +80,20 @@ if (Astro.request.method === "POST") {
           }
         }
 
-        return Astro.redirect("/admin");
+        // Check if user has MFA enabled
+        try {
+          const { data: mfaData } = await supabase.auth.mfa.listFactors();
+          const verifiedFactors = mfaData?.totp?.filter((f: any) => f.status === 'verified') || [];
+          if (verifiedFactors.length > 0) {
+            needsMfa = true;
+            // Don't redirect yet — show 2FA form
+          } else {
+            return Astro.redirect("/admin");
+          }
+        } catch (mfaErr) {
+          // MFA check failed, allow login without 2FA
+          return Astro.redirect("/admin");
+        }
       } else {
         errorMessage = "Vui lòng nhập Email và Mật khẩu.";
       }
@@ -471,7 +485,7 @@ if (Astro.request.method === "POST") {
       </div>
 
       <!-- Login form -->
-      <div class="form-card">
+      <div class="form-card" id="login-card" style={needsMfa ? 'display:none;' : ''}>
         <h2 class="form-title">Đăng nhập Quản trị viên</h2>
         <p class="form-sub">Vui lòng nhập thông tin để truy cập hệ thống.</p>
 
@@ -555,6 +569,51 @@ if (Astro.request.method === "POST") {
           <p class="copyright">© 2024 FlySky Guitar Admin Portal. All Rights Reserved.</p>
         </div>
       </div>
+
+      <!-- 2FA Verification form (shown after password auth when MFA is enabled) -->
+      <div class="form-card" id="mfa-card" style={needsMfa ? '' : 'display:none;'}>
+        <div style="text-align:center;margin-bottom:24px;">
+          <div style="width:64px;height:64px;border-radius:16px;background:rgba(244,140,37,.1);display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px;">
+            <span class="material-symbols-outlined" style="font-size:32px;color:#f48c25;">verified_user</span>
+          </div>
+          <h2 class="form-title">Xác thực 2 lớp</h2>
+          <p class="form-sub">Nhập mã 6 số từ ứng dụng Authenticator để tiếp tục</p>
+        </div>
+
+        <div class="field">
+          <div class="field-header">
+            <label class="field-label" for="totp-code">Mã xác thực (OTP)</label>
+          </div>
+          <div class="input-wrap">
+            <span class="material-symbols-outlined input-icon">pin</span>
+            <input
+              id="totp-code"
+              class="form-input"
+              type="text"
+              placeholder="000000"
+              maxlength="6"
+              autocomplete="one-time-code"
+              inputmode="numeric"
+              style="letter-spacing:8px;font-size:22px;font-weight:800;text-align:center;padding-left:16px;"
+              autofocus
+            />
+          </div>
+        </div>
+
+        <button class="login-btn" type="button" id="verify-mfa-btn" style="margin-top:8px;">
+          <span class="material-symbols-outlined" style="font-size:20px;">check_circle</span>
+          Xác nhận đăng nhập
+        </button>
+
+        <div class="error-box" id="mfa-error" style="display:none;"></div>
+
+        <div style="text-align:center;margin-top:20px;">
+          <a href="/admin/login" style="font-size:13px;color:#6b5a46;text-decoration:none;transition:color .15s;" onmouseover="this.style.color='#f48c25'" onmouseout="this.style.color='#6b5a46'">
+            <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">arrow_back</span>
+            Quay lại đăng nhập
+          </a>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -592,6 +651,92 @@ if (Astro.request.method === "POST") {
     }
 
     (window as any).togglePw = togglePw;
+
+    // ── 2FA Verification on Login ──
+    const mfaCard = document.getElementById('mfa-card');
+    const totpCodeInput = document.getElementById('totp-code') as HTMLInputElement | null;
+    const verifyMfaBtn = document.getElementById('verify-mfa-btn') as HTMLButtonElement | null;
+    const mfaError = document.getElementById('mfa-error') as HTMLElement | null;
+
+    // Auto-focus TOTP input if MFA card is visible
+    if (mfaCard && mfaCard.style.display !== 'none' && totpCodeInput) {
+      setTimeout(() => totpCodeInput.focus(), 100);
+    }
+
+    // Only allow digits in TOTP input
+    totpCodeInput?.addEventListener('input', () => {
+      totpCodeInput.value = totpCodeInput.value.replace(/\D/g, '').slice(0, 6);
+    });
+
+    // Submit on Enter key
+    totpCodeInput?.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        verifyMfaBtn?.click();
+      }
+    });
+
+    verifyMfaBtn?.addEventListener('click', async () => {
+      const code = totpCodeInput?.value?.trim() || '';
+      
+      if (code.length !== 6 || !/^\d{6}$/.test(code)) {
+        if (mfaError) {
+          mfaError.textContent = 'Vui lòng nhập đúng mã 6 chữ số.';
+          mfaError.style.display = 'block';
+        }
+        return;
+      }
+
+      if (mfaError) mfaError.style.display = 'none';
+      verifyMfaBtn.disabled = true;
+      verifyMfaBtn.innerHTML = '<span class="material-symbols-outlined btn-spinner" style="font-size:20px;">autorenew</span> Đang xác thực...';
+
+      try {
+        // First get MFA factors to find the factorId
+        const statusRes = await fetch('/api/admin/mfa/status');
+        const statusData = await statusRes.json();
+        
+        if (!statusData.success || !statusData.factors || statusData.factors.length === 0) {
+          // No factors found, just redirect
+          window.location.href = '/admin';
+          return;
+        }
+
+        const factorId = statusData.factors[0].id;
+
+        // Verify the TOTP code
+        const verifyRes = await fetch('/api/admin/mfa/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ factorId, code })
+        });
+        const verifyData = await verifyRes.json();
+
+        if (verifyData.success) {
+          verifyMfaBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size:20px;">check_circle</span> Thành công! Đang chuyển hướng...';
+          window.location.href = '/admin';
+        } else {
+          if (mfaError) {
+            mfaError.textContent = verifyData.error || 'Mã xác thực không đúng. Vui lòng thử lại.';
+            mfaError.style.display = 'block';
+            mfaError.style.animation = 'shake 0.4s ease';
+          }
+          if (totpCodeInput) {
+            totpCodeInput.value = '';
+            totpCodeInput.focus();
+          }
+          verifyMfaBtn.disabled = false;
+          verifyMfaBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size:20px;">check_circle</span> Xác nhận đăng nhập';
+        }
+      } catch (err: any) {
+        if (mfaError) {
+          mfaError.textContent = 'Lỗi kết nối: ' + (err?.message || 'Không xác định');
+          mfaError.style.display = 'block';
+        }
+        verifyMfaBtn.disabled = false;
+        verifyMfaBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size:20px;">check_circle</span> Xác nhận đăng nhập';
+      }
+    });
   </script>
 </body>
 </html>

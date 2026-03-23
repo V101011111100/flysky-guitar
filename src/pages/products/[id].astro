@@ -6,6 +6,21 @@ import { supabase } from '../../lib/supabase';
 
 const { id } = Astro.params;
 
+// Check if current user is admin (for inline editing)
+let isAdmin = false;
+const accessToken = Astro.cookies.get("sb-access-token");
+const refreshToken = Astro.cookies.get("sb-refresh-token");
+
+if (accessToken && refreshToken) {
+  const { data: authData } = await supabase.auth.setSession({
+    access_token: accessToken.value,
+    refresh_token: refreshToken.value,
+  });
+  if (authData?.user) {
+    isAdmin = true;
+  }
+}
+
 // Lấy sản phẩm hiện tại
 const { data: dbProduct, error } = await supabase
   .from('products')
@@ -157,7 +172,11 @@ const related = (dbRelated || []).map(rp => ({
 
           <!-- Name + subtitle -->
           <div>
-            <h1 class="text-white text-3xl lg:text-4xl font-extrabold leading-tight">{product.name}</h1>
+            <h1 
+              class="text-white text-3xl lg:text-4xl font-extrabold leading-tight"
+              data-editable={isAdmin ? "name" : undefined}
+              data-original={product.name}
+            >{product.name}</h1>
             <p class="text-text-muted text-lg mt-1">{product.subtitle}</p>
           </div>
 
@@ -177,7 +196,11 @@ const related = (dbRelated || []).map(rp => ({
 
           <!-- Price -->
           <div class="flex items-baseline gap-3">
-            <span class="text-white text-4xl font-extrabold">{product.priceFormatted}</span>
+            <span 
+              class="text-white text-4xl font-extrabold"
+              data-editable={isAdmin ? "price" : undefined}
+              data-original={product.price}
+            >{product.priceFormatted}</span>
           </div>
 
           <!-- Benefits -->
@@ -197,7 +220,11 @@ const related = (dbRelated || []).map(rp => ({
           </div>
 
           <!-- Description -->
-          <p class="text-text-muted leading-relaxed">{product.longDescription}</p>
+          <p 
+            class="text-text-muted leading-relaxed"
+            data-editable={isAdmin ? "description" : undefined}
+            data-original={product.longDescription}
+          >{product.longDescription}</p>
 
           <div class="flex flex-col sm:flex-row gap-3">
             <button
@@ -400,6 +427,24 @@ const related = (dbRelated || []).map(rp => ({
   )}
 
   <Footer />
+
+  <!-- Admin Inline Edit Toolbar (only visible to admin) -->
+  {isAdmin && (
+    <div id="admin-toolbar" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
+      <button
+        id="toggle-edit-mode"
+        class="bg-primary hover:bg-primary/90 text-background-dark font-bold px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 transition-all hover:scale-105"
+        title="Bật/tắt chế độ chỉnh sửa nhanh"
+      >
+        <span class="material-symbols-outlined">edit</span>
+        <span id="edit-mode-text">Chỉnh sửa</span>
+      </button>
+      <div id="edit-status" class="hidden bg-background-dark border border-border-dark text-white text-sm px-4 py-2 rounded-xl shadow-lg">
+        <span class="material-symbols-outlined text-green-500 text-sm animate-pulse">check_circle</span>
+        <span class="ml-2">Đã lưu</span>
+      </div>
+    </div>
+  )}
 
   <!-- Review Modal -->
   <div id="review-modal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
@@ -615,5 +660,107 @@ const related = (dbRelated || []).map(rp => ({
       rvSubmitBtn.innerHTML = 'Gửi đánh giá';
     }
   });
+
+  // ── INLINE EDITING (Admin only) ──
+  const toggleEditBtn = document.getElementById('toggle-edit-mode');
+  const editModeText = document.getElementById('edit-mode-text');
+  const editStatus = document.getElementById('edit-status');
+  let editMode = false;
+
+  if (toggleEditBtn) {
+    toggleEditBtn.addEventListener('click', () => {
+      editMode = !editMode;
+      
+      if (editMode) {
+        editModeText!.textContent = 'Lưu & Thoát';
+        toggleEditBtn.classList.add('bg-green-600');
+        toggleEditBtn.classList.remove('bg-primary');
+        enableEditMode();
+      } else {
+        editModeText!.textContent = 'Chỉnh sửa';
+        toggleEditBtn.classList.remove('bg-green-600');
+        toggleEditBtn.classList.add('bg-primary');
+        disableEditMode();
+      }
+    });
+  }
+
+  function enableEditMode() {
+    const editables = document.querySelectorAll('[data-editable]');
+    editables.forEach((el: Element) => {
+      const htmlEl = el as HTMLElement;
+      htmlEl.style.outline = '2px dashed #f48c25';
+      htmlEl.style.outlineOffset = '4px';
+      htmlEl.style.cursor = 'text';
+      htmlEl.contentEditable = 'true';
+      
+      // Store original value
+      htmlEl.dataset.currentValue = htmlEl.textContent || '';
+      
+      // On blur, save changes
+      htmlEl.addEventListener('blur', handleSave);
+    });
+  }
+
+  function disableEditMode() {
+    const editables = document.querySelectorAll('[data-editable]');
+    editables.forEach((el: Element) => {
+      const htmlEl = el as HTMLElement;
+      htmlEl.style.outline = 'none';
+      htmlEl.style.cursor = 'default';
+      htmlEl.contentEditable = 'false';
+      htmlEl.removeEventListener('blur', handleSave);
+    });
+  }
+
+  async function handleSave(e: Event) {
+    const el = e.target as HTMLElement;
+    const field = el.dataset.editable;
+    const newValue = el.textContent?.trim() || '';
+    const originalValue = el.dataset.currentValue || '';
+
+    if (!field || newValue === originalValue) return;
+
+    // Show saving indicator
+    el.style.opacity = '0.5';
+
+    try {
+      const productSlug = window.location.pathname.split('/').pop();
+      
+      const res = await fetch('/api/products/quick-update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: productSlug, field, value: newValue })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        // Update stored value
+        el.dataset.currentValue = newValue;
+        
+        // Show success status
+        if (editStatus) {
+          editStatus.classList.remove('hidden');
+          setTimeout(() => editStatus.classList.add('hidden'), 2000);
+        }
+
+        // If price was updated, format it
+        if (field === 'price') {
+          const formatted = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(data.value);
+          el.textContent = formatted;
+          el.dataset.currentValue = formatted;
+        }
+      } else {
+        alert('Lỗi lưu: ' + data.error);
+        el.textContent = originalValue;
+      }
+    } catch (err: any) {
+      alert('Lỗi kết nối: ' + err.message);
+      el.textContent = originalValue;
+    } finally {
+      el.style.opacity = '1';
+    }
+  }
 
 </script>

@@ -15,8 +15,12 @@
     "@supabase/supabase-js": "^2.99.0",
     "@tailwindcss/vite": "^4.2.1",
     "astro": "^6.0.4",
+    "nodemailer": "^8.0.3",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.9.3",
     "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/nodemailer": "^7.0.11"
   }
 }

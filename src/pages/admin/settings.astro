@@ -36,6 +36,13 @@ const bankAccountNumber = getSetting('flysky_bankAccountNumber', '1234567890');
 const momoPartnerCode = getSetting('flysky_momoPartnerCode', '');
 const momoAccessKey = getSetting('flysky_momoAccessKey', '');
 const momoSecretKey = getSetting('flysky_momoSecretKey', '');
+
+// Email SMTP Settings
+const smtpHost = getSetting('flysky_smtpHost', 'smtp.gmail.com');
+const smtpPort = getSetting('flysky_smtpPort', '587');
+const smtpUser = getSetting('flysky_smtpUser', '');
+const smtpPass = getSetting('flysky_smtpPass', '');
+const smtpFromName = getSetting('flysky_smtpFromName', 'FlySky Guitar');
 ---
 
 <AdminLayout
@@ -56,6 +63,7 @@ const momoSecretKey = getSetting('flysky_momoSecretKey', '');
     <button class="stg-tab" onclick="switchTab('general', this)">Cài đặt chung</button>
     <button class="stg-tab" onclick="switchTab('appearance', this)">Giao diện</button>
     <button class="stg-tab" onclick="switchTab('payment', this)">Thanh toán</button>
+    <button class="stg-tab" onclick="switchTab('email', this)">Email</button>
     <button class="stg-tab" onclick="switchTab('notifications', this)">Thông báo</button>
     <button class="stg-tab stg-tab-active" onclick="switchTab('security', this)">Bảo mật &amp; Tài khoản</button>
   </div>
@@ -355,6 +363,82 @@ const momoSecretKey = getSetting('flysky_momoSecretKey', '');
     </div>
   </div>
 
+  <!-- ── TAB: EMAIL ── -->
+  <div id="tab-email" class="tab-pane" style="display:none;">
+    <div class="stg-content">
+      <section class="stg-section">
+        <div class="section-head">
+          <div>
+            <h3 class="section-title">Cấu hình Email SMTP</h3>
+            <p class="section-desc">Thiết lập kết nối với Gmail hoặc bất kỳ SMTP server nào để gửi email tự động.</p>
+          </div>
+          <button class="btn-save" onclick="saveSettings()">
+            <span class="material-symbols-outlined">save</span>
+            Lưu thay đổi
+          </button>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">SMTP Host</label>
+            <input type="text" id="stg-smtp-host" class="form-input" placeholder="smtp.gmail.com" value={smtpHost} />
+            <p class="field-hint">Gmail: smtp.gmail.com | Outlook: smtp-mail.outlook.com</p>
+          </div>
+          <div class="form-group">
+            <label class="form-label">SMTP Port</label>
+            <input type="number" id="stg-smtp-port" class="form-input" placeholder="587" value={smtpPort} />
+            <p class="field-hint">Thường dùng: 587 (TLS) hoặc 465 (SSL)</p>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email gửi đi</label>
+            <input type="email" id="stg-smtp-user" class="form-input" placeholder="your-email@gmail.com" value={smtpUser} />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Mật khẩu ứng dụng</label>
+            <input type="password" id="stg-smtp-pass" class="form-input" placeholder="App Password (16 ký tự)" value={smtpPass} />
+            <p class="field-hint">
+              <a href="https://myaccount.google.com/apppasswords" target="_blank" style="color: #f48c25; text-decoration: underline;">
+                Lấy App Password từ Gmail →
+              </a>
+            </p>
+          </div>
+          <div class="form-group form-full">
+            <label class="form-label">Tên người gửi</label>
+            <input type="text" id="stg-smtp-from-name" class="form-input" placeholder="FlySky Guitar" value={smtpFromName} />
+          </div>
+        </div>
+      </section>
+
+      <hr class="stg-divider" />
+
+      <section class="stg-section">
+        <div class="section-head">
+          <div>
+            <h3 class="section-title">Kiểm tra kết nối</h3>
+            <p class="section-desc">Gửi email thử nghiệm để đảm bảo cấu hình hoạt động chính xác.</p>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group form-full">
+            <label class="form-label">Email nhận thử nghiệm</label>
+            <div style="display: flex; gap: 12px;">
+              <input type="email" id="test-email-input" class="form-input" placeholder="your-email@example.com" style="flex: 1;" />
+              <button class="btn-primary" onclick="testEmailConnection()" style="white-space: nowrap;">
+                <span class="material-symbols-outlined" style="font-size: 18px;">send</span>
+                Gửi email test
+              </button>
+            </div>
+            <p class="field-hint" id="test-email-result" style="margin-top: 8px; display: none;"></p>
+          </div>
+        </div>
+      </section>
+
+      <div class="bottom-actions">
+        <button class="btn-cancel">Hủy bỏ</button>
+        <button class="btn-update" onclick="saveSettings()">Cập nhật tất cả</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ── TAB: THÔNG BÁO ── -->
   <div id="tab-notifications" class="tab-pane" style="display:none;">
     <div class="ntf-content">
@@ -566,7 +650,7 @@ const momoSecretKey = getSetting('flysky_momoSecretKey', '');
         <h2 class="sec-section-title" style="padding:24px 24px 16px;">Mật khẩu &amp; Xác thực</h2>
         <div class="auth-list">
           <!-- Change Password -->
-          <div class="auth-item auth-item-hover">
+          <div class="auth-item auth-item-hover" id="btn-change-password" style="cursor:pointer;">
             <div class="auth-icon orange-bg">
               <span class="material-symbols-outlined">key</span>
             </div>
@@ -586,20 +670,116 @@ const momoSecretKey = getSetting('flysky_momoSecretKey', '');
               <p class="auth-desc">Yêu cầu mã xác minh từ ứng dụng Authenticator khi đăng nhập</p>
             </div>
             <label class="toggle-label-wrap">
-              <input type="checkbox" class="toggle-chk" checked />
+              <input type="checkbox" class="toggle-chk" id="toggle-2fa" />
               <div class="toggle-track"><div class="toggle-thumb"></div></div>
             </label>
           </div>
         </div>
       </div>
 
+      <!-- ═══ MODAL: ĐỔI MẬT KHẨU ═══ -->
+      <div class="modal-overlay" id="modal-change-pw" style="display:none;">
+        <div class="modal-box">
+          <div class="modal-header">
+            <div class="modal-header-icon orange-bg"><span class="material-symbols-outlined">lock_reset</span></div>
+            <div>
+              <h3 class="modal-title">Đổi mật khẩu</h3>
+              <p class="modal-subtitle">Nhập mật khẩu hiện tại và mật khẩu mới</p>
+            </div>
+            <button class="modal-close" id="close-pw-modal"><span class="material-symbols-outlined">close</span></button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label class="form-label">Mật khẩu hiện tại</label>
+              <div class="pw-input-wrap">
+                <span class="material-symbols-outlined inp-icon">lock</span>
+                <input type="password" id="pw-current" class="form-input inp-with-icon" placeholder="Nhập mật khẩu hiện tại" />
+                <button class="pw-eye" type="button"><span class="material-symbols-outlined">visibility_off</span></button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Mật khẩu mới</label>
+              <div class="pw-input-wrap">
+                <span class="material-symbols-outlined inp-icon">key</span>
+                <input type="password" id="pw-new" class="form-input inp-with-icon" placeholder="Nhập mật khẩu mới (tối thiểu 8 ký tự)" />
+                <button class="pw-eye" type="button"><span class="material-symbols-outlined">visibility_off</span></button>
+              </div>
+              <div class="pw-strength" id="pw-strength-bar">
+                <div class="pw-strength-fill"></div>
+              </div>
+              <p class="pw-strength-text" id="pw-strength-text"></p>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Xác nhận mật khẩu mới</label>
+              <div class="pw-input-wrap">
+                <span class="material-symbols-outlined inp-icon">check_circle</span>
+                <input type="password" id="pw-confirm" class="form-input inp-with-icon" placeholder="Nhập lại mật khẩu mới" />
+                <button class="pw-eye" type="button"><span class="material-symbols-outlined">visibility_off</span></button>
+              </div>
+              <p class="pw-match-text" id="pw-match-text"></p>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-cancel" id="cancel-pw-modal">Hủy</button>
+            <button class="btn-save" id="btn-save-pw" disabled>
+              <span class="material-symbols-outlined">save</span>
+              Cập nhật mật khẩu
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ MODAL: THIẾT LẬP 2FA ═══ -->
+      <div class="modal-overlay" id="modal-2fa-setup" style="display:none;">
+        <div class="modal-box" style="max-width:420px;">
+          <div class="modal-header">
+            <div class="modal-header-icon orange-bg"><span class="material-symbols-outlined">verified_user</span></div>
+            <div>
+              <h3 class="modal-title">Thiết lập xác thực 2 lớp</h3>
+              <p class="modal-subtitle">Quét mã QR bằng ứng dụng Authenticator</p>
+            </div>
+            <button class="modal-close" id="close-2fa-modal"><span class="material-symbols-outlined">close</span></button>
+          </div>
+          <div class="modal-body" style="align-items:center;text-align:center;">
+            <img id="qr-code-img" src="" alt="QR Code" style="width:200px;height:200px;border-radius:12px;background:#fff;padding:12px;box-shadow:0 4px 20px rgba(0,0,0,.3);" />
+            <p style="font-size:13px;color:#94a3b8;margin:0;">Hoặc nhập mã thủ công vào app:</p>
+            <code id="totp-secret" style="display:block;background:#2d2218;padding:10px 16px;border-radius:8px;color:#f48c25;font-size:13px;word-break:break-all;letter-spacing:1.5px;width:100%;"></code>
+            <div class="form-group" style="width:100%;text-align:left;">
+              <label class="form-label">Nhập mã 6 số từ app Authenticator</label>
+              <div class="icon-input-wrap">
+                <span class="material-symbols-outlined inp-icon">pin</span>
+                <input type="text" id="totp-verify-code" class="form-input inp-with-icon" placeholder="000000" maxlength="6" style="letter-spacing:6px;font-size:18px;font-weight:700;text-align:center;" />
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-cancel" id="cancel-2fa-modal">Hủy</button>
+            <button class="btn-save" id="btn-verify-2fa">
+              <span class="material-symbols-outlined">check_circle</span>
+              Xác nhận kích hoạt
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- ═══ PHẦN 3: QUẢN LÝ PHIÊN ═══ -->
       <div class="sec-card">
-        <h2 class="sec-section-title" style="padding:24px 24px 16px;">Quản lý phiên đăng nhập</h2>
-        <div class="session-list">
-          <!-- Sessions will be dynamically loaded here -->
+        <div class="session-header">
+          <h2 class="sec-section-title" style="padding:0;">Quản lý phiên đăng nhập</h2>
+          <p class="auth-desc" style="margin-top:4px;">Danh sách các thiết bị đang đăng nhập vào tài khoản của bạn.</p>
         </div>
-        <button class="btn-logout-all" onclick="logoutAllSessions()">Đăng xuất khỏi tất cả các thiết bị khác</button>
+        <div class="session-list" id="session-list">
+          <div class="session-loading">
+            <span class="material-symbols-outlined spin-icon">sync</span>
+            <span>Đang tải phiên đăng nhập...</span>
+          </div>
+        </div>
+        <div class="session-actions">
+          <button class="btn-logout-all" onclick="logoutAllSessions()">
+            <span class="material-symbols-outlined" style="font-size:18px;">logout</span>
+            Đăng xuất khỏi tất cả các thiết bị khác
+          </button>
+        </div>
       </div>
 
       <!-- ═══ PHẦN 4: TỰ ĐỘNG ĐĂNG XUẤT ═══ -->
@@ -672,7 +852,12 @@ const momoSecretKey = getSetting('flysky_momoSecretKey', '');
       { id: 'stg-bank-acc-num', key: 'flysky_bankAccountNumber' },
       { id: 'stg-momo-partner', key: 'flysky_momoPartnerCode' },
       { id: 'stg-momo-access', key: 'flysky_momoAccessKey' },
-      { id: 'stg-momo-secret', key: 'flysky_momoSecretKey' }
+      { id: 'stg-momo-secret', key: 'flysky_momoSecretKey' },
+      { id: 'stg-smtp-host', key: 'flysky_smtpHost' },
+      { id: 'stg-smtp-port', key: 'flysky_smtpPort' },
+      { id: 'stg-smtp-user', key: 'flysky_smtpUser' },
+      { id: 'stg-smtp-pass', key: 'flysky_smtpPass' },
+      { id: 'stg-smtp-from-name', key: 'flysky_smtpFromName' }
     ];
 
     const settingsToSave: any[] = [];
@@ -701,6 +886,48 @@ const momoSecretKey = getSetting('flysky_momoSecretKey', '');
   }
   (window as any).saveSettings = saveSettings;
 
+  // Test Email Connection
+  async function testEmailConnection() {
+    const testEmailInput = document.getElementById('test-email-input') as HTMLInputElement;
+    const resultEl = document.getElementById('test-email-result');
+    
+    if (!testEmailInput || !resultEl) return;
+    
+    const testEmail = testEmailInput.value.trim();
+    if (!testEmail) {
+      resultEl.textContent = '⚠️ Vui lòng nhập email nhận thử nghiệm';
+      resultEl.style.color = '#f59e0b';
+      resultEl.style.display = 'block';
+      return;
+    }
+
+    resultEl.textContent = '⏳ Đang gửi email test...';
+    resultEl.style.color = '#94a3b8';
+    resultEl.style.display = 'block';
+
+    try {
+      const response = await fetch('/api/email/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ test_email: testEmail })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        resultEl.textContent = '✅ Email đã được gửi thành công! Kiểm tra hộp thư của bạn.';
+        resultEl.style.color = '#10b981';
+      } else {
+        resultEl.textContent = `❌ Lỗi: ${data.error}`;
+        resultEl.style.color = '#ef4444';
+      }
+    } catch (error: any) {
+      resultEl.textContent = `❌ Lỗi kết nối: ${error.message}`;
+      resultEl.style.color = '#ef4444';
+    }
+  }
+  (window as any).testEmailConnection = testEmailConnection;
+
   // Session Management Functions
   async function loadActiveSessions() {
     try {
@@ -718,6 +945,11 @@ const momoSecretKey = getSetting('flysky_momoSecretKey', '');
     const sessionList = document.querySelector('.session-list');
     if (!sessionList) return;
     
+    if (!sessions || sessions.length === 0) {
+      sessionList.innerHTML = '<div class="session-empty"><span class="material-symbols-outlined" style="font-size:32px;display:block;margin-bottom:8px;">devices</span>Không có phiên đăng nhập nào</div>';
+      return;
+    }
+    
     sessionList.innerHTML = sessions.map((session: any) => `
       <div class="session-item ${session.isCurrent ? 'current-session' : ''}">
         <div class="session-icon ${session.deviceType === 'desktop' ? 'green-bg' : session.deviceType === 'mobile' ? 'blue-bg' : 'grey-bg'}">
@@ -727,13 +959,17 @@ const momoSecretKey = getSetting('flysky_momoSecretKey', '');
         </div>
         <div class="session-info">
           <p class="session-name">${session.deviceName} - ${session.browser}</p>
-          <p class="session-ip">Địa chỉ IP: ${session.ipAddress} • ${session.location}</p>
+          <div class="session-meta">
+            <span>IP: ${session.ipAddress}</span>
+            <span class="session-meta-dot"></span>
+            <span>${session.location}</span>
+          </div>
           <p class="session-last">Hoạt động lần cuối: ${formatLastActivity(session.lastActivity)}</p>
           ${session.isCurrent ? '<span class="session-badge current-badge"><span class="badge-dot"></span> Phiên hiện tại</span>' : ''}
         </div>
-        ${!session.isCurrent ? `<button class="session-terminate" onclick="terminateSession('${session.sessionId}')">
-          <span class="material-symbols-outlined">logout</span>
-          Kết thúc phiên
+        ${!session.isCurrent ? `<button class="session-del-btn" onclick="terminateSession('${session.sessionId}')">
+          <span class="material-symbols-outlined">delete_outline</span>
+          Xóa phiên
         </button>` : ''}
       </div>
     `).join('');
@@ -781,7 +1017,7 @@ const momoSecretKey = getSetting('flysky_momoSecretKey', '');
   }
 
   async function logoutAllSessions() {
-    if (!confirm('Bạn có chắc chắn muốn đăng xuất khỏi tất cả các thiết bị khác?')) return;
+    if (!confirm('Bạn có chắc chắn muốn đăng xuất khỏi TẤT CẢ thiết bị (bao gồm phiên hiện tại)?\n\nBạn sẽ bị chuyển về trang đăng nhập.')) return;
     
     try {
       const response = await fetch('/api/admin/sessions/logout-all', {
@@ -791,8 +1027,13 @@ const momoSecretKey = getSetting('flysky_momoSecretKey', '');
       
       const data = await response.json();
       if (data.success) {
-        alert('Đã đăng xuất khỏi tất cả các thiết bị thành công!');
-        window.location.href = '/admin/login';
+        // Sign out current session: submit the signout form to clear cookies
+        const form = document.getElementById('logout-form') as HTMLFormElement;
+        if (form) {
+          form.submit();
+        } else {
+          window.location.href = '/api/auth/signout';
+        }
       } else {
         alert('Lỗi khi đăng xuất: ' + data.error);
       }
@@ -843,6 +1084,257 @@ const momoSecretKey = getSetting('flysky_momoSecretKey', '');
       timeoutSelect.addEventListener('change', updateAutoLogoutTimeout);
       saveBtn.addEventListener('click', updateAutoLogoutTimeout);
     }
+
+    // ── Change Password Modal ──
+    const pwModal = document.getElementById('modal-change-pw') as HTMLElement;
+    const btnOpenPw = document.getElementById('btn-change-password');
+    const btnClosePw = document.getElementById('close-pw-modal');
+    const btnCancelPw = document.getElementById('cancel-pw-modal');
+    const btnSavePw = document.getElementById('btn-save-pw') as HTMLButtonElement;
+    const pwCurrent = document.getElementById('pw-current') as HTMLInputElement;
+    const pwNew = document.getElementById('pw-new') as HTMLInputElement;
+    const pwConfirm = document.getElementById('pw-confirm') as HTMLInputElement;
+    const strengthFill = document.querySelector('.pw-strength-fill') as HTMLElement;
+    const strengthText = document.getElementById('pw-strength-text') as HTMLElement;
+    const matchText = document.getElementById('pw-match-text') as HTMLElement;
+
+    function openPwModal() { if (pwModal) pwModal.style.display = 'flex'; }
+    function closePwModal() {
+      if (pwModal) pwModal.style.display = 'none';
+      if (pwCurrent) pwCurrent.value = '';
+      if (pwNew) pwNew.value = '';
+      if (pwConfirm) pwConfirm.value = '';
+      if (strengthFill) { strengthFill.style.width = '0%'; strengthFill.style.background = ''; }
+      if (strengthText) strengthText.textContent = '';
+      if (matchText) matchText.textContent = '';
+      if (btnSavePw) btnSavePw.disabled = true;
+    }
+
+    btnOpenPw?.addEventListener('click', openPwModal);
+    btnClosePw?.addEventListener('click', closePwModal);
+    btnCancelPw?.addEventListener('click', closePwModal);
+    pwModal?.addEventListener('click', (e: Event) => { if (e.target === pwModal) closePwModal(); });
+
+    // Password strength checker
+    function checkPasswordStrength(pw: string): { score: number; label: string; color: string } {
+      let score = 0;
+      if (pw.length >= 8) score++;
+      if (pw.length >= 12) score++;
+      if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score++;
+      if (/\d/.test(pw)) score++;
+      if (/[^a-zA-Z0-9]/.test(pw)) score++;
+
+      if (score <= 1) return { score, label: 'Yếu', color: '#ef4444' };
+      if (score <= 2) return { score, label: 'Trung bình', color: '#f59e0b' };
+      if (score <= 3) return { score, label: 'Khá', color: '#3b82f6' };
+      return { score, label: 'Mạnh', color: '#10b981' };
+    }
+
+    function validatePwForm() {
+      const current = pwCurrent?.value || '';
+      const newPw = pwNew?.value || '';
+      const confirm = pwConfirm?.value || '';
+      const strength = checkPasswordStrength(newPw);
+
+      // Update strength bar
+      if (strengthFill && strengthText) {
+        if (newPw.length > 0) {
+          strengthFill.style.width = `${(strength.score / 5) * 100}%`;
+          strengthFill.style.background = strength.color;
+          strengthText.textContent = `Độ mạnh: ${strength.label}`;
+          strengthText.style.color = strength.color;
+        } else {
+          strengthFill.style.width = '0%';
+          strengthText.textContent = '';
+        }
+      }
+
+      // Check match
+      if (matchText) {
+        if (confirm.length > 0 && newPw !== confirm) {
+          matchText.textContent = 'Mật khẩu xác nhận không khớp';
+          matchText.style.color = '#ef4444';
+        } else if (confirm.length > 0 && newPw === confirm) {
+          matchText.textContent = 'Mật khẩu khớp ✓';
+          matchText.style.color = '#10b981';
+        } else {
+          matchText.textContent = '';
+        }
+      }
+
+      // Enable save button
+      if (btnSavePw) {
+        btnSavePw.disabled = !(current.length > 0 && newPw.length >= 8 && newPw === confirm);
+      }
+    }
+
+    pwCurrent?.addEventListener('input', validatePwForm);
+    pwNew?.addEventListener('input', validatePwForm);
+    pwConfirm?.addEventListener('input', validatePwForm);
+
+    // Toggle password visibility
+    document.querySelectorAll('.pw-eye').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const wrap = btn.closest('.pw-input-wrap');
+        const input = wrap?.querySelector('input') as HTMLInputElement;
+        const icon = btn.querySelector('.material-symbols-outlined') as HTMLElement;
+        if (input && icon) {
+          const isPassword = input.type === 'password';
+          input.type = isPassword ? 'text' : 'password';
+          icon.textContent = isPassword ? 'visibility' : 'visibility_off';
+        }
+      });
+    });
+
+    // Save password
+    btnSavePw?.addEventListener('click', async () => {
+      const currentPw = pwCurrent?.value || '';
+      const newPw = pwNew?.value || '';
+      
+      btnSavePw.disabled = true;
+      btnSavePw.textContent = 'Đang cập nhật...';
+
+      try {
+        const response = await fetch('/api/admin/change-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ currentPassword: currentPw, newPassword: newPw })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          alert('Đã cập nhật mật khẩu thành công!');
+          closePwModal();
+        } else {
+          alert(data.error || 'Lỗi cập nhật mật khẩu');
+        }
+      } catch (err: any) {
+        alert('Lỗi kết nối: ' + (err?.message || 'Không xác định'));
+      } finally {
+        btnSavePw.disabled = false;
+        btnSavePw.innerHTML = '<span class="material-symbols-outlined">save</span> Cập nhật mật khẩu';
+      }
+    });
+
+    // ── 2FA Toggle ──
+    const toggle2fa = document.getElementById('toggle-2fa') as HTMLInputElement;
+    const modal2fa = document.getElementById('modal-2fa-setup') as HTMLElement;
+    const close2faBtn = document.getElementById('close-2fa-modal');
+    const cancel2faBtn = document.getElementById('cancel-2fa-modal');
+    const verify2faBtn = document.getElementById('btn-verify-2fa') as HTMLButtonElement;
+    const qrCodeImg = document.getElementById('qr-code-img') as HTMLImageElement;
+    const totpSecret = document.getElementById('totp-secret') as HTMLElement;
+    const totpInput = document.getElementById('totp-verify-code') as HTMLInputElement;
+    let currentFactorId = '';
+
+    function open2faModal() { if (modal2fa) modal2fa.style.display = 'flex'; }
+    function close2faModal() {
+      if (modal2fa) modal2fa.style.display = 'none';
+      if (totpInput) totpInput.value = '';
+      currentFactorId = '';
+    }
+
+    close2faBtn?.addEventListener('click', () => { close2faModal(); toggle2fa.checked = false; });
+    cancel2faBtn?.addEventListener('click', () => { close2faModal(); toggle2fa.checked = false; });
+    modal2fa?.addEventListener('click', (e: Event) => {
+      if (e.target === modal2fa) { close2faModal(); toggle2fa.checked = false; }
+    });
+
+    // Check current 2FA status via API
+    (async () => {
+      try {
+        const res = await fetch('/api/admin/mfa/status');
+        const data = await res.json();
+        if (data.success && data.enabled && toggle2fa) {
+          toggle2fa.checked = true;
+        }
+      } catch (e) { /* MFA not available */ }
+    })();
+
+    toggle2fa?.addEventListener('change', async () => {
+      if (toggle2fa.checked) {
+        // Enroll MFA via API
+        try {
+          const enrollRes = await fetch('/api/admin/mfa/enroll', { method: 'POST' });
+          const enrollData = await enrollRes.json();
+          
+          if (!enrollData.success) {
+            alert('Lỗi kích hoạt 2FA: ' + enrollData.error);
+            toggle2fa.checked = false;
+            return;
+          }
+          
+          if (enrollData.qrCode) {
+            // Show QR code and secret in inline modal
+            currentFactorId = enrollData.factorId;
+            if (qrCodeImg) qrCodeImg.src = enrollData.qrCode;
+            if (totpSecret) totpSecret.textContent = enrollData.secret;
+            if (totpInput) totpInput.value = '';
+            open2faModal();
+          } else {
+            alert('Không nhận được mã QR từ server.');
+            toggle2fa.checked = false;
+          }
+        } catch (err: any) {
+          alert('Lỗi: ' + (err?.message || 'Không hỗ trợ 2FA'));
+          toggle2fa.checked = false;
+        }
+      } else {
+        // Unenroll MFA via API
+        if (!confirm('Bạn có chắc chắn muốn tắt xác thực 2 lớp?')) {
+          toggle2fa.checked = true;
+          return;
+        }
+        try {
+          const res = await fetch('/api/admin/mfa/unenroll', { method: 'POST' });
+          const data = await res.json();
+          if (data.success) {
+            alert('Đã tắt xác thực 2 lớp.');
+          } else {
+            alert('Lỗi: ' + data.error);
+            toggle2fa.checked = true;
+          }
+        } catch (err: any) {
+          alert('Lỗi: ' + (err?.message || 'Không xác định'));
+          toggle2fa.checked = true;
+        }
+      }
+    });
+
+    // Verify 2FA code button
+    verify2faBtn?.addEventListener('click', async () => {
+      const code = totpInput?.value?.trim() || '';
+      if (code.length !== 6 || !/^\d{6}$/.test(code)) {
+        alert('Vui lòng nhập đúng mã 6 chữ số.');
+        return;
+      }
+      
+      verify2faBtn.disabled = true;
+      verify2faBtn.textContent = 'Đang xác nhận...';
+
+      try {
+        const verifyRes = await fetch('/api/admin/mfa/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ factorId: currentFactorId, code })
+        });
+        const verifyData = await verifyRes.json();
+        
+        if (verifyData.success) {
+          alert('Đã kích hoạt xác thực 2 lớp thành công!');
+          close2faModal();
+        } else {
+          alert(verifyData.error || 'Mã xác thực không đúng.');
+          toggle2fa.checked = false;
+        }
+      } catch (err: any) {
+        alert('Lỗi kết nối: ' + (err?.message || 'Không xác định'));
+        toggle2fa.checked = false;
+      } finally {
+        verify2faBtn.disabled = false;
+        verify2faBtn.innerHTML = '<span class="material-symbols-outlined">check_circle</span> Xác nhận kích hoạt';
+      }
+    });
   });
 
   const logoInput = document.getElementById('logo-upload-input');
@@ -1063,36 +1555,16 @@ const momoSecretKey = getSetting('flysky_momoSecretKey', '');
   .toggle-thumb { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: left .2s; }
   .toggle-chk:checked + .toggle-track .toggle-thumb { left: 22px; }
 
-  /* Sessions */
+  /* Sessions - static elements only (dynamic styles in global block below) */
+  .session-header { padding: 24px 24px 12px; }
   .session-list { }
-  .session-item { display: flex; align-items: flex-start; gap: 16px; padding: 18px 24px; }
-  .session-divider { border-top: 1px solid rgba(74,58,42,.4); }
-  .session-icon { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .green-bg { background: rgba(16,185,129,.15); color: #34d399; }
-  .grey-bg  { background: #2d2218; color: #94a3b8; }
-  .session-info { flex: 1; }
-  .session-name { font-size: 14px; font-weight: 700; color: #f9fafb; }
-  .session-ip   { font-size: 12px; color: #94a3b8; margin-top: 3px; }
-  .session-last { font-size: 11px; color: #64748b; margin-top: 6px; }
-  .session-badge {
-    display: inline-flex; align-items: center; gap: 4px;
-    margin-top: 6px; font-size: 11px; font-weight: 700;
-    padding: 2px 8px; border-radius: 999px;
-  }
-  .current-badge { background: rgba(16,185,129,.1); color: #34d399; }
-  .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: #34d399; flex-shrink: 0; }
-  .session-logout {
-    background: none; border: none; cursor: pointer;
-    color: #64748b; transition: color .15s; padding: 4px;
-  }
-  .session-logout:hover { color: #ef4444; }
-  .session-logout .material-symbols-outlined { font-size: 20px; }
+  .session-actions { border-top: 1px solid rgba(74,58,42,.4); }
   .btn-logout-all {
-    width: 100%; padding: 10px 24px;
+    width: 100%; padding: 12px 24px;
     font-size: 13px; font-weight: 700; color: #ef4444;
     background: none; border: none; cursor: pointer;
     font-family: 'Manrope', sans-serif;
-    border-top: 1px solid rgba(74,58,42,.4);
+    display: flex; align-items: center; justify-content: center; gap: 8px;
     transition: background .15s;
   }
   .btn-logout-all:hover { background: rgba(239,68,68,.06); }
@@ -1339,6 +1811,104 @@ const momoSecretKey = getSetting('flysky_momoSecretKey', '');
   .ntf-add-btn .material-symbols-outlined { font-size: 16px; }
   .ntf-chart-row { border-top: 1px solid rgba(74,58,42,.4); padding-top: 16px; padding-bottom: 0; }
   .ntf-actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding: 8px 0 16px; border-top: 1px solid rgba(74,58,42,.4); }
+</style>
+
+<style is:global>
+  /* ── Dynamic session items (injected via innerHTML) ── */
+  .session-loading { display:flex; align-items:center; gap:10px; padding:24px; color:#94a3b8; font-size:13px; }
+  .spin-icon { animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .session-item {
+    display: flex; align-items: center; gap: 16px; padding: 16px 24px;
+    border-bottom: 1px solid rgba(74,58,42,.25); transition: background .15s;
+  }
+  .session-item:last-child { border-bottom: none; }
+  .session-item:hover { background: rgba(244,140,37,.04); }
+  .current-session { background: rgba(16,185,129,.05) !important; }
+  .session-icon {
+    width: 44px; height: 44px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    font-size: 22px;
+  }
+  .green-bg { background: rgba(16,185,129,.15); color: #34d399; }
+  .blue-bg  { background: rgba(59,130,246,.15); color: #60a5fa; }
+  .grey-bg  { background: rgba(100,116,139,.12); color: #94a3b8; }
+  .session-info { flex: 1; min-width: 0; }
+  .session-name { font-size: 14px; font-weight: 700; color: #f9fafb; margin: 0; }
+  .session-meta {
+    font-size: 12px; color: #94a3b8; margin-top: 4px;
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  }
+  .session-meta-dot { width: 3px; height: 3px; border-radius: 50%; background: #64748b; flex-shrink: 0; }
+  .session-last { font-size: 11px; color: #64748b; margin-top: 4px; }
+  .session-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    margin-top: 6px; font-size: 11px; font-weight: 700;
+    padding: 3px 10px; border-radius: 999px;
+  }
+  .current-badge { background: rgba(16,185,129,.12); color: #34d399; }
+  .badge-dot {
+    width: 6px; height: 6px; border-radius: 50%; background: #34d399;
+    flex-shrink: 0; animation: pulse-dot 2s infinite;
+  }
+  @keyframes pulse-dot { 0%,100% { opacity:1; } 50% { opacity:.4; } }
+  .session-del-btn {
+    background: none; border: 1px solid rgba(239,68,68,.25); border-radius: 8px;
+    cursor: pointer; color: #94a3b8; padding: 7px 14px;
+    font-size: 12px; font-weight: 600; font-family: 'Manrope', sans-serif;
+    display: flex; align-items: center; gap: 6px;
+    transition: all .15s; flex-shrink: 0; white-space: nowrap;
+  }
+  .session-del-btn:hover {
+    color: #ef4444; border-color: #ef4444; background: rgba(239,68,68,.08);
+  }
+  .session-del-btn .material-symbols-outlined { font-size: 16px; }
+  .session-empty {
+    padding: 40px 24px; text-align: center; color: #64748b; font-size: 13px;
+  }
+
+  /* ── Modal (change password) ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.6); backdrop-filter: blur(4px);
+    z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-box {
+    background: #1a1207; border: 1px solid rgba(74,58,42,.6); border-radius: 16px;
+    width: 100%; max-width: 480px; box-shadow: 0 25px 50px rgba(0,0,0,.4);
+  }
+  .modal-header {
+    display: flex; align-items: center; gap: 14px; padding: 20px 24px;
+    border-bottom: 1px solid rgba(74,58,42,.4);
+  }
+  .modal-header-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .modal-title { font-size: 16px; font-weight: 800; color: #f9fafb; }
+  .modal-subtitle { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+  .modal-close {
+    background: none; border: none; color: #64748b; cursor: pointer;
+    margin-left: auto; padding: 4px; border-radius: 6px; transition: all .15s;
+  }
+  .modal-close:hover { color: #f9fafb; background: rgba(255,255,255,.08); }
+  .modal-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+  .modal-footer {
+    display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+    padding: 16px 24px; border-top: 1px solid rgba(74,58,42,.4);
+  }
+
+  /* ── Password input ── */
+  .pw-input-wrap { position: relative; }
+  .pw-eye {
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; color: #64748b; cursor: pointer; padding: 4px;
+    transition: color .15s;
+  }
+  .pw-eye:hover { color: #f48c25; }
+  .pw-strength { height: 4px; border-radius: 4px; background: #2d2218; margin-top: 8px; overflow: hidden; }
+  .pw-strength-fill { height: 100%; border-radius: 4px; width: 0%; transition: width .3s, background .3s; }
+  .pw-strength-text { font-size: 11px; margin-top: 4px; font-weight: 600; }
+  .pw-match-text { font-size: 11px; margin-top: 4px; font-weight: 600; }
 </style>
 
 

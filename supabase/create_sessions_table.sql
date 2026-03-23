@@ -49,18 +49,3 @@ BEGIN
   WHERE expires_at < NOW() OR is_active = false;
 END;
 $$ LANGUAGE plpgsql;
-
--- Optional: Create trigger to automatically clean up expired sessions daily
--- This trigger would require the cron job or event system to be set up
--- CREATE OR REPLACE FUNCTION public.auto_cleanup_expired_sessions()
--- RETURNS trigger AS $$
--- BEGIN
---   PERFORM public.cleanup_expired_sessions();
---   RETURN NULL;
--- END;
--- $$ LANGUAGE plpgsql;
-
--- CREATE TRIGGER trigger_auto_cleanup_sessions
--- AFTER INSERT OR UPDATE ON public.user_sessions
--- FOR EACH ROW
--- EXECUTE FUNCTION public.auto_cleanup_expired_sessions();

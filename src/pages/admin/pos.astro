@@ -595,49 +595,82 @@ const { data: orders } = await supabase
       </div>
     </div>
 
-    <main class="flex h-full w-full">
-      <!-- SIDEBAR -->
-      <aside class="w-64 bg-wood-dark/70 backdrop-blur-sm border-r border-stone-800 flex flex-col">
-        <div class="p-6 border-b border-stone-800">
+    <main class="flex h-full w-full relative flex-col">
+      <!-- Top Bar with Tabs -->
+      <div class="flex-shrink-0 bg-wood-medium/50 border-b border-stone-800 px-4 py-3 flex items-center justify-between gap-4">
+        <!-- Left: Logo & Tabs -->
+        <div class="flex items-center gap-6">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-lg bg-accent-orange flex items-center justify-center text-wood-dark font-bold">
-              <span class="material-symbols-outlined">point_of_sale</span>
+            <div class="w-9 h-9 rounded-lg bg-accent-orange flex items-center justify-center text-wood-dark font-bold">
+              <span class="material-symbols-outlined text-xl">point_of_sale</span>
             </div>
-            <div>
-              <div class="text-sm font-bold tracking-widest uppercase">FlySky POS</div>
+            <div class="hidden sm:block">
+              <div class="text-sm font-bold tracking-widest uppercase text-white">FlySky POS</div>
               <div class="text-[10px] text-gray-400 uppercase">Hệ thống bán hàng</div>
             </div>
           </div>
+          
+          <!-- Desktop Tabs -->
+          <div class="hidden md:flex gap-2">
+            <template x-for="tab in tabs" :key="tab.id">
+              <button @click="activeTab = tab.id; window.history.replaceState(null, '', '?tab=' + tab.id)"
+                :class="activeTab === tab.id ? 'bg-accent-orange text-white shadow-lg' : 'text-gray-400 hover:bg-wood-medium/60 hover:text-white'"
+                class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                <span class="material-symbols-outlined text-lg" x-text="tab.icon"></span>
+                <span x-text="tab.label"></span>
+              </button>
+            </template>
+          </div>
         </div>
 
-        <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
-          <template x-for="tab in tabs" :key="tab.id">
-            <button @click="activeTab = tab.id; window.history.replaceState(null, '', '?tab=' + tab.id)"
-              :class="activeTab === tab.id ? 'bg-accent-orange text-white shadow-lg shadow-orange-500/10' : 'text-gray-400 hover:bg-wood-medium/40 hover:text-white'"
-              class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-colors">
-              <span class="material-symbols-outlined" x-text="tab.icon"></span>
-              <span x-text="tab.label"></span>
-            </button>
-          </template>
-        </nav>
+        <!-- Right: Back button -->
+        <a href="/admin" class="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-wood-medium/40 transition-colors text-sm font-semibold">
+          <span class="material-symbols-outlined text-lg">arrow_back</span>
+          <span class="hidden sm:inline">Quay về</span>
+        </a>
+      </div>
 
-        <div class="p-4 border-t border-stone-800">
-          <a href="/admin" class="flex items-center gap-2 px-4 py-3 rounded-lg text-gray-400 hover:text-white hover:bg-wood-medium/40 transition-colors text-sm font-semibold">
-            <span class="material-symbols-outlined" style="font-size:20px;">arrow_back</span>
-            Quay về Admin
-          </a>
+      <!-- Mobile Tab Dropdown -->
+      <div class="md:hidden p-3 bg-wood-medium/30 border-b border-stone-800" x-data="{dropdownOpen: false}">
+        <div class="relative">
+          <button @click="dropdownOpen = !dropdownOpen"
+            class="w-full bg-wood-dark border border-stone-700 rounded-lg px-4 py-2.5 flex items-center justify-between text-white hover:border-accent-orange transition-colors">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-accent-orange" x-text="tabs.find(t => t.id === activeTab)?.icon"></span>
+              <span class="font-semibold text-sm" x-text="tabs.find(t => t.id === activeTab)?.label"></span>
+            </div>
+            <span class="material-symbols-outlined transition-transform" :class="{'rotate-180': dropdownOpen}">expand_more</span>
+          </button>
+          <div x-show="dropdownOpen" @click.away="dropdownOpen = false"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 translate-y-1"
+            x-transition:enter-end="opacity-100 translate-y-0"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100 translate-y-0"
+            x-transition:leave-end="opacity-0 translate-y-1"
+            class="absolute top-full left-0 right-0 mt-2 bg-wood-dark border border-stone-700 rounded-lg shadow-xl overflow-hidden z-50"
+            style="display: none;">
+            <template x-for="tab in tabs" :key="tab.id">
+              <button @click="activeTab = tab.id; dropdownOpen = false"
+                :class="activeTab === tab.id ? 'bg-accent-orange text-white' : 'text-gray-400 hover:bg-wood-medium/40 hover:text-white'"
+                class="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold transition-colors border-b border-stone-800 last:border-0">
+                <span class="material-symbols-outlined" x-text="tab.icon"></span>
+                <span x-text="tab.label"></span>
+              </button>
+            </template>
+          </div>
         </div>
-      </aside>
+      </div>
 
       <!-- MAIN CONTENT -->
       <!-- TAB: SALES -->
-      <section x-show="activeTab === 'sales'" class="flex-1 flex border-r border-stone-800">
+      <section x-show="activeTab === 'sales'" class="flex-1 flex flex-col lg:flex-row overflow-hidden">
         <!-- Products Area -->
-        <div class="flex-1 flex flex-col border-r border-stone-800">
-          <div class="p-6 bg-wood-medium/50 backdrop-blur-sm border-b border-stone-800">
-              <div class="flex justify-between items-center mb-6">
-                <h1 class="text-sm font-bold tracking-widest text-accent-orange uppercase flex items-center">
-                  <span class="material-symbols-outlined mr-2">grid_view</span>
+        <div class="flex-1 flex flex-col pb-16 lg:pb-0 overflow-hidden">
+          <div class="p-4 lg:p-6 bg-wood-medium/50 backdrop-blur-sm border-b border-stone-800">
+              <div class="flex justify-between items-center mb-4 lg:mb-6">
+                <h1 class="text-xs lg:text-sm font-bold tracking-widest text-accent-orange uppercase flex items-center">
+                  <span class="material-symbols-outlined mr-2 text-base lg:text-xl">grid_view</span>
                   Chọn sản phẩm
                 </h1>
              </div>
@@ -645,13 +678,13 @@ const { data: orders } = await supabase
                 <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
                   <span class="material-symbols-outlined text-xl">search</span>
                 </span>
-                <input x-model="search" class="block w-full pl-10 pr-3 py-3 bg-wood-dark border border-stone-700 rounded-lg focus:ring-accent-orange focus:border-accent-orange text-sm shadow-inner" placeholder="Tìm kiếm tên đàn hoặc mã SKU..." type="text" />
+                <input x-model="search" class="block w-full pl-10 pr-3 py-2.5 lg:py-3 bg-wood-dark border border-stone-700 rounded-lg focus:ring-accent-orange focus:border-accent-orange text-sm shadow-inner" placeholder="Tìm kiếm tên đàn hoặc mã SKU..." type="text" />
              </div>
           </div>
-          <div class="flex-1 overflow-y-auto p-6 grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 content-start">
+          <div class="flex-1 overflow-y-auto p-3 lg:p-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3 lg:gap-4 content-start auto-rows-max">
              <template x-for="product in filteredProducts" :key="product.id">
-                <div @click="addToCart(product)" class="bg-[#2d2218] p-3 rounded-lg border border-[#4a3a2a] hover:border-[#f48c25] hover:shadow-lg transition-all cursor-pointer group flex flex-col h-full">
-                   <div class="w-full h-32 shadow-inner rounded-md mb-3 bg-[#221910] overflow-hidden relative border border-[#4a3a2a]/50">
+                <div @click="addToCart(product)" class="bg-[#2d2218] p-3 rounded-lg border border-[#4a3a2a] hover:border-[#f48c25] hover:shadow-lg transition-all cursor-pointer group flex flex-col min-h-[200px]">
+                   <div class="w-full aspect-square shadow-inner rounded-md mb-3 bg-[#221910] overflow-hidden relative border border-[#4a3a2a]/50">
                       <template x-if="product.gallery_images && product.gallery_images.length > 0">
                         <img :src="product.gallery_images[0]" :alt="product.name" class="w-full h-full object-cover" />
                       </template>
@@ -673,13 +706,20 @@ const { data: orders } = await supabase
         </div>
 
         <!-- Cart Area -->
-        <div class="w-[520px] max-w-[45%] flex flex-col bg-wood-dark">
-          <div class="p-4 border-b border-stone-800 bg-wood-medium/30 flex justify-between items-center">
-             <h2 class="text-sm font-bold tracking-widest text-gray-400 flex items-center">
-                <span class="material-symbols-outlined mr-2">shopping_cart</span>
+        <div class="fixed lg:relative bottom-0 left-0 right-0 lg:w-[420px] xl:w-[480px] flex flex-col bg-wood-dark border-t lg:border-t-0 lg:border-l border-stone-800 z-40 transition-transform duration-300 max-h-[70vh] lg:max-h-full"
+             :class="{'translate-y-[calc(100%-56px)]': !cartOpen, 'translate-y-0': cartOpen}"
+             x-data="{cartOpen: window.innerWidth >= 1024}"
+             x-init="window.addEventListener('resize', () => { if(window.innerWidth >= 1024) cartOpen = true; })">
+          <div class="p-3 lg:p-4 border-b border-stone-800 bg-wood-medium/30 flex justify-between items-center cursor-pointer lg:cursor-default"
+               @click="if(window.innerWidth < 1024) cartOpen = !cartOpen">
+             <h2 class="text-xs lg:text-sm font-bold tracking-widest text-gray-400 flex items-center">
+                <span class="material-symbols-outlined mr-2 text-base lg:text-xl">shopping_cart</span>
                 GIỎ HÀNG (<span x-text="cart.length"></span>)
              </h2>
-             <button @click="cart = []" class="text-xs text-red-400 hover:text-red-300">Xóa tất cả</button>
+             <div class="flex items-center gap-2">
+               <button @click.stop="cart = []" class="text-xs text-red-400 hover:text-red-300">Xóa tất cả</button>
+               <span class="material-symbols-outlined text-gray-400 lg:hidden transition-transform" :class="{'rotate-180': cartOpen}">expand_less</span>
+             </div>
           </div>
           
           <!-- Cart Items -->
