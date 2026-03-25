@@ -1,4 +1,28 @@
 ---
+import { supabase } from '../lib/supabase';
+
+const { data: heroSettings } = await supabase
+  .from('site_settings')
+  .select('key, value')
+  .in('key', ['flysky_heroImageUrl', 'flysky_heroImages', 'flysky_heroEffect', 'flysky_heroIntervalSec']);
+
+const heroImageUrl =
+  heroSettings?.find((s: any) => s.key === 'flysky_heroImageUrl')?.value ||
+  '/images/hero-guitar.jpg';
+
+const heroImagesRaw = heroSettings?.find((s: any) => s.key === 'flysky_heroImages')?.value || '';
+const heroEffectRaw = heroSettings?.find((s: any) => s.key === 'flysky_heroEffect')?.value || 'fade';
+const heroIntervalRaw = heroSettings?.find((s: any) => s.key === 'flysky_heroIntervalSec')?.value || '4';
+
+const heroImages = String(heroImagesRaw)
+  .split(/\r?\n|,/)
+  .map((x: string) => x.trim())
+  .filter(Boolean);
+
+const imageList = heroImages.length > 0 ? heroImages : [heroImageUrl];
+const heroEffect = heroEffectRaw === 'zoom' ? 'zoom' : 'fade';
+const heroIntervalSec = Math.max(2, Math.min(15, parseInt(String(heroIntervalRaw), 10) || 4));
+const heroIntervalMs = heroIntervalSec * 1000;
 ---
 
 <section class="relative w-full overflow-hidden">
@@ -26,10 +50,69 @@
       <div class="order-1 lg:order-2 relative flex justify-center lg:justify-end">
         <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-primary/20 blur-[100px] rounded-full"></div>
         <div
-          class="w-full max-w-[500px] aspect-[3/4] rounded-2xl bg-center bg-cover bg-no-repeat shadow-2xl rotate-3 hover:rotate-0 transition-transform duration-700 ease-out"
-          style="background-image: url('/images/hero-guitar.jpg');"
-        ></div>
+          id="hero-slideshow"
+          class="relative overflow-hidden w-full max-w-[500px] aspect-[3/4] rounded-2xl bg-center bg-cover bg-no-repeat shadow-2xl rotate-3 hover:rotate-0 transition-transform duration-700 ease-out"
+          style={`background-image: url('${imageList[0]}');`}
+          data-effect={heroEffect}
+        >
+          <div id="hero-slide-a" class="hero-slide-layer" style={`background-image:url('${imageList[0]}');opacity:1;`}></div>
+          <div id="hero-slide-b" class="hero-slide-layer" style={`background-image:url('${imageList[0]}');opacity:0;`}></div>
+        </div>
       </div>
     </div>
   </div>
 </section>
+
+<script define:vars={{ imageList, heroEffect, heroIntervalMs }}>
+  const slides = Array.isArray(imageList) ? imageList.filter(Boolean) : [];
+  const host = document.getElementById('hero-slideshow');
+  const layerA = document.getElementById('hero-slide-a');
+  const layerB = document.getElementById('hero-slide-b');
+
+  if (host && layerA && layerB && slides.length > 1) {
+    let currentIndex = 0;
+    let showingA = true;
+
+    const applyEffect = (incoming) => {
+      if (heroEffect === 'zoom') {
+        incoming.style.transform = 'scale(1.08)';
+        incoming.style.transition = 'opacity 900ms ease, transform 3500ms ease';
+        requestAnimationFrame(() => {
+          incoming.style.transform = 'scale(1)';
+        });
+      } else {
+        incoming.style.transition = 'opacity 900ms ease';
+      }
+    };
+
+    window.setInterval(() => {
+      const nextIndex = (currentIndex + 1) % slides.length;
+      const outgoing = showingA ? layerA : layerB;
+      const incoming = showingA ? layerB : layerA;
+
+      incoming.style.backgroundImage = `url('${slides[nextIndex]}')`;
+      incoming.style.opacity = '0';
+      applyEffect(incoming);
+
+      requestAnimationFrame(() => {
+        incoming.style.opacity = '1';
+        outgoing.style.opacity = '0';
+      });
+
+      currentIndex = nextIndex;
+      showingA = !showingA;
+    }, heroIntervalMs);
+  }
+</script>
+
+<style>
+  .hero-slide-layer {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    will-change: opacity, transform;
+  }
+</style>

@@ -1,9 +1,13 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { ensureSameOrigin } from '../../../lib/security';
 
 // POST: upsert a customer's display_name (admin-set official name)
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
+    const originCheck = ensureSameOrigin(request);
+    if (!originCheck.ok) return originCheck.response;
+
     // Auth check
     const accessToken = cookies.get('sb-access-token');
     const refreshToken = cookies.get('sb-refresh-token');

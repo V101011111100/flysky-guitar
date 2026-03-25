@@ -466,21 +466,50 @@ const statusLabel: Record<string, string> = {
         completed: 'status-completed', cancelled: 'status-cancelled'
       };
 
-      modalBody.innerHTML = orders.map((o: any) => `
-        <div class="order-history-item">
-          <div class="oh-top">
-            <div>
-              <span class="oh-num">${o.order_number}</span>
-              <span class="oh-date">${new Date(o.created_at).toLocaleDateString('vi-VN')}</span>
-            </div>
-            <span class="oh-status ${statusCls[o.status] || ''}">${statusLabel[o.status] || o.status}</span>
-          </div>
-          <div class="oh-bottom">
-            <span style="color:#94a3b8;font-size:12px;">${o.shipping_address || ''}</span>
-            <strong class="oh-total">${new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND'}).format(o.total_amount||0)}</strong>
-          </div>
-        </div>
-      `).join('');
+      const fragment = document.createDocumentFragment();
+
+      for (const o of orders) {
+        const item = document.createElement('div');
+        item.className = 'order-history-item';
+
+        const top = document.createElement('div');
+        top.className = 'oh-top';
+
+        const topLeft = document.createElement('div');
+        const orderNumber = document.createElement('span');
+        orderNumber.className = 'oh-num';
+        orderNumber.textContent = String(o.order_number || '');
+
+        const orderDate = document.createElement('span');
+        orderDate.className = 'oh-date';
+        orderDate.textContent = new Date(o.created_at).toLocaleDateString('vi-VN');
+
+        topLeft.append(orderNumber, orderDate);
+
+        const status = document.createElement('span');
+        status.className = `oh-status ${statusCls[o.status] || ''}`;
+        status.textContent = String(statusLabel[o.status] || o.status || '');
+
+        top.append(topLeft, status);
+
+        const bottom = document.createElement('div');
+        bottom.className = 'oh-bottom';
+
+        const shippingAddress = document.createElement('span');
+        shippingAddress.style.color = '#94a3b8';
+        shippingAddress.style.fontSize = '12px';
+        shippingAddress.textContent = String(o.shipping_address || '');
+
+        const total = document.createElement('strong');
+        total.className = 'oh-total';
+        total.textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(o.total_amount || 0);
+
+        bottom.append(shippingAddress, total);
+        item.append(top, bottom);
+        fragment.appendChild(item);
+      }
+
+      modalBody.replaceChildren(fragment);
     });
   });
 

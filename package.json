@@ -6,7 +6,8 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "check:csrf": "node scripts/check-csrf-guard.cjs"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.7",
@@ -18,9 +19,11 @@
     "nodemailer": "^8.0.3",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.9.3",
+    "web-push": "^3.6.7",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "@types/nodemailer": "^7.0.11"
+    "@types/nodemailer": "^7.0.11",
+    "@types/web-push": "^3.6.4"
   }
 }

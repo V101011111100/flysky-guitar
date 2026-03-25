@@ -3,29 +3,17 @@ import { supabase } from '../../../../lib/supabase';
 
 const corsHeaders = {
   'Content-Type': 'application/json',
-  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+  'Access-Control-Allow-Headers': 'Content-Type'
 };
 
-export const GET: APIRoute = async ({ request }) => {
+export const GET: APIRoute = async ({ cookies }) => {
   try {
-    // Get auth token from cookie
-    const cookieHeader = request.headers.get('cookie') || '';
-    const accessToken = cookieHeader
-      .split(';')
-      .map(c => c.trim())
-      .find(c => c.startsWith('sb-access-token='))
-      ?.split('=')[1];
-
-    const refreshToken = cookieHeader
-      .split(';')
-      .map(c => c.trim())
-      .find(c => c.startsWith('sb-refresh-token='))
-      ?.split('=')[1];
+    const accessToken = cookies.get('sb-access-token');
+    const refreshToken = cookies.get('sb-refresh-token');
 
     if (accessToken && refreshToken) {
-      await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+      await supabase.auth.setSession({ access_token: accessToken.value, refresh_token: refreshToken.value });
     }
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -53,5 +41,5 @@ export const GET: APIRoute = async ({ request }) => {
 };
 
 export const OPTIONS: APIRoute = async () => {
-  return new Response(null, { status: 200, headers: corsHeaders });
+  return new Response(null, { status: 204, headers: corsHeaders });
 };

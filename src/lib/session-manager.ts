@@ -89,12 +89,18 @@ export class SessionManager {
     }
   }
 
-  static async terminateSession(sessionId: string): Promise<boolean> {
+  static async terminateSession(sessionId: string, userId?: string): Promise<boolean> {
     try {
-      const { error } = await supabase
+      let query = supabase
         .from('user_sessions')
         .update({ is_active: false, last_activity: new Date().toISOString() })
         .eq('id', sessionId);
+
+      if (userId) {
+        query = query.eq('user_id', userId);
+      }
+
+      const { error } = await query;
 
       if (error) {
         console.error('Error terminating session:', error);

@@ -1,16 +1,19 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { logActivity, getClientIp } from '../../../lib/logger';
+import { ensureSameOrigin } from '../../../lib/security';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   const corsHeaders = {
     'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type'
   };
 
   try {
+    const originCheck = ensureSameOrigin(request);
+    if (!originCheck.ok) return originCheck.response;
+
     // Auth check
     const accessToken = cookies.get("sb-access-token");
     const refreshToken = cookies.get("sb-refresh-token");
@@ -87,9 +90,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
 export const OPTIONS: APIRoute = async () => {
   return new Response(null, {
-    status: 200,
+    status: 204,
     headers: {
-      'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
     }

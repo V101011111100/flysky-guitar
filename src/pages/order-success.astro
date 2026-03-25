@@ -19,8 +19,8 @@ import Footer from '../components/Footer.astro';
           <div class="w-20 h-20 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center mx-auto mb-5 success-icon">
             <span class="material-symbols-outlined text-primary text-4xl" style="font-variation-settings: 'FILL' 1">check_circle</span>
           </div>
-          <h1 class="text-white text-3xl font-extrabold mb-2">Thanh toán thành công!</h1>
-          <p class="text-text-muted leading-relaxed max-w-md mx-auto">
+          <h1 class="text-white text-3xl font-extrabold mb-2" id="success-title">Thanh toán thành công!</h1>
+          <p class="text-text-muted leading-relaxed max-w-md mx-auto" id="success-desc">
             Cảm ơn bạn đã tin tưởng FlySky Guitar. Đơn hàng của bạn đã được tiếp nhận và đang được chuẩn bị để giao đến bạn.
           </p>
         </div>
@@ -38,9 +38,9 @@ import Footer from '../components/Footer.astro';
             </div>
             <div class="col-span-2 md:col-span-1">
               <p class="text-text-muted text-xs uppercase font-bold tracking-wider mb-1">Trạng thái</p>
-              <span class="inline-flex items-center gap-1.5 bg-green-500/10 border border-green-500/30 text-green-400 text-xs font-bold px-3 py-1 rounded-full">
+              <span id="status-badge" class="inline-flex items-center gap-1.5 bg-green-500/10 border border-green-500/30 text-green-400 text-xs font-bold px-3 py-1 rounded-full">
                 <span class="w-1.5 h-1.5 rounded-full bg-green-400"></span>
-                Đã tiếp nhận
+                <span id="status-text">Đã tiếp nhận</span>
               </span>
             </div>
           </div>
@@ -78,7 +78,7 @@ import Footer from '../components/Footer.astro';
         <div class="px-8 py-6">
           <div class="flex items-start gap-3 bg-background-dark border border-border-dark rounded-xl p-4 mb-6">
             <span class="material-symbols-outlined text-primary flex-shrink-0">mail</span>
-            <p class="text-text-muted text-sm leading-relaxed">
+            <p class="text-text-muted text-sm leading-relaxed" id="email-notice">
               Một email xác nhận đã được gửi đến địa chỉ của bạn. Chúng tôi sẽ liên hệ trong vòng <span class="text-white font-semibold">24 giờ</span> để xác nhận đơn hàng và tư vấn chi tiết.
             </p>
           </div>
@@ -156,6 +156,31 @@ import Footer from '../components/Footer.astro';
     // Total
     const totalEl = document.getElementById('order-total');
     if (totalEl) totalEl.textContent = formatPrice(order.total);
+
+    // Title / description based on payment method
+    const pm = order.paymentMethod || 'bank';
+    const titleEl  = document.getElementById('success-title');
+    const descEl   = document.getElementById('success-desc');
+    const statusEl = document.getElementById('status-text');
+    const noticeEl = document.getElementById('email-notice');
+
+    if (pm === 'cash') {
+      if (titleEl)  titleEl.textContent  = 'Gửi yêu cầu mua hàng thành công!';
+      if (descEl)   descEl.textContent   = 'Chúng tôi đã nhận yêu cầu của bạn. Nhân viên sẽ liên hệ xác nhận và thu tiền khi giao hàng.';
+      if (statusEl) statusEl.textContent = 'Đã tiếp nhận';
+      if (noticeEl) noticeEl.innerHTML   = 'Email xác nhận yêu cầu đã được gửi đến địa chỉ của bạn. Chúng tôi sẽ liên hệ trong vòng <span class="text-white font-semibold">24 giờ</span> để xác nhận đơn hàng.';
+    } else if (pm === 'installment') {
+      if (titleEl)  titleEl.textContent  = 'Gửi yêu cầu trả góp thành công!';
+      if (descEl)   descEl.textContent   = 'Chúng tôi đã nhận yêu cầu trả góp của bạn. Nhân viên sẽ liên hệ tư vấn và hướng dẫn hoàn tất hồ sơ.';
+      if (statusEl) statusEl.textContent = 'Đang xử lý hồ sơ';
+      if (noticeEl) noticeEl.innerHTML   = 'Email xác nhận yêu cầu trả góp đã được gửi đến địa chỉ của bạn. Nhân viên sẽ liên hệ trong vòng <span class="text-white font-semibold">24 giờ</span> để tư vấn.';
+    } else {
+      // bank — default
+      if (titleEl)  titleEl.textContent  = 'Thanh toán thành công!';
+      if (descEl)   descEl.textContent   = 'Cảm ơn bạn đã thanh toán. Đơn hàng đang được xử lý và sẽ giao đến bạn sớm nhất.';
+      if (statusEl) statusEl.textContent = 'Đã thanh toán';
+      if (noticeEl) noticeEl.innerHTML   = 'Email xác nhận thanh toán đã được gửi đến địa chỉ của bạn. Chúng tôi sẽ liên hệ trong vòng <span class="text-white font-semibold">24 giờ</span> để xác nhận đơn hàng.';
+    }
 
     // Contact info
     const nameEl = document.getElementById('order-name');

@@ -258,13 +258,13 @@ function formatDate(ds: string) {
       
     </div>
     
-    <!-- Success Toast Positioned -->
-    <div class="toast-notification">
+    <!-- Export Toast (hidden by default; shown on export action) -->
+    <div class="toast-notification" id="export-toast" aria-hidden="true">
       <div class="toast-content">
         <div class="toast-icon">
           <span class="material-symbols-outlined">check_circle</span>
         </div>
-        <div>
+        <div class="toast-texts">
           <p class="toast-title">Yêu cầu đã được tiếp nhận</p>
           <p class="toast-desc">Đang chuẩn bị tệp báo cáo của bạn...</p>
         </div>
@@ -355,6 +355,19 @@ function formatDate(ds: string) {
     // Export Dropdown Period Selection Logic
     const exportPeriodBtns = document.querySelectorAll('.export-dropdown .dp-btn:not(#btn-open-datepicker)');
     const csvExportBtn = document.getElementById('btn-export-csv') as HTMLAnchorElement;
+    const exportToast = document.getElementById('export-toast');
+    let exportToastTimer: ReturnType<typeof setTimeout> | null = null;
+
+    function showExportToast() {
+      if (!exportToast) return;
+      exportToast.classList.add('is-visible');
+      exportToast.setAttribute('aria-hidden', 'false');
+      if (exportToastTimer) clearTimeout(exportToastTimer);
+      exportToastTimer = setTimeout(() => {
+        exportToast.classList.remove('is-visible');
+        exportToast.setAttribute('aria-hidden', 'true');
+      }, 2600);
+    }
     
     // Set initial active based on URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -369,6 +382,10 @@ function formatDate(ds: string) {
       } else {
         csvExportBtn.href = `/api/export-logs?period=${encodeURIComponent(currentUrlPeriod)}`;
       }
+
+      csvExportBtn.addEventListener('click', () => {
+        showExportToast();
+      });
     }
 
     exportPeriodBtns.forEach(btn => {
@@ -942,9 +959,9 @@ function formatDate(ds: string) {
   .stat-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #64748b; margin-top: 4px; }
 
   /* Toast Notification */
-  @keyframes bounceToast {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateY(8px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
   }
   @keyframes progressTrack {
     0% { width: 0%; transform: translateX(-100%); }
@@ -954,36 +971,69 @@ function formatDate(ds: string) {
 
   .toast-notification {
     position: fixed;
-    bottom: 32px;
-    right: 32px;
-    z-index: 100;
-    animation: bounceToast 2s infinite ease-in-out;
+    bottom: 24px;
+    right: 24px;
+    z-index: 120;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(8px) scale(0.98);
+    transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s ease;
+  }
+  .toast-notification.is-visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+    animation: toastIn 0.22s ease;
   }
   .toast-content {
     display: flex;
     align-items: center;
-    gap: 16px;
-    background: #221910;
-    border: 1px solid rgba(244, 140, 37, 0.3);
-    padding: 16px;
-    border-radius: 12px;
-    box-shadow: 0 25px 50px -12px rgba(244, 140, 37, 0.1);
+    gap: 12px;
+    width: min(420px, calc(100vw - 32px));
+    background: linear-gradient(135deg, #251a10, #1f160f);
+    border: 1px solid rgba(244, 140, 37, 0.35);
+    padding: 12px 14px;
+    border-radius: 14px;
+    box-shadow: 0 20px 36px rgba(0, 0, 0, 0.45);
   }
   .toast-icon {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
-    background: rgba(244, 140, 37, 0.2);
+    background: rgba(244, 140, 37, 0.18);
     color: #f48c25;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
   }
-  .toast-title { font-size: 14px; font-weight: 700; color: white; }
-  .toast-desc { font-size: 12px; color: #94a3b8; }
-  .toast-progress-wrap { margin-left: 16px; }
+  .toast-texts {
+    min-width: 0;
+    flex: 1;
+  }
+  .toast-title {
+    font-size: 14px;
+    line-height: 1.2;
+    font-weight: 800;
+    color: #f8fafc;
+    margin-bottom: 2px;
+  }
+  .toast-desc {
+    font-size: 12px;
+    line-height: 1.25;
+    color: #94a3b8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .toast-progress-wrap {
+    width: 56px;
+    flex-shrink: 0;
+    margin-left: 8px;
+  }
   .toast-progress-track {
-    width: 48px;
+    width: 56px;
     height: 4px;
     background: rgba(244, 140, 37, 0.1);
     border-radius: 999px;
@@ -995,6 +1045,21 @@ function formatDate(ds: string) {
     height: 100%;
     background: #f48c25;
     animation: progressTrack 2s ease-in-out infinite;
+  }
+  @media (max-width: 768px) {
+    .toast-notification {
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+    }
+    .toast-content {
+      width: 100%;
+      padding: 11px 12px;
+      gap: 10px;
+    }
+    .toast-title { font-size: 14px; }
+    .toast-desc { font-size: 12px; }
+    .toast-progress-wrap { display: none; }
   }
 </style>
 

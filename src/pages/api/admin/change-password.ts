@@ -1,15 +1,18 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { ensureSameOrigin } from '../../../lib/security';
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, cookies }) => {
   const corsHeaders = {
     'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+    'Access-Control-Allow-Headers': 'Content-Type'
   };
 
   try {
+    const originCheck = ensureSameOrigin(request);
+    if (!originCheck.ok) return originCheck.response;
+
     const body = await request.json();
     const { currentPassword, newPassword } = body;
 
@@ -27,12 +30,24 @@ export const POST: APIRoute = async ({ request }) => {
       }), { status: 400, headers: corsHeaders });
     }
 
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
+    // Get current user from cookies
+    const accessToken = cookies.get('sb-access-token');
+    const refreshToken = cookies.get('sb-refresh-token');
+    if (!accessToken || !refreshToken) {
       return new Response(JSON.stringify({
         success: false,
         error: 'Người dùng chưa xác thực.'
+      }), { status: 401, headers: corsHeaders });
+    }
+    const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+      access_token: accessToken.value,
+      refresh_token: refreshToken.value,
+    });
+    const user = sessionData?.user;
+    if (sessionError || !user) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.'
       }), { status: 401, headers: corsHeaders });
     }
 
@@ -76,11 +91,10 @@ export const POST: APIRoute = async ({ request }) => {
 
 export const OPTIONS: APIRoute = async () => {
   return new Response(null, {
-    status: 200,
+    status: 204,
     headers: {
-      'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Headers': 'Content-Type',
       'Access-Control-Max-Age': '86400'
     }
   });

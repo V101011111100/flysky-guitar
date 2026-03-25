@@ -1,9 +1,13 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { sendEmail } from '../../../lib/email';
+import { ensureSameOrigin } from '../../../lib/security';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
-    // Auth check
+    const originCheck = ensureSameOrigin(request);
+    if (!originCheck.ok) return originCheck.response;
+
     const accessToken = cookies.get('sb-access-token');
     const refreshToken = cookies.get('sb-refresh-token');
 
@@ -30,31 +34,28 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     if (!test_email) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Email address required' }),
+        JSON.stringify({ success: false, error: 'Vui lòng nhập địa chỉ email nhận thử nghiệm.' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    // Send test email using the send API
-    const sendResponse = await fetch('/api/email/send', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        to: test_email,
-        template_key: 'order_confirmation',
-        variables: {
-          order_number: 'TEST-001',
-          total_amount: '1.000.000đ',
-          customer_name: 'Test User',
-          items: 'Test Product',
-        },
-      }),
+    const result = await sendEmail({
+      to: test_email,
+      subject: '✅ FlySky Guitar — Email test thành công!',
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#fff;border-radius:10px;border:1px solid #eee;">
+          <h2 style="color:#f48c25;margin-top:0;">✅ Kết nối SMTP thành công!</h2>
+          <p style="color:#444;">Cấu hình email của FlySky Guitar đang hoạt động bình thường.</p>
+          <p style="color:#444;">Email này được gửi vào: <strong>${new Date().toLocaleString('vi-VN')}</strong></p>
+          <hr style="border:none;border-top:1px solid #eee;margin:20px 0;"/>
+          <p style="color:#aaa;font-size:12px;">FlySky Guitar Admin — Cài đặt Email & Thông báo</p>
+        </div>
+      `,
+      templateKey: 'test',
     });
 
-    const result = await sendResponse.json();
-
     return new Response(JSON.stringify(result), {
-      status: sendResponse.status,
+      status: result.success ? 200 : 500,
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error: any) {

@@ -4,23 +4,24 @@ import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
 import { supabase } from '../lib/supabase';
 
-// Lấy cài đặt thanh toán từ DB Server-side
-const { data: settingsData } = await supabase
-  .from('site_settings')
+// Lấy cài đặt thanh toán từ bảng payment_settings
+const { data: paymentSettingsData } = await supabase
+  .from('payment_settings')
   .select('*')
-  .in('key', ['flysky_bankName', 'flysky_bankAccountName', 'flysky_bankAccountNumber', 'flysky_momoPartnerCode', 'flysky_momoAccessKey', 'flysky_momoSecretKey']);
+  .in('provider', ['bank_transfer', 'momo']);
 
-const getSetting = (key: string, _default: string) => {
-  const item = settingsData?.find((s: any) => s.key === key);
-  return item ? item.value : _default;
-};
+const getProvider = (provider: string) =>
+  paymentSettingsData?.find((p: any) => p.provider === provider);
 
-const bankName = getSetting('flysky_bankName', 'BIDV');
-const bankAccountName = getSetting('flysky_bankAccountName', 'CÔNG TY TNHH FLYSKY GUITAR');
-const bankAccountNumber = getSetting('flysky_bankAccountNumber', '1234567890');
-// momo config
-const momoPartnerCode = getSetting('flysky_momoPartnerCode', '');
-const momoAccessKey = getSetting('flysky_momoAccessKey', '');
+const bankProvider = getProvider('bank_transfer');
+const bankEnabled: boolean = bankProvider?.enabled ?? true;
+const bankName: string = bankProvider?.config?.bank_name ?? 'BIDV';
+const bankAccountName: string = bankProvider?.config?.account_name ?? 'CÔNG TY TNHH FLYSKY GUITAR';
+const bankAccountNumber: string = bankProvider?.config?.account_number ?? '1234567890';
+
+const momoProvider = getProvider('momo');
+const momoEnabled: boolean = momoProvider?.enabled ?? false;
+const momoPartnerCode: string = momoProvider?.config?.partner_code ?? '';
 ---
 
 <Layout title="Thanh toán đơn hàng | FlySky Guitar" description="Trang thanh toán đơn hàng an toàn.">
@@ -72,7 +73,7 @@ const momoAccessKey = getSetting('flysky_momoAccessKey', '');
           <div class="bg-card-dark border border-border-dark rounded-2xl overflow-hidden flex flex-col">
             <div class="flex border-b border-border-dark">
               <button id="tab-btn-bank" class="flex-1 py-4 text-sm font-bold text-white bg-primary/10 border-b-2 border-primary transition-all">Chuyển khoản / VietQR</button>
-              <button id="tab-btn-momo" class="flex-1 py-4 text-sm font-bold text-text-muted hover:text-white transition-all">Ví MoMo</button>
+              {momoEnabled && <button id="tab-btn-momo" class="flex-1 py-4 text-sm font-bold text-text-muted hover:text-white transition-all">Ví MoMo</button>}
               <button id="tab-btn-visa" class="flex-1 py-4 text-sm font-bold text-text-muted hover:text-white transition-all">Thẻ Visa/Master</button>
             </div>
 
@@ -115,13 +116,13 @@ const momoAccessKey = getSetting('flysky_momoAccessKey', '');
               </div>
 
               <!-- Tab MoMo -->
+              {momoEnabled && (
               <div id="tab-pane-momo" class="hidden animate-fade-in text-center">
                  <div class="w-16 h-16 mx-auto bg-[#A50064] rounded-2xl flex items-center justify-center mb-4 mt-6">
                     <span class="text-white font-bold text-xl">MoMo</span>
                  </div>
                  <h3 class="text-white font-bold text-md mb-2">Thanh toán qua Ví MoMo</h3>
                  <p class="text-text-muted text-xs mb-6">Tính năng đang kích hoạt (BETA). Tạm thời sử dụng chuyển khoản thủ công nếu MoMo lỗi.</p>
-
                  {momoPartnerCode ? (
                     <button class="w-full bg-[#A50064] hover:bg-[#8A0054] text-white font-bold py-3 rounded-xl transition-colors">
                       Mở ứng dụng MoMo ngay
@@ -132,6 +133,7 @@ const momoAccessKey = getSetting('flysky_momoAccessKey', '');
                     </div>
                  )}
               </div>
+              )}
 
               <!-- Tab Visa -->
               <div id="tab-pane-visa" class="hidden animate-fade-in text-center">
@@ -171,13 +173,13 @@ const momoAccessKey = getSetting('flysky_momoAccessKey', '');
   <Footer />
 </Layout>
 
-<script define:vars={{ bankName, bankAccountNumber, bankAccountName }}>
+<script define:vars={{ bankName, bankAccountNumber, bankAccountName, momoEnabled }}>
   function formatPrice(n) {
     return n.toLocaleString('vi-VN') + '₫';
   }
 
-  // Handle Tab switching
-  const tabs = ['bank', 'momo', 'visa'];
+  // Build active tabs list dynamically based on enabled providers
+  const tabs = ['bank', ...(momoEnabled ? ['momo'] : []), 'visa'];
   tabs.forEach(tab => {
     document.getElementById(`tab-btn-${tab}`)?.addEventListener('click', () => {
       // styles buttons

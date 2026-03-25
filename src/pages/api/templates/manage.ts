@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { ensureSameOrigin } from '../../../lib/security';
 
 export const GET: APIRoute = async ({ request, url, cookies }) => {
   const type = url.searchParams.get('type');
@@ -16,6 +17,9 @@ export const GET: APIRoute = async ({ request, url, cookies }) => {
 };
 
 export const POST: APIRoute = async ({ request, cookies }) => {
+  const originCheck = ensureSameOrigin(request);
+  if (originCheck) return originCheck;
+
   // auth check...
   try {
     const body = await request.json();

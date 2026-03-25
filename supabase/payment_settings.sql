@@ -52,6 +52,12 @@ CREATE POLICY "Authenticated users can update payment settings"
   TO authenticated
   USING (true);
 
+-- Only authenticated users can insert payment settings
+CREATE POLICY "Authenticated users can insert payment settings"
+  ON payment_settings FOR INSERT
+  TO authenticated
+  WITH CHECK (true);
+
 -- Anyone can insert payment transactions (for webhooks)
 CREATE POLICY "Anyone can insert payment transactions"
   ON payment_transactions FOR INSERT

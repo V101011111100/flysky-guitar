@@ -1,8 +1,12 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { ensureSameOrigin } from '../../../lib/security';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
+    const originCheck = ensureSameOrigin(request);
+    if (!originCheck.ok) return originCheck.response;
+
     // Authenticate user via cookies
     const accessToken = cookies.get("sb-access-token");
     const refreshToken = cookies.get("sb-refresh-token");

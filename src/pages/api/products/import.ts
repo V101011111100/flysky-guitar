@@ -1,8 +1,12 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import * as XLSX from 'xlsx';
+import { ensureSameOrigin } from '../../../lib/security';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
+  const originCheck = ensureSameOrigin(request);
+  if (originCheck) return originCheck;
+
   try {
     // 1. Auth check
     const accessToken = cookies.get("sb-access-token");

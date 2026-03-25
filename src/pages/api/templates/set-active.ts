@@ -1,7 +1,11 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { ensureSameOrigin } from '../../../lib/security';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
+  const originCheck = ensureSameOrigin(request);
+  if (originCheck) return originCheck;
+
   try {
     const { id, type } = await request.json();
     if (!id || !type) return new Response(JSON.stringify({ error: 'Missing fields' }), { status: 400 });

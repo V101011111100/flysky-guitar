@@ -233,15 +233,20 @@ const instagramUrl = getSetting('flysky_instagramUrl', 'https://instagram.com/fl
   closeBtn.addEventListener('click', closeChat);
 
   // Form submit
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const name = (document.getElementById('chat-name') as HTMLInputElement).value.trim();
-    const phone = (document.getElementById('chat-phone') as HTMLInputElement).value.trim();
-    const content = (document.getElementById('chat-content') as HTMLTextAreaElement).value.trim();
+    const nameEl  = document.getElementById('chat-name')    as HTMLInputElement;
+    const phoneEl = document.getElementById('chat-phone')   as HTMLInputElement;
+    const contentEl = document.getElementById('chat-content') as HTMLTextAreaElement;
+    const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+
+    const name    = nameEl.value.trim();
+    const phone   = phoneEl.value.trim();
+    const content = contentEl.value.trim();
 
     if (!name || !phone || !content) {
-      [document.getElementById('chat-name'), document.getElementById('chat-phone'), document.getElementById('chat-content')].forEach(el => {
-        if (el && !(el as HTMLInputElement).value.trim()) {
+      [nameEl, phoneEl, contentEl].forEach(el => {
+        if (!el.value.trim()) {
           el.classList.add('ring-2', 'ring-red-500', 'border-red-500');
           setTimeout(() => el.classList.remove('ring-2', 'ring-red-500', 'border-red-500'), 2000);
         }
@@ -249,15 +254,35 @@ const instagramUrl = getSetting('flysky_instagramUrl', 'https://instagram.com/fl
       return;
     }
 
-    // Show success (future: POST to API)
-    form.classList.add('hidden');
-    successEl.classList.remove('hidden');
-    setTimeout(() => {
-      successEl.classList.add('hidden');
-      form.classList.remove('hidden');
-      form.reset();
-      closeChat();
-    }, 3000);
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Đang gửi...';
+
+    try {
+      const res = await fetch('/api/contact/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone, content }),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        form.classList.add('hidden');
+        successEl.classList.remove('hidden');
+        setTimeout(() => {
+          successEl.classList.add('hidden');
+          form.classList.remove('hidden');
+          form.reset();
+          closeChat();
+        }, 3000);
+      } else {
+        alert('Lỗi: ' + (data.error || 'Không thể gửi. Vui lòng thử lại.'));
+      }
+    } catch {
+      alert('Lỗi kết nối. Vui lòng thử lại sau.');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<span class="material-symbols-outlined text-[18px]">send</span> Hoàn tất & Gửi tin nhắn';
+    }
   });
 
   // Click outside to close

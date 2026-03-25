@@ -17,13 +17,20 @@ const getSetting = (key: string, _default: string) => {
   return item ? item.value : _default;
 };
 
+// Maintenance mode check — redirect frontend visitors if active
+const maintenanceMode = getSetting('flysky_maintenanceMode', 'false') === 'true';
+const currentPath = Astro.url.pathname;
+const isMaintenancePage = currentPath === '/maintenance';
+if (maintenanceMode && !isMaintenancePage) {
+  return Astro.redirect('/maintenance');
+}
+
 const clientSettings = {
-  logo: '', // Logo requires client-side loading or DB, localStorage is not available in SSR
+  logo: getSetting('flysky_logoUrl', ''), // Persisted logo URL from DB (set after R2 upload)
   flysky_storeName: getSetting('flysky_storeName', 'FlySky Guitar Studio'),
   flysky_contactEmail: getSetting('flysky_contactEmail', 'contact@flysky.vn'),
   flysky_storeAddress: getSetting('flysky_storeAddress', '37 Lê Thiện Trị'),
   flysky_contactPhone: getSetting('flysky_contactPhone', '090 123 4567'),
-  flysky_socialUrl: getSetting('flysky_socialUrl', 'https://facebook.com/flyskyguitar'),
   flysky_heroH1: getSetting('flysky_heroH1', 'Đánh Thức Đam Mê Âm Nhạc Của Bạn'),
   flysky_heroSub: getSetting('flysky_heroSub', 'Khám phá bộ sưu tập nhạc cụ cao cấp, được tinh chỉnh hoàn hảo để mang lại cảm hứng sáng tạo bất tận cho mọi nghệ sĩ.'),
   flysky_brandColor: getSetting('flysky_brandColor', '#f48c25'),

@@ -1,11 +1,15 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { logActivity, getClientIp } from '../../../lib/logger';
+import { ensureSameOrigin } from '../../../lib/security';
 
 const VALID_STATUSES = ['pending', 'processing', 'completed', 'cancelled'];
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
+    const originCheck = ensureSameOrigin(request);
+    if (!originCheck.ok) return originCheck.response;
+
     // Auth check
     const accessToken = cookies.get('sb-access-token');
     const refreshToken = cookies.get('sb-refresh-token');

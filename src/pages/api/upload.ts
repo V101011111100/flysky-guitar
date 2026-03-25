@@ -1,8 +1,35 @@
 import type { APIRoute } from 'astro';
 import { uploadToR2 } from '../../lib/r2';
+import { supabase } from '../../lib/supabase';
+import { ensureSameOrigin } from '../../lib/security';
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, cookies }) => {
   try {
+    const originCheck = ensureSameOrigin(request);
+    if (!originCheck.ok) return originCheck.response;
+
+    const accessToken = cookies.get('sb-access-token');
+    const refreshToken = cookies.get('sb-refresh-token');
+
+    if (!accessToken || !refreshToken) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const { data: authData, error: authError } = await supabase.auth.setSession({
+      access_token: accessToken.value,
+      refresh_token: refreshToken.value,
+    });
+
+    if (authError || !authData.user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     const formData = await request.formData();
     const file = formData.get('file') as File;
 

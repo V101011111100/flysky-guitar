@@ -46,8 +46,21 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
         </div>
       </header>
 
+      <!-- Source Switcher -->
+      <div id="source-switcher" style="display:flex;align-items:center;gap:8px;padding:8px 20px;border-bottom:1px solid rgba(244,140,37,0.1);background:rgba(34,25,16,0.6);">
+        <button id="src-r2" class="src-tab src-tab-active" onclick="switchSource('r2')">
+          <span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;">cloud</span>
+          R2 (Sản phẩm)
+        </button>
+        <button id="src-supabase" class="src-tab" onclick="switchSource('supabase')">
+          <span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;">database</span>
+          Supabase Storage
+        </button>
+        <span id="storage-badge" style="margin-left:auto;font-size:11px;color:#64748b;">site-media bucket</span>
+      </div>
+
       <!-- Toolbar / Filters -->
-      <div class="toolbar">
+      <div class="toolbar" id="r2-toolbar">
         <div class="filters-flex">
           <button class="filter-chip chip-active">Tất cả</button>
           <button class="filter-chip">Hình ảnh</button>
@@ -67,13 +80,24 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
         </div>
       </div>
 
-      <!-- Media Grid -->
-      <div class="grid-scroll-area">
+      <!-- R2 Media Grid -->
+      <div class="grid-scroll-area" id="r2-grid-area">
         <div id="media-loading" style="display: flex; justify-content: center; padding: 40px; color: #94a3b8;">
           <span class="material-symbols-outlined" style="animation: spin 1s linear infinite;">autorenew</span>
           <span style="margin-left: 8px;">Đang tải danh sách...</span>
         </div>
         <div class="media-grid" id="media-grid" style="display: none;">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- Supabase Storage Grid -->
+      <div class="grid-scroll-area" id="storage-grid-area" style="display:none;">
+        <div id="storage-loading" style="display:flex;justify-content:center;padding:40px;color:#94a3b8;">
+          <span class="material-symbols-outlined" style="animation: spin 1s linear infinite;">autorenew</span>
+          <span style="margin-left:8px;">Đang tải Supabase Storage...</span>
+        </div>
+        <div class="media-grid" id="storage-grid" style="display:none;">
           <!-- Dynamically populated -->
         </div>
       </div>
@@ -113,6 +137,185 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
   let selectedFile = null;
   let selectedFiles = []; // Multi-select mode
   let isMultiSelectMode = false;
+
+  // ── Supabase Storage state ──
+  let storageFiles = [];
+  let storageSelectedFile = null;
+  let currentSource = 'r2'; // 'r2' | 'supabase'
+
+  function switchSource(src) {
+    currentSource = src;
+    const r2Tab = document.getElementById('src-r2');
+    const sbTab = document.getElementById('src-supabase');
+    const r2GridArea = document.getElementById('r2-grid-area');
+    const storageGridArea = document.getElementById('storage-grid-area');
+    const r2Toolbar = document.getElementById('r2-toolbar');
+    const storageBadge = document.getElementById('storage-badge');
+    const dirSidebar = document.querySelector('.dir-sidebar');
+
+    if (src === 'r2') {
+      r2Tab.classList.add('src-tab-active');
+      sbTab.classList.remove('src-tab-active');
+      r2GridArea.style.display = '';
+      storageGridArea.style.display = 'none';
+      r2Toolbar.style.display = '';
+      storageBadge.style.display = 'none';
+      if (dirSidebar) dirSidebar.style.display = '';
+      // Close storage sidebar
+      storageSelectedFile = null;
+      document.getElementById('details-sidebar').style.display = 'none';
+    } else {
+      sbTab.classList.add('src-tab-active');
+      r2Tab.classList.remove('src-tab-active');
+      r2GridArea.style.display = 'none';
+      storageGridArea.style.display = '';
+      r2Toolbar.style.display = 'none';
+      storageBadge.style.display = '';
+      if (dirSidebar) dirSidebar.style.display = 'none';
+      // Close R2 sidebar
+      selectedFile = null;
+      document.getElementById('details-sidebar').style.display = 'none';
+      if (storageFiles.length === 0) fetchStorageFiles();
+      else renderStorageGrid();
+    }
+  }
+
+  async function fetchStorageFiles() {
+    const loading = document.getElementById('storage-loading');
+    const grid = document.getElementById('storage-grid');
+    if (loading) loading.style.display = 'flex';
+    if (grid) grid.style.display = 'none';
+    try {
+      const res = await fetch('/api/media/storage-list');
+      const data = await res.json();
+      if (data.success) {
+        storageFiles = data.files;
+        renderStorageGrid();
+      } else {
+        showToast('Lỗi tải Supabase Storage: ' + (data.error || ''), 'error');
+      }
+    } catch (e) {
+      showToast('Lỗi kết nối khi tải Storage', 'error');
+    } finally {
+      if (loading) loading.style.display = 'none';
+      if (grid) grid.style.display = 'grid';
+    }
+  }
+
+  function renderStorageGrid() {
+    const grid = document.getElementById('storage-grid');
+    const loading = document.getElementById('storage-loading');
+    if (!grid) return;
+    if (loading) loading.style.display = 'none';
+    grid.style.display = 'grid';
+    grid.innerHTML = '';
+
+    if (storageFiles.length === 0) {
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:#64748b;"><span class="material-symbols-outlined" style="font-size:48px;display:block;margin-bottom:12px;">cloud_off</span>Bucket trống — chưa có file nào trong site-media</div>';
+      return;
+    }
+
+    storageFiles.forEach((file) => {
+      const isSelected = storageSelectedFile && storageSelectedFile.path === file.path;
+      const isImg = file.name.match(/\.(jpeg|jpg|gif|png|webp|avif|svg)$/i);
+      const item = document.createElement('div');
+      item.className = `grid-item ${isSelected ? 'item-selected' : ''}`;
+      item.onclick = () => {
+        storageSelectedFile = file;
+        renderStorageGrid();
+        renderStorageSidebar();
+      };
+      item.innerHTML = `
+        <div class="item-img" style="${isImg ? `background-image:url('${file.url}')` : 'background:#3f3f46;display:flex;align-items:center;justify-content:center;'}">   
+          ${!isImg ? '<span class="material-symbols-outlined" style="font-size:32px;color:#94a3b8;">insert_drive_file</span>' : ''}
+        </div>
+        <div class="item-overlay ${isSelected ? 'item-overlay-visible' : ''}">
+          <p class="item-title">${file.name}</p>
+        </div>
+      `;
+      grid.appendChild(item);
+    });
+  }
+
+  function renderStorageSidebar() {
+    const sidebar = document.getElementById('details-sidebar');
+    const content = document.getElementById('details-content');
+    const btnCopy = document.getElementById('btn-copy-url');
+    const btnDel = document.getElementById('btn-delete-file');
+    if (!sidebar || !content) return;
+
+    if (currentSource !== 'supabase' || !storageSelectedFile) {
+      if (currentSource === 'supabase') sidebar.style.display = 'none';
+      return;
+    }
+
+    const f = storageSelectedFile;
+    const isImg = f.name.match(/\.(jpeg|jpg|gif|png|webp|avif|svg)$/i);
+    const sizeStr = formatBytes(f.size || 0);
+    const dateStr = f.createdAt ? formatDate(f.createdAt) : '—';
+
+    content.innerHTML = `
+      <div class="preview-box">
+        <div class="preview-img" style="${isImg ? `background-image:url('${f.url}')` : 'background:#3f3f46;display:flex;align-items:center;justify-content:center;'}">
+          ${!isImg ? '<span class="material-symbols-outlined" style="font-size:48px;color:#94a3b8;">insert_drive_file</span>' : ''}
+        </div>
+        <div class="file-meta">
+          <div class="meta-row"><span class="meta-label">Tên file</span><span class="meta-val break-words">${f.name}</span></div>
+          <div class="meta-row"><span class="meta-label">Đường dẫn</span><span class="meta-val break-words" style="font-size:11px;color:#64748b;">${f.path}</span></div>
+          <div class="meta-row"><span class="meta-label">Bucket</span><span class="meta-val">site-media</span></div>
+          <div class="meta-row"><span class="meta-label">Kích thước</span><span class="meta-val">${sizeStr}</span></div>
+          <div class="meta-row"><span class="meta-label">Loại</span><span class="meta-val">${f.contentType || '—'}</span></div>
+          <div class="meta-row"><span class="meta-label">Ngày tạo</span><span class="meta-val">${dateStr}</span></div>
+        </div>
+      </div>
+    `;
+
+    sidebar.style.display = 'flex';
+
+    // Rebind sidebar buttons for storage context
+    if (btnCopy) {
+      btnCopy.onclick = () => {
+        navigator.clipboard.writeText(f.url).then(() => {
+          const orig = btnCopy.innerHTML;
+          btnCopy.innerHTML = '<span class="material-symbols-outlined icon-norm">check</span> Đã sao chép!';
+          btnCopy.style.background = '#10b981';
+          showToast('Đã chép URL vào khay nhớ!', 'success');
+          setTimeout(() => { btnCopy.innerHTML = orig; btnCopy.style.background = ''; }, 2000);
+        });
+      };
+    }
+    if (btnDel) {
+      btnDel.onclick = () => deleteStorageFile(f);
+    }
+  }
+
+  async function deleteStorageFile(file) {
+    showConfirmModal(
+      `Xóa tệp "${file.name}" khỏi Supabase Storage?`,
+      async () => {
+        try {
+          const res = await fetch('/api/media/storage-delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: file.path, bucket: 'site-media' })
+          });
+          const data = await res.json();
+          if (data.success) {
+            storageFiles = storageFiles.filter(f => f.path !== file.path);
+            storageSelectedFile = null;
+            renderStorageGrid();
+            renderStorageSidebar();
+            showToast('Đã xóa tệp khỏi Supabase Storage!', 'success');
+          } else {
+            showToast('Lỗi xóa: ' + (data.error || 'Không xác định'), 'error');
+          }
+        } catch (e) {
+          showToast('Lỗi máy chủ khi xóa', 'error');
+        }
+      },
+      null
+    );
+  }
 
   const mediaGrid = document.getElementById('media-grid');
   const mediaLoading = document.getElementById('media-loading');
@@ -815,6 +1018,8 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
       fetchMedia();
       setupButtonListeners();
   });
+
+  window.switchSource = switchSource;
 </script>
 
 <style is:global>
@@ -1030,6 +1235,27 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
   }
   .btn-upload:hover { filter: brightness(1.1); }
   .btn-upload .material-symbols-outlined { font-size: 18px; }
+
+  /* Source Switcher Tabs */
+  .src-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 18px;
+    border: none;
+    background: transparent;
+    color: #94a3b8;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .src-tab:hover { color: #f48c25; }
+  .src-tab-active {
+    color: #f48c25;
+    border-bottom-color: #f48c25;
+  }
 
   /* Toolbar Filter */
   .toolbar {

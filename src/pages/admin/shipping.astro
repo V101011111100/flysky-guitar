@@ -1,0 +1,1161 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout
+  title="Quản lý vận chuyển"
+  subtitle="Quản lý đối tác giao hàng, API tích hợp và vận đơn theo thời gian thực."
+  activeNav="shipping"
+>
+  <section class="shipping-page">
+    <div class="sp-head">
+      <div>
+        <h2>Quản lý Đối tác Vận chuyển</h2>
+        <p>Thiết lập API, gán vận đơn cho đơn hàng và theo dõi trạng thái giao hàng tập trung.</p>
+      </div>
+      <button id="btn-refresh" class="sp-btn-outline" type="button">Làm mới dữ liệu</button>
+    </div>
+
+    <div class="sp-stats" id="sp-stats"></div>
+
+    <section class="sp-card">
+      <div class="sp-card-head">
+        <h3>Kết nối nhà vận chuyển</h3>
+        <span class="sp-card-note">Bật/tắt kết nối và cấu hình API từng đối tác</span>
+      </div>
+      <div class="sp-provider-grid" id="sp-provider-grid"></div>
+    </section>
+
+    <section class="sp-card">
+      <div class="sp-card-head">
+        <h3>Cấu hình chi phí vận chuyển</h3>
+        <span class="sp-card-note">Đồng bộ từ bảng shipping_rates</span>
+      </div>
+      <div class="sp-table-wrap">
+        <table class="sp-table">
+          <thead>
+            <tr>
+              <th>Phương thức</th>
+              <th>Trạng thái API</th>
+              <th>Loại tính giá</th>
+              <th>Phí cơ bản</th>
+              <th>Phí/Kg</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="sp-rates-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="sp-card">
+      <div class="sp-card-head">
+        <h3>Quản lý đơn hàng vận chuyển</h3>
+        <span class="sp-card-note">Gán đối tác, mã vận đơn, trạng thái giao hàng</span>
+      </div>
+      <div class="sp-table-wrap">
+        <table class="sp-table">
+          <thead>
+            <tr>
+              <th>Mã đơn</th>
+              <th>Khách hàng</th>
+              <th>Tổng tiền</th>
+              <th>Đơn vị vận chuyển</th>
+              <th>Mã vận đơn</th>
+              <th>Trạng thái</th>
+              <th>ETA</th>
+              <th>Vị trí hiện tại</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="sp-orders-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="sp-card">
+      <div class="sp-card-head">
+        <h3>Theo dõi đơn hàng thời gian thực</h3>
+      </div>
+      <div class="sp-logs" id="sp-logs"></div>
+    </section>
+  </section>
+
+  <div class="sp-modal" id="provider-modal" aria-hidden="true">
+    <div class="sp-modal-content">
+      <div class="sp-modal-head">
+        <h3 id="provider-modal-title">Cấu hình API</h3>
+        <button type="button" id="provider-modal-close" class="sp-icon-btn">✕</button>
+      </div>
+      <div id="provider-form" class="sp-form-grid"></div>
+      <div class="sp-modal-actions">
+        <button type="button" id="provider-modal-cancel" class="sp-btn-outline">Hủy</button>
+        <button type="button" id="provider-modal-save" class="sp-btn-primary">Lưu cấu hình</button>
+      </div>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  type Provider = {
+    id: string;
+    provider_code: string;
+    provider_name: string;
+    enabled: boolean;
+    config: Record<string, any>;
+    updated_at: string;
+  };
+
+  type Tracking = {
+    id: string;
+    order_id: string;
+    provider_code: string;
+    tracking_number: string;
+    status: string;
+    current_location: string | null;
+    estimated_delivery: string | null;
+    updated_at: string;
+    created_at: string;
+    order?: {
+      order_number?: string;
+      customer_name?: string;
+      customer_phone?: string;
+      total_amount?: number;
+    };
+  };
+
+  type Order = {
+    id: string;
+    order_number: string;
+    customer_name: string;
+    customer_phone: string;
+    total_amount: number;
+    status: string;
+    created_at: string;
+  };
+
+  const providerLabels: Record<string, string> = {
+    ghtk: 'GHTK',
+    ghn: 'GHN',
+    viettel_post: 'Viettel Post',
+    vnpost: 'VNPost',
+    jnt: 'J&T',
+    self_delivery: 'Tự giao',
+  };
+
+  const providerShortCode: Record<string, string> = {
+    ghtk: 'GK',
+    ghn: 'GN',
+    viettel_post: 'VT',
+    vnpost: 'VN',
+    jnt: 'JT',
+    self_delivery: 'SD',
+  };
+
+  const trackingStatusLabel: Record<string, string> = {
+    pending: 'Chờ lấy hàng',
+    picked_up: 'Đã lấy hàng',
+    in_transit: 'Đang vận chuyển',
+    out_for_delivery: 'Đang giao',
+    delivered: 'Đã giao',
+    failed: 'Thất bại',
+    returned: 'Hoàn hàng',
+  };
+
+  const providerFieldSchemas: Record<string, Array<{ key: string; label: string; type?: string; placeholder?: string }>> = {
+    ghtk: [
+      { key: 'api_url', label: 'API URL' },
+      { key: 'shop_id', label: 'Shop ID' },
+      { key: 'api_token', label: 'API Token', type: 'password', placeholder: 'Để trống để giữ token cũ' },
+      { key: 'pick_address.address', label: 'Địa chỉ lấy hàng' },
+      { key: 'pick_address.ward', label: 'Phường/Xã' },
+      { key: 'pick_address.district', label: 'Quận/Huyện' },
+      { key: 'pick_address.province', label: 'Tỉnh/Thành phố' },
+    ],
+    viettel_post: [
+      { key: 'api_url', label: 'API URL' },
+      { key: 'customer_id', label: 'Customer ID' },
+      { key: 'username', label: 'Username' },
+      { key: 'password', label: 'Password', type: 'password', placeholder: 'Để trống để giữ password cũ' },
+      { key: 'sender_phone', label: 'SĐT người gửi' },
+      { key: 'sender_address', label: 'Địa chỉ lấy hàng' },
+    ],
+    ghn: [
+      { key: 'api_url', label: 'API URL' },
+      { key: 'shop_id', label: 'Shop ID' },
+      { key: 'from_district_id', label: 'District ID kho gửi' },
+      { key: 'api_token', label: 'API Token', type: 'password', placeholder: 'Để trống để giữ token cũ' },
+    ],
+    vnpost: [
+      { key: 'api_url', label: 'API URL' },
+      { key: 'customer_code', label: 'Mã khách hàng' },
+      { key: 'api_key', label: 'API Key', type: 'password', placeholder: 'Để trống để giữ key cũ' },
+    ],
+    jnt: [
+      { key: 'api_url', label: 'API URL' },
+      { key: 'customer_code', label: 'Mã khách hàng' },
+      { key: 'api_key', label: 'API Key', type: 'password', placeholder: 'Để trống để giữ key cũ' },
+    ],
+    self_delivery: [
+      { key: 'base_fee', label: 'Phí cơ bản' },
+      { key: 'free_shipping_threshold', label: 'Ngưỡng miễn phí ship' },
+    ],
+  };
+
+  let providers: Provider[] = [];
+  let rates: any[] = [];
+  let trackings: Tracking[] = [];
+  let orders: Order[] = [];
+
+  let activeProviderCode = '';
+
+  const statsEl = document.getElementById('sp-stats') as HTMLDivElement;
+  const providerGridEl = document.getElementById('sp-provider-grid') as HTMLDivElement;
+  const ratesBodyEl = document.getElementById('sp-rates-body') as HTMLTableSectionElement;
+  const ordersBodyEl = document.getElementById('sp-orders-body') as HTMLTableSectionElement;
+  const logsEl = document.getElementById('sp-logs') as HTMLDivElement;
+
+  const providerModal = document.getElementById('provider-modal') as HTMLDivElement;
+  const providerModalTitle = document.getElementById('provider-modal-title') as HTMLHeadingElement;
+  const providerForm = document.getElementById('provider-form') as HTMLDivElement;
+
+  function formatCurrency(value: number): string {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(value || 0);
+  }
+
+  function formatDate(value: string | null | undefined): string {
+    if (!value) return '—';
+    return new Date(value).toLocaleString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+
+  function getByPath(obj: Record<string, any>, path: string): any {
+    return path.split('.').reduce((acc: any, seg) => (acc ? acc[seg] : undefined), obj);
+  }
+
+  function setByPath(obj: Record<string, any>, path: string, value: any): void {
+    const segs = path.split('.');
+    let cursor: Record<string, any> = obj;
+
+    for (let i = 0; i < segs.length - 1; i++) {
+      const seg = segs[i];
+      if (!cursor[seg] || typeof cursor[seg] !== 'object') {
+        cursor[seg] = {};
+      }
+      cursor = cursor[seg];
+    }
+
+    cursor[segs[segs.length - 1]] = value;
+  }
+
+  function toast(message: string, type: 'success' | 'error' = 'success') {
+    const node = document.createElement('div');
+    node.className = `sp-toast ${type === 'error' ? 'sp-toast-error' : ''}`;
+    node.textContent = message;
+    document.body.appendChild(node);
+    setTimeout(() => {
+      node.style.opacity = '0';
+      setTimeout(() => node.remove(), 260);
+    }, 2400);
+  }
+
+  async function loadDashboard() {
+    const res = await fetch('/api/admin/shipping/dashboard');
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Không thể tải dữ liệu vận chuyển');
+    }
+
+    providers = data.providers || [];
+    rates = data.rates || [];
+    trackings = data.trackings || [];
+    orders = data.orders || [];
+
+    renderStats();
+    renderProviders();
+    renderRates();
+    renderOrders();
+    renderLogs();
+  }
+
+  function renderStats() {
+    const activeProviders = providers.filter((p) => p.enabled).length;
+    const inTransit = trackings.filter((t) => ['picked_up', 'in_transit', 'out_for_delivery'].includes(t.status)).length;
+    const failed = trackings.filter((t) => ['failed', 'returned'].includes(t.status)).length;
+    const waitingAssign = orders.filter((o) => {
+      return !trackings.find((t) => t.order_id === o.id);
+    }).length;
+
+    statsEl.innerHTML = `
+      <div class="sp-stat-card">
+        <p class="sp-stat-label">Tổng đối tác</p>
+        <div class="sp-stat-row"><span class="sp-stat-value">${String(providers.length).padStart(2, '0')}</span><span class="sp-up">+${activeProviders} mới</span></div>
+      </div>
+      <div class="sp-stat-card">
+        <p class="sp-stat-label">Đang giao hàng</p>
+        <div class="sp-stat-row"><span class="sp-stat-value">${inTransit}</span><span class="sp-chip">Đang xử lý</span></div>
+      </div>
+      <div class="sp-stat-card">
+        <p class="sp-stat-label">Giao thất bại</p>
+        <div class="sp-stat-row"><span class="sp-stat-value">${failed}</span><span class="sp-down">${failed > 0 ? 'Cần xử lý' : '0%'}</span></div>
+      </div>
+      <div class="sp-stat-card sp-stat-focus">
+        <p class="sp-stat-label">Chờ gán vận đơn</p>
+        <div class="sp-stat-row"><span class="sp-stat-value">${waitingAssign}</span><span class="sp-up">Realtime</span></div>
+      </div>
+    `;
+  }
+
+  function renderProviders() {
+    providerGridEl.innerHTML = providers
+      .map((provider) => {
+        return `
+          <article class="sp-provider-card">
+            <div class="sp-provider-logo">${providerShortCode[provider.provider_code] || 'SP'}</div>
+            <div class="sp-provider-main">
+              <h4>${provider.provider_name}</h4>
+              <span class="sp-pill ${provider.enabled ? 'sp-pill-green' : 'sp-pill-gray'}">
+                ${provider.enabled ? 'ĐANG HOẠT ĐỘNG' : 'CHƯA KẾT NỐI'}
+              </span>
+            </div>
+            <div class="sp-provider-actions">
+              ${provider.enabled ? `
+                <label class="sp-switch">
+                  <span>Tự động kết nối</span>
+                  <input type="checkbox" data-provider-toggle="${provider.provider_code}" ${provider.enabled ? 'checked' : ''}>
+                </label>
+              ` : `
+                <label class="sp-switch">
+                  <span>Bật kết nối</span>
+                  <input type="checkbox" data-provider-toggle="${provider.provider_code}" ${provider.enabled ? 'checked' : ''}>
+                </label>
+              `}
+              <button class="sp-btn-primary" data-provider-config="${provider.provider_code}" type="button">${provider.enabled ? 'Cài đặt API' : 'Kết nối ngay'}</button>
+            </div>
+          </article>
+        `;
+      })
+      .join('');
+
+    providerGridEl.querySelectorAll<HTMLInputElement>('[data-provider-toggle]').forEach((input) => {
+      input.addEventListener('change', async () => {
+        const providerCode = input.dataset.providerToggle || '';
+        try {
+          await updateProvider(providerCode, { enabled: input.checked });
+          toast('Đã cập nhật trạng thái kết nối');
+        } catch (error: any) {
+          input.checked = !input.checked;
+          toast(error.message || 'Không thể cập nhật trạng thái', 'error');
+        }
+      });
+    });
+
+    providerGridEl.querySelectorAll<HTMLButtonElement>('[data-provider-config]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const providerCode = button.dataset.providerConfig || '';
+        openProviderModal(providerCode);
+      });
+    });
+  }
+
+  function renderRates() {
+    if (!rates.length) {
+      ratesBodyEl.innerHTML = `<tr><td colspan="6" class="sp-empty">Chưa có dữ liệu cấu hình phí vận chuyển.</td></tr>`;
+      return;
+    }
+
+    ratesBodyEl.innerHTML = rates
+      .map((rate) => {
+        const route = `${rate.from_province || 'Toàn quốc'} → ${rate.to_province || 'Toàn quốc'}`;
+        const weight = `${rate.weight_from ?? 0}kg - ${rate.weight_to ?? '∞'}kg`;
+        return `
+          <tr>
+            <td>
+              <div class="sp-method-cell">
+                <span class="sp-method-code">${providerShortCode[rate.provider_code] || 'SP'}</span>
+                <div>
+                  <p class="sp-method-title">${providerLabels[rate.provider_code] || rate.provider_code}</p>
+                  <p class="sp-method-sub">${route}</p>
+                </div>
+              </div>
+            </td>
+            <td>${rate.enabled ? '<span class="sp-dot ok"></span> Hoạt động' : '<span class="sp-dot off"></span> Ngoại tuyến'}</td>
+            <td><span class="sp-type-chip">${weight.includes('∞') ? 'Theo cân nặng' : 'Cố định'}</span></td>
+            <td>${formatCurrency(Number(rate.base_fee || 0))}</td>
+            <td>${rate.per_kg_fee ? `${formatCurrency(Number(rate.per_kg_fee || 0))}/kg` : '—'}</td>
+            <td><button class="sp-icon-ghost" type="button">⚙</button></td>
+          </tr>
+        `;
+      })
+      .join('');
+  }
+
+  function renderOrders() {
+    if (!orders.length) {
+      ordersBodyEl.innerHTML = `<tr><td colspan="9" class="sp-empty">Không có đơn hàng cần xử lý vận chuyển.</td></tr>`;
+      return;
+    }
+
+    const providerOptions = providers
+      .map((p) => `<option value="${p.provider_code}">${p.provider_name}</option>`)
+      .join('');
+
+    ordersBodyEl.innerHTML = orders
+      .slice(0, 40)
+      .map((order) => {
+        const existing = trackings.find((tracking) => tracking.order_id === order.id);
+
+        return `
+          <tr data-order-row="${order.id}">
+            <td>#${order.order_number}</td>
+            <td>
+              <div>${order.customer_name || 'Khách lẻ'}</div>
+              <div class="sp-muted">${order.customer_phone || ''}</div>
+            </td>
+            <td>${formatCurrency(Number(order.total_amount || 0))}</td>
+            <td>
+              <select data-field="provider">
+                ${providerOptions}
+              </select>
+            </td>
+            <td><input data-field="tracking" type="text" value="${existing?.tracking_number || ''}" placeholder="Nhập mã vận đơn"></td>
+            <td>
+              <select data-field="status">
+                <option value="pending">Chờ lấy hàng</option>
+                <option value="picked_up">Đã lấy hàng</option>
+                <option value="in_transit">Đang vận chuyển</option>
+                <option value="out_for_delivery">Đang giao</option>
+                <option value="delivered">Đã giao</option>
+                <option value="failed">Thất bại</option>
+                <option value="returned">Hoàn hàng</option>
+              </select>
+            </td>
+            <td><input data-field="eta" type="datetime-local" value="${existing?.estimated_delivery ? new Date(existing.estimated_delivery).toISOString().slice(0, 16) : ''}"></td>
+            <td><input data-field="location" type="text" value="${existing?.current_location || ''}" placeholder="Bưu cục hiện tại"></td>
+            <td><button class="sp-btn-primary" type="button" data-save-order="${order.id}">Lưu</button></td>
+          </tr>
+        `;
+      })
+      .join('');
+
+    ordersBodyEl.querySelectorAll<HTMLTableRowElement>('tr[data-order-row]').forEach((row) => {
+      const orderId = row.dataset.orderRow || '';
+      const existing = trackings.find((tracking) => tracking.order_id === orderId);
+
+      const providerSelect = row.querySelector<HTMLSelectElement>('select[data-field="provider"]');
+      const statusSelect = row.querySelector<HTMLSelectElement>('select[data-field="status"]');
+
+      if (providerSelect) providerSelect.value = existing?.provider_code || 'ghtk';
+      if (statusSelect) statusSelect.value = existing?.status || 'pending';
+    });
+
+    ordersBodyEl.querySelectorAll<HTMLButtonElement>('button[data-save-order]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const orderId = button.dataset.saveOrder || '';
+        const row = ordersBodyEl.querySelector<HTMLTableRowElement>(`tr[data-order-row="${orderId}"]`);
+        if (!row) return;
+
+        const providerCode = row.querySelector<HTMLSelectElement>('select[data-field="provider"]')?.value || '';
+        const trackingNumber = row.querySelector<HTMLInputElement>('input[data-field="tracking"]')?.value.trim() || '';
+        const status = row.querySelector<HTMLSelectElement>('select[data-field="status"]')?.value || 'pending';
+        const etaRaw = row.querySelector<HTMLInputElement>('input[data-field="eta"]')?.value || '';
+        const currentLocation = row.querySelector<HTMLInputElement>('input[data-field="location"]')?.value.trim() || '';
+
+        if (!trackingNumber) {
+          toast('Cần nhập mã vận đơn trước khi lưu', 'error');
+          return;
+        }
+
+        button.disabled = true;
+        try {
+          const payload = {
+            orderId,
+            providerCode,
+            trackingNumber,
+            status,
+            currentLocation,
+            estimatedDelivery: etaRaw ? new Date(etaRaw).toISOString() : null,
+          };
+
+          const res = await fetch('/api/admin/shipping/trackings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+
+          if (!res.ok || !data.success) {
+            throw new Error(data.error || 'Không thể lưu vận đơn');
+          }
+
+          toast('Đã cập nhật thông tin vận chuyển');
+          await loadDashboard();
+        } catch (error: any) {
+          toast(error.message || 'Không thể lưu vận đơn', 'error');
+        } finally {
+          button.disabled = false;
+        }
+      });
+    });
+  }
+
+  function renderLogs() {
+    if (!trackings.length) {
+      logsEl.innerHTML = '<div class="sp-empty">Chưa có lịch sử tracking.</div>';
+      return;
+    }
+
+    logsEl.innerHTML = trackings
+      .slice(0, 12)
+      .map((tracking) => {
+        const status = trackingStatusLabel[tracking.status] || tracking.status;
+        const orderCode = tracking.order?.order_number || 'N/A';
+        const provider = providerLabels[tracking.provider_code] || tracking.provider_code;
+
+        return `
+          <article class="sp-log-item">
+            <div>
+              <p class="sp-log-title">#${orderCode} • ${tracking.tracking_number}</p>
+              <p class="sp-log-sub">${provider} • ${status}${tracking.current_location ? ` - ${tracking.current_location}` : ''}</p>
+            </div>
+            <div class="sp-log-time">Cập nhật: ${formatDate(tracking.updated_at)}</div>
+          </article>
+        `;
+      })
+      .join('');
+  }
+
+  function openProviderModal(providerCode: string) {
+    const provider = providers.find((p) => p.provider_code === providerCode);
+    if (!provider) return;
+
+    activeProviderCode = providerCode;
+    providerModalTitle.textContent = `Cấu hình API - ${provider.provider_name}`;
+
+    const schema = providerFieldSchemas[providerCode] || [
+      { key: 'api_url', label: 'API URL' },
+      { key: 'api_key', label: 'API Key', type: 'password', placeholder: 'Để trống để giữ key cũ' },
+    ];
+
+    providerForm.innerHTML = schema
+      .map((field) => {
+        const value = getByPath(provider.config || {}, field.key);
+        const inputType = field.type || 'text';
+        const displayValue = inputType === 'password' ? '' : (value ?? '');
+
+        return `
+          <label class="sp-form-group">
+            <span>${field.label}</span>
+            <input
+              type="${inputType}"
+              data-config-key="${field.key}"
+              value="${String(displayValue)}"
+              placeholder="${field.placeholder || ''}"
+              autocomplete="off"
+            >
+          </label>
+        `;
+      })
+      .join('');
+
+    providerModal.classList.add('open');
+    providerModal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeProviderModal() {
+    providerModal.classList.remove('open');
+    providerModal.setAttribute('aria-hidden', 'true');
+    providerForm.innerHTML = '';
+    activeProviderCode = '';
+  }
+
+  async function updateProvider(providerCode: string, patch: { enabled?: boolean; config?: Record<string, any> }) {
+    const res = await fetch('/api/admin/shipping/providers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        providerCode,
+        enabled: patch.enabled,
+        config: patch.config,
+      }),
+    });
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Không thể cập nhật nhà vận chuyển');
+    }
+
+    await loadDashboard();
+  }
+
+  document.getElementById('provider-modal-close')?.addEventListener('click', closeProviderModal);
+  document.getElementById('provider-modal-cancel')?.addEventListener('click', closeProviderModal);
+  document.getElementById('provider-modal-save')?.addEventListener('click', async () => {
+    if (!activeProviderCode) return;
+
+    const config: Record<string, any> = {};
+    providerForm.querySelectorAll<HTMLInputElement>('input[data-config-key]').forEach((input) => {
+      const key = input.dataset.configKey || '';
+      if (!key) return;
+      setByPath(config, key, input.value);
+    });
+
+    const current = providers.find((p) => p.provider_code === activeProviderCode);
+
+    try {
+      await updateProvider(activeProviderCode, {
+        enabled: current?.enabled,
+        config,
+      });
+      toast('Đã lưu cấu hình API');
+      closeProviderModal();
+    } catch (error: any) {
+      toast(error.message || 'Không thể lưu cấu hình API', 'error');
+    }
+  });
+
+  providerModal.addEventListener('click', (event) => {
+    if (event.target === providerModal) {
+      closeProviderModal();
+    }
+  });
+
+  document.getElementById('btn-refresh')?.addEventListener('click', async () => {
+    try {
+      await loadDashboard();
+      toast('Đã làm mới dữ liệu');
+    } catch (error: any) {
+      toast(error.message || 'Không thể làm mới dữ liệu', 'error');
+    }
+  });
+
+  loadDashboard().catch((error) => {
+    toast(error.message || 'Không thể tải dữ liệu vận chuyển', 'error');
+  });
+</script>
+
+<style is:global>
+  .shipping-page {
+    display: grid;
+    gap: 16px;
+    color: #f8fafc;
+  }
+
+  .sp-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .sp-head h2 {
+    font-size: 44px;
+    line-height: 1.05;
+    margin-bottom: 4px;
+    letter-spacing: -0.02em;
+  }
+
+  .sp-head p {
+    color: #9aa5b5;
+    font-size: 14px;
+  }
+
+  .sp-card {
+    background: linear-gradient(180deg, rgba(38, 28, 19, 0.95) 0%, rgba(32, 23, 16, 0.95) 100%);
+    border: 1px solid rgba(244, 140, 37, 0.2);
+    border-radius: 14px;
+    padding: 16px;
+  }
+
+  .sp-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .sp-card-head h3 {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .sp-card-note {
+    color: #98a3b7;
+    font-size: 12px;
+  }
+
+  .sp-btn-outline,
+  .sp-btn-primary {
+    border-radius: 8px;
+    border: 1px solid #4a3828;
+    background: transparent;
+    color: #f1f5f9;
+    font-size: 12px;
+    font-weight: 800;
+    min-height: 36px;
+    padding: 8px 13px;
+    cursor: pointer;
+    transition: all .16s;
+  }
+
+  .sp-btn-outline:hover {
+    border-color: #f48c25;
+    color: #f48c25;
+    background: rgba(244, 140, 37, 0.08);
+  }
+
+  .sp-btn-primary {
+    border-color: #e47f1e;
+    color: #fff;
+    background: linear-gradient(180deg, #f29a43 0%, #ee8520 100%);
+  }
+
+  .sp-btn-primary:hover {
+    filter: brightness(1.08);
+  }
+
+  .sp-stats {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .sp-stat-card {
+    border: 1px solid #3f3125;
+    border-radius: 10px;
+    background: rgba(39, 29, 20, 0.8);
+    padding: 12px;
+  }
+
+  .sp-stat-focus {
+    border-color: rgba(244, 140, 37, 0.45);
+  }
+
+  .sp-stat-label {
+    color: #8f9cb0;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    font-size: 10px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .sp-stat-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .sp-stat-value {
+    font-size: 30px;
+    line-height: 1;
+    font-weight: 800;
+    color: #fff;
+  }
+
+  .sp-chip,
+  .sp-up,
+  .sp-down {
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .sp-chip {
+    color: #f5a452;
+    background: rgba(244, 140, 37, 0.16);
+    padding: 2px 8px;
+    border-radius: 999px;
+  }
+
+  .sp-up {
+    color: #22c55e;
+  }
+
+  .sp-down {
+    color: #f87171;
+  }
+
+  .sp-provider-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .sp-provider-card {
+    border: 1px solid #3f3125;
+    border-radius: 12px;
+    background: rgba(37, 27, 18, 0.9);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+    transition: border-color .15s, transform .15s;
+  }
+
+  .sp-provider-card:hover {
+    border-color: rgba(244, 140, 37, 0.35);
+    transform: translateY(-1px);
+  }
+
+  .sp-provider-logo {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    border: 2px solid #fff;
+    background: linear-gradient(180deg, #5f646f, #3a3f49);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    font-weight: 800;
+    color: #fff;
+  }
+
+  .sp-provider-main h4 {
+    font-size: 16px;
+    margin-bottom: 3px;
+  }
+
+  .sp-pill {
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .06em;
+    padding: 3px 8px;
+  }
+
+  .sp-pill-green {
+    color: #22c55e;
+    background: rgba(34, 197, 94, 0.1);
+  }
+
+  .sp-pill-gray {
+    color: #9aa5b5;
+    background: rgba(148, 163, 184, 0.1);
+  }
+
+  .sp-provider-actions {
+    margin-top: auto;
+    width: 100%;
+    display: grid;
+    gap: 8px;
+  }
+
+  .sp-switch {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    color: #a7b3c7;
+    font-size: 11px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(74, 56, 40, 0.7);
+  }
+
+  .sp-switch input {
+    width: 15px;
+    height: 15px;
+    accent-color: #f48c25;
+  }
+
+  .sp-table-wrap {
+    overflow: auto;
+    border: 1px solid #3f3125;
+    border-radius: 10px;
+    background: rgba(20, 15, 10, 0.38);
+  }
+
+  .sp-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 900px;
+  }
+
+  .sp-table th,
+  .sp-table td {
+    padding: 12px 10px;
+    font-size: 12px;
+    border-top: 1px solid rgba(74, 56, 40, 0.75);
+    color: #e2e8f0;
+  }
+
+  .sp-table thead th {
+    border-top: none;
+    color: #8f9cb0;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    font-size: 10px;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.015);
+  }
+
+  .sp-table tbody tr:hover {
+    background: rgba(244, 140, 37, 0.05);
+  }
+
+  .sp-method-cell {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+
+  .sp-method-code {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: #2e241a;
+    border: 1px solid #49392b;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 800;
+    color: #d6deea;
+  }
+
+  .sp-method-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #f8fafc;
+  }
+
+  .sp-method-sub {
+    font-size: 10px;
+    color: #8f9cb0;
+    margin-top: 2px;
+  }
+
+  .sp-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+  }
+
+  .sp-dot.ok {
+    background: #22c55e;
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+  }
+
+  .sp-dot.off {
+    background: #6b7280;
+  }
+
+  .sp-type-chip {
+    font-size: 10px;
+    border-radius: 6px;
+    padding: 2px 7px;
+    color: #c8d4e7;
+    background: rgba(59, 130, 246, 0.16);
+  }
+
+  .sp-icon-ghost {
+    border: 1px solid #49392b;
+    background: transparent;
+    color: #b8c3d5;
+    border-radius: 7px;
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+  }
+
+  .sp-table input,
+  .sp-table select,
+  .sp-form-group input {
+    width: 100%;
+    min-height: 35px;
+    border-radius: 8px;
+    border: 1px solid #4a3828;
+    background: #241b12;
+    color: #f8fafc;
+    font-size: 12px;
+    padding: 7px 8px;
+  }
+
+  .sp-table input:focus,
+  .sp-table select:focus,
+  .sp-form-group input:focus {
+    outline: none;
+    border-color: rgba(244, 140, 37, 0.8);
+    box-shadow: 0 0 0 3px rgba(244, 140, 37, 0.14);
+  }
+
+  .sp-empty {
+    text-align: center;
+    color: #9aa5b5;
+    padding: 20px;
+  }
+
+  .sp-muted {
+    color: #9aa5b5;
+    font-size: 11px;
+  }
+
+  .sp-logs {
+    display: grid;
+    gap: 10px;
+  }
+
+  .sp-log-item {
+    border: 1px solid #3f3125;
+    background: rgba(36, 27, 19, 0.9);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .sp-log-title {
+    font-size: 12px;
+    color: #f8fafc;
+    font-weight: 700;
+  }
+
+  .sp-log-sub {
+    font-size: 11px;
+    color: #f59e0b;
+    margin-top: 2px;
+  }
+
+  .sp-log-time {
+    font-size: 11px;
+    color: #93a0b4;
+  }
+
+  .sp-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 120;
+    padding: 16px;
+  }
+
+  .sp-modal.open {
+    display: flex;
+  }
+
+  .sp-modal-content {
+    width: min(700px, 100%);
+    max-height: 88vh;
+    overflow: auto;
+    border-radius: 12px;
+    border: 1px solid #4a3828;
+    background: #261b12;
+    padding: 14px;
+    display: grid;
+    gap: 10px;
+  }
+
+  .sp-modal-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .sp-modal-head h3 {
+    font-size: 16px;
+  }
+
+  .sp-icon-btn {
+    border: 1px solid #4a3828;
+    background: transparent;
+    color: #cbd5e1;
+    border-radius: 8px;
+    width: 34px;
+    height: 34px;
+    cursor: pointer;
+  }
+
+  .sp-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .sp-form-group {
+    display: grid;
+    gap: 6px;
+  }
+
+  .sp-form-group span {
+    font-size: 12px;
+    color: #c4cfdf;
+    font-weight: 700;
+  }
+
+  .sp-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .sp-toast {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    background: #16a34a;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 9px 12px;
+    border-radius: 10px;
+    z-index: 200;
+    transition: opacity .26s;
+  }
+
+  .sp-toast-error {
+    background: #ef4444;
+  }
+
+  @media (max-width: 1100px) {
+    .sp-stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .sp-provider-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 680px) {
+    .sp-head h2 {
+      font-size: 34px;
+    }
+
+    .sp-stats,
+    .sp-provider-grid,
+    .sp-form-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .sp-modal-actions {
+      flex-direction: column;
+    }
+
+    .sp-btn-outline,
+    .sp-btn-primary {
+      width: 100%;
+    }
+  }
+</style>

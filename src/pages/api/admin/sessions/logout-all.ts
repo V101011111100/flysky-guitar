@@ -1,27 +1,47 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { SessionManager } from '../../../../lib/session-manager';
+import { ensureSameOrigin } from '../../../../lib/security';
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, cookies }) => {
   try {
-    // Lấy user hiện tại để xác thực quyền
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !user) {
+    const originCheck = ensureSameOrigin(request);
+    if (!originCheck.ok) return originCheck.response;
+
+    const accessToken = cookies.get('sb-access-token');
+    const refreshToken = cookies.get('sb-refresh-token');
+
+    if (!accessToken || !refreshToken) {
       return new Response(JSON.stringify({
         success: false,
-        error: 'User not authenticated'
+        error: 'Unauthorized'
       }), {
         status: 401,
         headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
+          'Content-Type': 'application/json'
+        }
+      });
+    }
+
+    const { data: authData, error: authError } = await supabase.auth.setSession({
+      access_token: accessToken.value,
+      refresh_token: refreshToken.value,
+    });
+
+    if (authError || !authData.user) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Unauthorized'
+      }), {
+        status: 401,
+        headers: {
+          'Content-Type': 'application/json'
         }
       });
     }
     
     // Terminate ALL sessions (including current) for this user
-    const sessions = await SessionManager.getUserSessions(user.id);
+    const sessions = await SessionManager.getUserSessions(authData.user.id);
     
     let allSuccess = true;
     for (const session of sessions) {
@@ -36,10 +56,7 @@ export const POST: APIRoute = async ({ request }) => {
       }), {
         status: 200,
         headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+          'Content-Type': 'application/json'
         }
       });
     } else {
@@ -49,8 +66,7 @@ export const POST: APIRoute = async ({ request }) => {
       }), {
         status: 500,
         headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
+          'Content-Type': 'application/json'
         }
       });
     }
@@ -63,8 +79,7 @@ export const POST: APIRoute = async ({ request }) => {
     }), {
       status: 500,
       headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
+        'Content-Type': 'application/json'
       }
     });
   }
@@ -72,11 +87,10 @@ export const POST: APIRoute = async ({ request }) => {
 
 export const OPTIONS: APIRoute = async () => {
   return new Response(null, {
-    status: 200,
+    status: 204,
     headers: {
-      'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Headers': 'Content-Type',
       'Access-Control-Max-Age': '86400'
     }
   });

@@ -1,5 +1,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { sendEmail, buildOrderConfirmationFromTemplate } from '../../../lib/email';
+import { sendPushToAll } from '../../../lib/push';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -91,6 +93,46 @@ export const POST: APIRoute = async ({ request }) => {
           }
         }
       }
+
+      // Gửi email + push notification (fire-and-forget, không block response)
+      const notifyAll = async () => {
+        try {
+          // 1. Email xác nhận đơn hàng cho khách hàng
+          if (customer_email) {
+            const { subject: emailSubject, html: emailHtml } =
+              await buildOrderConfirmationFromTemplate({
+                order_number: data.order_number,
+                customer_name,
+                customer_phone,
+                customer_address: customer_address,
+                payment_method: payment_method || 'bank',
+                total_amount: total_amount || 0,
+                items: Array.isArray(items)
+                  ? items.map((item: any) => ({
+                      name: item.name || item.categoryLabel || 'Sản phẩm',
+                      quantity: item.quantity || item.qty || 1,
+                      price: item.price || 0,
+                    }))
+                  : [],
+                note: note || undefined,
+              });
+            await sendEmail({
+              to: customer_email,
+              subject: emailSubject,
+              html: emailHtml,
+              templateKey: 'order_confirmation_customer',
+            });
+          }
+
+          // 3. Push notification cho admin
+          await sendPushToAll(
+            `🛒 Đơn hàng mới #${data.order_number}`,
+            `${customer_name} — ${(total_amount || 0).toLocaleString('vi-VN')}đ`,
+            '/admin/orders'
+          );
+        } catch {}
+      };
+      notifyAll();
 
       return new Response(JSON.stringify({ success: true, order_number: data.order_number, id: data.id }), { status: 200 });
 

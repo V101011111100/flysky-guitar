@@ -16,6 +16,8 @@ if (id) {
   if (data && !error) {
     product = data;
     isEdit = true;
+    console.log('Sản phẩm được load:', product);
+    console.log('Video URL:', product.video_url);
   }
 }
 
@@ -122,15 +124,6 @@ const { data: categoriesArray } = await supabase
             <!-- Gallery items will be injected here by JS -->
           </div>
           
-          <!-- Video Link -->
-          <div>
-            <label class="text-xs font-bold uppercase tracking-widest text-primary/70 mb-2 block">Link Video Demo Âm thanh</label>
-            <div class="relative">
-              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">play_circle</span>
-              <input type="text" class="w-full bg-background-dark border border-primary/20 rounded-lg py-3 pl-10 pr-4 focus:ring-1 focus:ring-primary focus:border-primary text-sm outline-none text-slate-200 placeholder-slate-600 transition-colors" placeholder="YouTube hoặc Vimeo URL..." />
-            </div>
-          </div>
-          
         </div>
       </section>
       
@@ -229,8 +222,9 @@ const { data: categoriesArray } = await supabase
               <input type="number" id="prod-stock" class="w-full bg-background-dark border border-primary/20 rounded-lg py-3 px-4 focus:ring-1 focus:ring-primary outline-none text-base text-slate-100 transition-colors" placeholder="10" value={isEdit ? product?.stock_quantity : '0'} min="0" required />
             </div>
             <div>
-              <label class="text-xs font-bold uppercase tracking-widest text-primary/70 mb-2 block">Link Ảnh Chính (Bắt buộc) *</label>
-              <input type="url" id="prod-image" class="w-full bg-background-dark border border-primary/20 rounded-lg py-3 px-4 focus:ring-1 focus:ring-primary outline-none text-sm text-slate-300 placeholder-slate-600 transition-colors" placeholder="https://..." value={isEdit ? product?.main_image_url : ''} required />
+              <label class="text-xs font-bold uppercase tracking-widest text-primary/70 mb-2 block">Link Video Demo (Bắt buộc) *</label>
+              <input type="url" id="prod-video" class="w-full bg-background-dark border border-primary/20 rounded-lg py-3 px-4 focus:ring-1 focus:ring-primary outline-none text-sm text-slate-300 placeholder-slate-600 transition-colors" placeholder="YouTube hoặc Vimeo URL..." value={isEdit ? product?.video_url : ''} required />
+              <p class="text-xs text-text-muted mt-1">Ví dụ: https://www.youtube.com/watch?v=dQw4w9WgXcQ</p>
             </div>
           </div>
           
@@ -407,7 +401,8 @@ const { data: categoriesArray } = await supabase
           'prod-category': (document.getElementById('prod-category') as HTMLSelectElement)?.value || '',
           'prod-stock': (document.getElementById('prod-stock') as HTMLInputElement)?.value || '0',
           'prod-status': (document.getElementById('prod-status') as HTMLSelectElement)?.value || 'active',
-          'prod-gallery': (document.getElementById('gallery-images-json') as HTMLInputElement)?.value || '[]'
+          'prod-gallery': (document.getElementById('gallery-images-json') as HTMLInputElement)?.value || '[]',
+          'prod-video': (document.getElementById('prod-video') as HTMLInputElement)?.value || ''
         };
 
         try {

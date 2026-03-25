@@ -2,20 +2,37 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { SessionManager } from '../../../lib/session-manager';
 
-export const GET: APIRoute = async ({ request }) => {
+export const GET: APIRoute = async ({ request, cookies }) => {
   try {
-    // Lấy user hiện tại từ session
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !user) {
+    const accessToken = cookies.get('sb-access-token');
+    const refreshToken = cookies.get('sb-refresh-token');
+
+    if (!accessToken || !refreshToken) {
       return new Response(JSON.stringify({
         success: false,
-        error: 'User not authenticated'
+        error: 'Unauthorized'
       }), {
         status: 401,
         headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
+          'Content-Type': 'application/json'
+        }
+      });
+    }
+
+    const { data: authData, error: authError } = await supabase.auth.setSession({
+      access_token: accessToken.value,
+      refresh_token: refreshToken.value,
+    });
+
+    const user = authData?.user;
+    if (authError || !user) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Unauthorized'
+      }), {
+        status: 401,
+        headers: {
+          'Content-Type': 'application/json'
         }
       });
     }
@@ -88,10 +105,7 @@ export const GET: APIRoute = async ({ request }) => {
     }), {
       status: 200,
       headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+        'Content-Type': 'application/json'
       }
     });
     
@@ -103,8 +117,7 @@ export const GET: APIRoute = async ({ request }) => {
     }), {
       status: 500,
       headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
+        'Content-Type': 'application/json'
       }
     });
   }
@@ -112,11 +125,10 @@ export const GET: APIRoute = async ({ request }) => {
 
 export const OPTIONS: APIRoute = async () => {
   return new Response(null, {
-    status: 200,
+    status: 204,
     headers: {
-      'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Headers': 'Content-Type',
       'Access-Control-Max-Age': '86400'
     }
   });

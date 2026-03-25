@@ -2,6 +2,9 @@
 import { supabase } from '../../lib/supabase';
 import { SessionManager } from '../../lib/session-manager';
 
+const isProduction = import.meta.env.PROD || import.meta.env.NODE_ENV === 'production';
+const useSecureCookies = isProduction ? true : Astro.url.protocol === 'https:';
+
 const accessToken = Astro.cookies.get("sb-access-token");
 const refreshToken = Astro.cookies.get("sb-refresh-token");
 
@@ -18,6 +21,7 @@ if (accessToken && refreshToken) {
     // If tokens exist but are invalid, clear them
     Astro.cookies.delete("sb-access-token", { path: "/" });
     Astro.cookies.delete("sb-refresh-token", { path: "/" });
+    Astro.cookies.delete("sb-session-type", { path: "/" });
   }
 }
 
@@ -44,12 +48,22 @@ if (Astro.request.method === "POST") {
         Astro.cookies.set("sb-access-token", authData.session.access_token, {
           path: "/",
           httpOnly: true,
+          secure: useSecureCookies,
           sameSite: 'lax',
           maxAge: rememberMe ? 30 * 24 * 60 * 60 : undefined,
         });
         Astro.cookies.set("sb-refresh-token", authData.session.refresh_token, {
           path: "/",
           httpOnly: true,
+          secure: useSecureCookies,
+          sameSite: 'lax',
+          maxAge: rememberMe ? 30 * 24 * 60 * 60 : undefined,
+        });
+        // Client-readable flag for auto-logout logic (not httpOnly)
+        Astro.cookies.set("sb-session-type", rememberMe ? "persistent" : "temporary", {
+          path: "/",
+          httpOnly: false,
+          secure: useSecureCookies,
           sameSite: 'lax',
           maxAge: rememberMe ? 30 * 24 * 60 * 60 : undefined,
         });

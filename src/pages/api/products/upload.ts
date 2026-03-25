@@ -1,5 +1,7 @@
 import type { APIRoute } from 'astro';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { supabase } from '../../../lib/supabase';
+import { ensureSameOrigin } from '../../../lib/security';
 
 // Lấy biến môi trường R2 từ process.env (thường Astro đã load .env vào process.env trong môi trường dev/build)
 // Bạn cũng có thể dùng import.meta.env nếu dùng Astro env, nhưng process.env phổ biến hơn.
@@ -21,8 +23,27 @@ if (accountId && accessKeyId && secretAccessKey) {
   });
 }
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, cookies }) => {
   try {
+    const originCheck = ensureSameOrigin(request);
+    if (!originCheck.ok) return originCheck.response;
+
+    const accessToken = cookies.get('sb-access-token');
+    const refreshToken = cookies.get('sb-refresh-token');
+
+    if (!accessToken || !refreshToken) {
+      return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), { status: 401 });
+    }
+
+    const { data: authData, error: authError } = await supabase.auth.setSession({
+      access_token: accessToken.value,
+      refresh_token: refreshToken.value,
+    });
+
+    if (authError || !authData.user) {
+      return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), { status: 401 });
+    }
+
     const formData = await request.formData();
     const file = formData.get('file') as File;
     

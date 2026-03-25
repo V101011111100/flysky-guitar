@@ -1,9 +1,13 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { logActivity, getClientIp } from '../../../lib/logger';
+import { ensureSameOrigin } from '../../../lib/security';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
+    const originCheck = ensureSameOrigin(request);
+    if (!originCheck.ok) return originCheck.response;
+
     // 1. Auth check
     const accessToken = cookies.get("sb-access-token");
     const refreshToken = cookies.get("sb-refresh-token");
@@ -27,7 +31,6 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const name = payload['prod-name'];
     const slug = payload['prod-slug'];
     const price = parseInt(payload['prod-price'] || '0');
-    const imageUrl = payload['prod-image'];
     const desc = payload['prod-desc'];
     const categoryId = payload['prod-category'] ? payload['prod-category'] : null;
     const specBody = payload['prod-body'] || null;
@@ -35,18 +38,16 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const specNeck = payload['prod-neck'] || null;
     const stockQuantity = parseInt(payload['prod-stock'] || '0') || 0;
     const status = payload['prod-status'] || 'active';
-
-    // Parse gallery images (array of additional image URLs)
+    const videoUrl = payload['prod-video'] || null;
+    
+    // Parse gallery images (array of additional image URLs) - for backward compatibility
     let galleryImages: string[] = [];
     try {
       const galleryRaw = payload['prod-gallery'];
       if (galleryRaw) galleryImages = JSON.parse(galleryRaw);
     } catch { }
 
-    // Add main image as first element in gallery if provided
-    if (imageUrl) {
-      galleryImages = [imageUrl, ...galleryImages];
-    }
+    // Note: Image handling removed - using video_url only
 
     if (!name || !slug) {
       return new Response(JSON.stringify({ success: false, error: "Tên sản phẩm và Đường dẫn hiển thị (slug) là bắt buộc" }), { status: 400 });
@@ -58,6 +59,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     try { await supabase.rpc('exec_sql', { sql_string: 'ALTER TABLE IF EXISTS public.products ADD COLUMN IF NOT EXISTS spec_neck text;' }); } catch (err) { }
     try { await supabase.rpc('exec_sql', { sql_string: 'ALTER TABLE IF EXISTS public.products ADD COLUMN IF NOT EXISTS stock_quantity integer not null default 0;' }); } catch (err) { }
     try { await supabase.rpc('exec_sql', { sql_string: "ALTER TABLE IF EXISTS public.products ADD COLUMN IF NOT EXISTS gallery_images text[];" }); } catch (err) { }
+    try { await supabase.rpc('exec_sql', { sql_string: "ALTER TABLE IF EXISTS public.products ADD COLUMN IF NOT EXISTS video_url text;" }); } catch (err) { }
 
     const dbPayload = {
       name: name,
@@ -70,7 +72,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       spec_neck: specNeck,
       stock_quantity: stockQuantity,
       status: status,
-      gallery_images: galleryImages.length > 0 ? galleryImages : null
+      gallery_images: galleryImages.length > 0 ? galleryImages : null,
+      video_url: videoUrl
     };
 
     const clientIp = await getClientIp(request);

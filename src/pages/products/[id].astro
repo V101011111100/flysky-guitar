@@ -62,6 +62,30 @@ const ratingStats = [5, 4, 3, 2, 1].map(stars => ({
   pct: totalReviews > 0 ? Math.round((starCounts[stars] / totalReviews) * 100) : 0
 }));
 
+// Helper function to convert video URL to embed URL
+function getVideoEmbedUrl(url: string): string | null {
+  if (!url) return null;
+  
+  // YouTube
+  const youtubeMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/);
+  if (youtubeMatch) {
+    return `https://www.youtube.com/embed/${youtubeMatch[1]}`;
+  }
+  
+  // Vimeo
+  const vimeoMatch = url.match(/(?:vimeo\.com\/|vimeo\.com\/video\/)(\d+)/);
+  if (vimeoMatch) {
+    return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+  }
+  
+  // If it's already an embed URL, return as is
+  if (url.includes('youtube.com/embed/') || url.includes('player.vimeo.com/video/')) {
+    return url;
+  }
+  
+  return null;
+}
+
 const product = {
   id: dbProduct.slug,
   name: dbProduct.name,
@@ -74,6 +98,7 @@ const product = {
     (dbProduct.gallery_images && dbProduct.gallery_images.length > 0) ? dbProduct.gallery_images[0] : '/images/default-guitar.webp',
     ...(Array.isArray(dbProduct.gallery_images) ? dbProduct.gallery_images.slice(1) : [])
   ],
+  videoUrl: dbProduct.video_url || null,
   rating: averageRating,
   reviews: totalReviews,
   badge: dbProduct.is_featured ? 'Nổi bật' : (dbProduct.status === 'out_of_stock' ? 'Hết hàng' : null),
@@ -296,14 +321,26 @@ const related = (dbRelated || []).map(rp => ({
             </ul>
           </div>
           <div class="relative bg-card-dark rounded-2xl overflow-hidden border border-border-dark aspect-video flex items-center justify-center">
-            <div class="absolute inset-0 bg-cover bg-center opacity-30" style={`background-image: url('${product.images[0]}')`}></div>
-            <div class="relative z-10 text-center p-8">
-              <div class="w-16 h-16 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center mx-auto mb-4 cursor-pointer hover:bg-primary/30 transition-colors">
-                <span class="material-symbols-outlined text-primary text-3xl">play_arrow</span>
-              </div>
-              <p class="text-white font-semibold mb-1">Lắng nghe {product.name} biểu diễn</p>
-              <p class="text-text-muted text-sm">Xem đánh giá & Thử âm thanh</p>
-            </div>
+            {product.videoUrl && getVideoEmbedUrl(product.videoUrl) ? (
+              <iframe 
+                src={getVideoEmbedUrl(product.videoUrl)}
+                title={`${product.name} Demo`}
+                class="w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen
+              />
+            ) : (
+              <>
+                <div class="absolute inset-0 bg-cover bg-center opacity-30" style={`background-image: url('${product.images[0]}')`}></div>
+                <div class="relative z-10 text-center p-8">
+                  <div class="w-16 h-16 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center mx-auto mb-4 cursor-pointer hover:bg-primary/30 transition-colors">
+                    <span class="material-symbols-outlined text-primary text-3xl">play_arrow</span>
+                  </div>
+                  <p class="text-white font-semibold mb-1">Lắng nghe {product.name} biểu diễn</p>
+                  <p class="text-text-muted text-sm">Xem đánh giá & Thử âm thanh</p>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

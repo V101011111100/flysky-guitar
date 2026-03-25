@@ -1,0 +1,112 @@
+---
+import { supabase } from '../lib/supabase';
+
+const { data: settingsData } = await supabase.from('site_settings').select('*');
+const getSetting = (key: string, def: string) =>
+  settingsData?.find((s: any) => s.key === key)?.value || def;
+
+const storeName  = getSetting('flysky_storeName', 'FlySky Guitar');
+const phone      = getSetting('flysky_contactPhone', '');
+const zaloUrl    = getSetting('flysky_zaloUrl', '');
+const facebookUrl = getSetting('flysky_facebookUrl', '');
+const logoUrl    = getSetting('flysky_logoUrl', '/logo.svg');
+const brandColor = getSetting('flysky_brandColor', '#f48c25');
+---
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bảo trì — {storeName}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Manrope', sans-serif;
+      background: #0c0a07;
+      color: #f1f5f9;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      max-width: 480px;
+      width: 100%;
+      background: #1a1208;
+      border: 1px solid rgba(244,140,37,.2);
+      border-radius: 20px;
+      padding: 48px 40px;
+      text-align: center;
+      box-shadow: 0 24px 64px rgba(0,0,0,.6), 0 0 0 1px rgba(244,140,37,.08);
+    }
+    .logo { width: 64px; height: 64px; object-fit: contain; margin: 0 auto 20px; display: block; }
+    .icon-wrap {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: rgba(244,140,37,.1);
+      border: 2px solid rgba(244,140,37,.3);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 24px;
+    }
+    .icon-wrap .material-symbols-outlined { font-size: 36px; color: #f48c25; }
+    h1 { font-size: 26px; font-weight: 800; color: #f9fafb; margin-bottom: 12px; }
+    .sub {
+      font-size: 15px; color: #94a3b8; line-height: 1.7; margin-bottom: 32px;
+    }
+    .divider { border: none; border-top: 1px solid rgba(255,255,255,.08); margin: 28px 0; }
+    .contact-label { font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; margin-bottom: 16px; }
+    .links { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .link-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 20px; border-radius: 12px;
+      background: rgba(244,140,37,.1); border: 1px solid rgba(244,140,37,.25);
+      color: #f48c25; text-decoration: none; font-size: 14px; font-weight: 700;
+      transition: all .2s;
+    }
+    .link-btn:hover { background: rgba(244,140,37,.2); border-color: #f48c25; }
+    .link-btn .material-symbols-outlined { font-size: 18px; }
+    .footer-note { font-size: 12px; color: #475569; margin-top: 28px; }
+  </style>
+  <script is:inline define:vars={{ brandColor }}>
+    document.documentElement.style.setProperty('--primary', brandColor);
+  </script>
+</head>
+<body>
+  <div class="card">
+    <img src={logoUrl} alt={storeName} class="logo" />
+    <div class="icon-wrap">
+      <span class="material-symbols-outlined">build</span>
+    </div>
+    <h1>Đang bảo trì</h1>
+    <p class="sub">
+      Website <strong>{storeName}</strong> đang tạm thời bảo trì để nâng cấp hệ thống.<br/>
+      Chúng tôi sẽ quay lại sớm nhất có thể. Xin lỗi vì sự bất tiện này!
+    </p>
+    <hr class="divider" />
+    <p class="contact-label">Liên hệ trong thời gian này</p>
+    <div class="links">
+      {phone && (
+        <a href={`tel:${phone}`} class="link-btn">
+          <span class="material-symbols-outlined">call</span>
+          {phone}
+        </a>
+      )}
+      {zaloUrl && (
+        <a href={zaloUrl} target="_blank" rel="noopener" class="link-btn">
+          <span class="material-symbols-outlined">chat</span>
+          Zalo
+        </a>
+      )}
+      {facebookUrl && (
+        <a href={facebookUrl} target="_blank" rel="noopener" class="link-btn">
+          <span class="material-symbols-outlined">groups</span>
+          Facebook
+        </a>
+      )}
+    </div>
+    <p class="footer-note">© {new Date().getFullYear()} {storeName}</p>
+  </div>
+</body>
+</html>

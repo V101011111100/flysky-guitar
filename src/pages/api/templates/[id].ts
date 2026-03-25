@@ -1,7 +1,11 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { ensureSameOrigin } from '../../../lib/security';
 
 export const DELETE: APIRoute = async ({ request, params, cookies }) => {
+  const originCheck = ensureSameOrigin(request);
+  if (originCheck) return originCheck;
+
   const { id } = params;
   if (!id) return new Response(JSON.stringify({ error: 'Missing ID' }), { status: 400 });
 
