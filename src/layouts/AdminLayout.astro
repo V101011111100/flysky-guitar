@@ -484,7 +484,10 @@ if (!accessToken || !refreshToken) {
           <div class="notif-dropdown" id="notif-dropdown" role="menu">
             <div class="notif-drop-header">
               <span class="notif-drop-title">Hoạt động gần đây</span>
-              <a href="/admin/activity-log" class="notif-drop-link">Xem tất cả</a>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <button type="button" class="notif-drop-link" id="notif-read-all-btn" style="background:none;border:none;cursor:pointer;padding:0;">Read all</button>
+                <a href="/admin/activity-log" class="notif-drop-link">Xem tất cả</a>
+              </div>
             </div>
             <div class="notif-list" id="notif-list">
               <div class="notif-loading" id="notif-loading">
@@ -586,6 +589,10 @@ if (!accessToken || !refreshToken) {
     border-color: rgba(244,140,37,0.25);
     transform: translateY(-1px);
   }
+  .notif-item.unread {
+    border-color: rgba(244,140,37,0.35);
+    background: rgba(244,140,37,0.06);
+  }
 
   .notif-icon-wrap {
     width: 34px;
@@ -669,6 +676,7 @@ if (!accessToken || !refreshToken) {
     const notifDropdown = document.getElementById('notif-dropdown');
     const notifList = document.getElementById('notif-list');
     const notifBadge = document.getElementById('notif-badge');
+    const notifReadAllBtn = document.getElementById('notif-read-all-btn') as HTMLButtonElement | null;
     let notifLoaded = false;
 
     const ACTION_ICONS: Record<string, { icon: string; bg: string; color: string }> = {
@@ -700,6 +708,7 @@ if (!accessToken || !refreshToken) {
     async function loadNotifications() {
       if (!notifList) return;
       const since = localStorage.getItem(NOTIF_SEEN_KEY) || '';
+      const sinceMs = since ? new Date(since).getTime() : 0;
       try {
         const res = await fetch(`/api/admin/notifications${since ? `?since=${encodeURIComponent(since)}` : ''}`);
         const data = await res.json();
@@ -726,8 +735,9 @@ if (!accessToken || !refreshToken) {
           const safeText = escapeHtml(log.action_text || 'Hoạt động hệ thống');
           const safeModule = escapeHtml(log.module_name || 'System');
           const safeUser = log.user_name ? escapeHtml(log.user_name) : '';
+          const isUnread = !sinceMs || new Date(log.created_at).getTime() > sinceMs;
           return `
-            <div class="notif-item">
+            <div class="notif-item ${isUnread ? 'unread' : ''}" data-created-at="${log.created_at}">
               <div class="notif-icon-wrap" style="background:${meta.bg}">
                 <span class="material-symbols-outlined" style="font-size:15px;color:${meta.color}">${meta.icon}</span>
               </div>
@@ -744,9 +754,57 @@ if (!accessToken || !refreshToken) {
           `;
         }).join('');
 
+        // Mark as read by interaction: hover or click on notification item
+        notifList.querySelectorAll<HTMLElement>('.notif-item.unread').forEach((item) => {
+          const markByItem = () => {
+            const createdAt = item.dataset.createdAt || new Date().toISOString();
+            markNotificationsSeen(createdAt);
+          };
+          item.addEventListener('mouseenter', markByItem, { once: true });
+          item.addEventListener('click', markByItem, { once: true });
+        });
+
       } catch (e) {
         if (notifList) notifList.innerHTML = '<div class="notif-drop-empty">Không thể tải thông báo</div>';
       }
+    }
+
+    function markNotificationsSeen(seenAt?: string) {
+      const nextSeen = seenAt || new Date().toISOString();
+      const currentSeen = localStorage.getItem(NOTIF_SEEN_KEY);
+
+      if (!currentSeen || new Date(nextSeen).getTime() > new Date(currentSeen).getTime()) {
+        localStorage.setItem(NOTIF_SEEN_KEY, nextSeen);
+      }
+
+      if (notifBadge) {
+        notifBadge.style.display = 'none';
+        notifBadge.textContent = '';
+      }
+
+      notifList?.querySelectorAll('.notif-item.unread').forEach((node) => {
+        node.classList.remove('unread');
+      });
+    }
+
+    function markAllNotificationsSeen() {
+      const items = Array.from(notifList?.querySelectorAll<HTMLElement>('.notif-item[data-created-at]') || []);
+      if (items.length === 0) {
+        markNotificationsSeen();
+        return;
+      }
+
+      // Use latest notification timestamp so currently listed items are all considered seen.
+      let latestSeen = new Date(0).toISOString();
+      items.forEach((item) => {
+        const createdAt = item.dataset.createdAt;
+        if (!createdAt) return;
+        if (new Date(createdAt).getTime() > new Date(latestSeen).getTime()) {
+          latestSeen = createdAt;
+        }
+      });
+
+      markNotificationsSeen(latestSeen);
     }
 
     // Initial badge check (lightweight)
@@ -765,10 +823,11 @@ if (!accessToken || !refreshToken) {
           notifLoaded = true;
           loadNotifications();
         }
-        // Mark as seen — store current time
-        localStorage.setItem(NOTIF_SEEN_KEY, new Date().toISOString());
-        // Hide badge immediately when opened
-        if (notifBadge) notifBadge.style.display = 'none';
+
+        // Mark as read when user actually interacts with dropdown
+        notifDropdown?.addEventListener('mouseenter', () => {
+          markNotificationsSeen();
+        }, { once: true });
       }
     });
 
@@ -780,6 +839,10 @@ if (!accessToken || !refreshToken) {
           notifBtn?.setAttribute('aria-expanded', 'false');
         }
       }
+    });
+
+    notifReadAllBtn?.addEventListener('click', () => {
+      markAllNotificationsSeen();
     });
 
     // Mobile sidebar toggle

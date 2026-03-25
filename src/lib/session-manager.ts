@@ -74,7 +74,7 @@ export class SessionManager {
         .from('user_sessions')
         .select('*')
         .eq('user_id', userId)
-        .eq('is_active', true)
+        .order('is_active', { ascending: false })
         .order('last_activity', { ascending: false });
 
       if (error) {

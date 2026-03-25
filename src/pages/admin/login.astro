@@ -1,6 +1,7 @@
 ---
 import { supabase } from '../../lib/supabase';
 import { SessionManager } from '../../lib/session-manager';
+import { getClientIp } from '../../lib/logger';
 
 const isProduction = import.meta.env.PROD || import.meta.env.NODE_ENV === 'production';
 const useSecureCookies = isProduction ? true : Astro.url.protocol === 'https:';
@@ -70,9 +71,7 @@ if (Astro.request.method === "POST") {
 
         // Lấy thông tin request để lưu session
         const userAgent = Astro.request.headers.get("user-agent") || '';
-        const clientIP = Astro.request.headers.get("x-forwarded-for") || 
-                       Astro.request.headers.get("x-real-ip") || 
-                       '127.0.0.1';
+        const clientIP = await getClientIp(Astro.request);
         
         const deviceInfo = SessionManager.parseUserAgent(userAgent);
 

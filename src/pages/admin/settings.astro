@@ -1338,10 +1338,11 @@ const autoLogoutTimeout = getSetting('flysky_autoLogoutTimeout', '120');
           </div>
           <p class="session-last">Hoạt động lần cuối: ${formatLastActivity(session.lastActivity)}</p>
           ${session.isCurrent ? '<span class="session-badge current-badge"><span class="badge-dot"></span> Phiên hiện tại</span>' : ''}
+          ${!session.isCurrent && !session.isActive ? '<span class="session-badge" style="margin-top:8px;background:rgba(148,163,184,.15);color:#cbd5e1;border-color:rgba(148,163,184,.35);">Đã kết thúc</span>' : ''}
         </div>
         ${!session.isCurrent ? `<button class="session-del-btn" onclick="terminateSession('${session.sessionId}')">
           <span class="material-symbols-outlined">delete_outline</span>
-          Xóa phiên
+          ${session.isActive ? 'Kết thúc phiên' : 'Xóa khỏi danh sách'}
         </button>` : ''}
       </div>
     `).join('');
@@ -1378,7 +1379,11 @@ const autoLogoutTimeout = getSetting('flysky_autoLogoutTimeout', '120');
       
       const data = await response.json();
       if (data.success) {
-        alert('Đã kết thúc phiên thành công!');
+        if (data.action === 'deleted') {
+          alert('Đã xóa phiên khỏi danh sách!');
+        } else {
+          alert('Đã kết thúc phiên thành công!');
+        }
         loadActiveSessions(); // Reload sessions
       } else {
         alert('Lỗi khi kết thúc phiên: ' + data.error);

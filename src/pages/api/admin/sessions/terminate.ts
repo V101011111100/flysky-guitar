@@ -55,30 +55,80 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
     }
 
-    // Sử dụng SessionManager để terminate session
-    const success = await SessionManager.terminateSession(sessionId, authData.user.id);
-    
-    if (success) {
+    const { data: targetSession, error: targetError } = await supabase
+      .from('user_sessions')
+      .select('id, is_active')
+      .eq('id', sessionId)
+      .eq('user_id', authData.user.id)
+      .single();
+
+    if (targetError || !targetSession) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Session not found'
+      }), {
+        status: 404,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+    }
+
+    if (targetSession.is_active) {
+      const terminated = await SessionManager.terminateSession(sessionId, authData.user.id);
+
+      if (!terminated) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to terminate session'
+        }), {
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+      }
+
       return new Response(JSON.stringify({
         success: true,
-        message: 'Session terminated successfully'
+        action: 'terminated',
+        message: 'Đã kết thúc phiên thành công'
       }), {
         status: 200,
         headers: {
           'Content-Type': 'application/json'
         }
       });
-    } else {
+    }
+
+    const { error: deleteError } = await supabase
+      .from('user_sessions')
+      .delete()
+      .eq('id', sessionId)
+      .eq('user_id', authData.user.id);
+
+    if (deleteError) {
       return new Response(JSON.stringify({
         success: false,
-        error: 'Failed to terminate session'
+        error: 'Failed to delete session'
       }), {
-        status: 403,
+        status: 500,
         headers: {
           'Content-Type': 'application/json'
         }
       });
     }
+
+    return new Response(JSON.stringify({
+      success: true,
+      action: 'deleted',
+      message: 'Đã xóa phiên khỏi danh sách'
+    }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
     
   } catch (error) {
     console.error('Terminate Session Error:', error);

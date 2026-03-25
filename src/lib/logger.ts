@@ -29,8 +29,18 @@ export async function logActivity(input: ActivityLogInput) {
 export async function getClientIp(request: Request): Promise<string> {
   const forwarded = request.headers.get('x-forwarded-for');
   const realIp = request.headers.get('x-real-ip');
-  
-  let ip = forwarded ? forwarded.split(',')[0].trim() : (realIp || '');
+  const vercelForwarded = request.headers.get('x-vercel-forwarded-for');
+
+  const rawIp = forwarded
+    ? forwarded.split(',')[0].trim()
+    : (realIp || vercelForwarded || '').trim();
+
+  // Normalize common proxy formats like ::ffff:1.2.3.4 or IP:PORT
+  let ip = rawIp.replace(/^::ffff:/i, '');
+  if (ip.includes(':') && !ip.includes('::') && ip.split(':').length === 2) {
+    const [host, port] = ip.split(':');
+    if (/^\d+$/.test(port)) ip = host;
+  }
 
   if (!ip || ip === '::1' || ip === '127.0.0.1' || ip.includes('localhost')) {
     try {

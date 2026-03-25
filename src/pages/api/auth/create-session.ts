@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { SessionManager } from '../../../lib/session-manager';
 import { ensureSameOrigin } from '../../../lib/security';
+import { getClientIp } from '../../../lib/logger';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
@@ -46,9 +47,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     // Lấy thông tin request
     const userAgent = request.headers.get('user-agent') || '';
-    const clientIP = request.headers.get('x-forwarded-for') || 
-                    request.headers.get('x-real-ip') || 
-                    '127.0.0.1';
+    const clientIP = await getClientIp(request);
     
     const parsedDevice = SessionManager.parseUserAgent(userAgent);
     
