@@ -1379,6 +1379,17 @@ const autoLogoutTimeout = getSetting('flysky_autoLogoutTimeout', '120');
       
       const data = await response.json();
       if (data.success) {
+        if (data.forceLogout) {
+          alert('Phiên hiện tại đã bị kết thúc. Hệ thống sẽ đăng xuất ngay.');
+          const form = document.getElementById('logout-form') as HTMLFormElement | null;
+          if (form) {
+            form.submit();
+          } else {
+            window.location.href = '/api/auth/signout';
+          }
+          return;
+        }
+
         if (data.action === 'deleted') {
           alert('Đã xóa phiên khỏi danh sách!');
         } else {

@@ -55,9 +55,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
     }
 
+    const currentRefreshToken = refreshToken.value;
+
     const { data: targetSession, error: targetError } = await supabase
       .from('user_sessions')
-      .select('id, is_active')
+      .select('id, is_active, refresh_token')
       .eq('id', sessionId)
       .eq('user_id', authData.user.id)
       .single();
@@ -92,6 +94,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return new Response(JSON.stringify({
         success: true,
         action: 'terminated',
+        forceLogout: targetSession.refresh_token === currentRefreshToken,
         message: 'Đã kết thúc phiên thành công'
       }), {
         status: 200,

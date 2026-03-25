@@ -57,7 +57,24 @@ export const GET: APIRoute = async ({ request, cookies }) => {
       Boolean(session.refresh_token) && session.refresh_token === currentRefreshToken
     );
 
+    const reusableCurrent = !currentSession
+      ? activeSessions.find((session) =>
+          (session.user_agent && session.user_agent === userAgent) ||
+          (
+            (session.device_name || '') === deviceInfo.deviceName &&
+            (session.browser || '') === deviceInfo.browser &&
+            (session.device_type || '') === deviceInfo.deviceType &&
+            (session.ip_address || '') === clientIP
+          )
+        )
+      : undefined;
+
     // Nếu chưa map được refresh token hiện tại vào session đang active, tạo mới session hiện tại.
+    if (!currentSession && reusableCurrent) {
+      currentSession = reusableCurrent;
+      console.log('Reusing existing active session and updating refresh token:', currentSession.id);
+    }
+
     if (!currentSession) {
       console.log('Current refresh token is not mapped, creating current session...');
 
