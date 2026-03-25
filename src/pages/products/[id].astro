@@ -3,6 +3,7 @@ import Layout from '../../layouts/Layout.astro';
 import Navbar from '../../components/Navbar.astro';
 import Footer from '../../components/Footer.astro';
 import { supabase } from '../../lib/supabase';
+import { getAdminMfaState } from '../../lib/security';
 
 const { id } = Astro.params;
 
@@ -12,13 +13,8 @@ const accessToken = Astro.cookies.get("sb-access-token");
 const refreshToken = Astro.cookies.get("sb-refresh-token");
 
 if (accessToken && refreshToken) {
-  const { data: authData } = await supabase.auth.setSession({
-    access_token: accessToken.value,
-    refresh_token: refreshToken.value,
-  });
-  if (authData?.user) {
-    isAdmin = true;
-  }
+  const authState = await getAdminMfaState(accessToken.value, refreshToken.value);
+  isAdmin = authState.authenticated && authState.isAdmin && !authState.requiresMfa;
 }
 
 // Lấy sản phẩm hiện tại
@@ -216,7 +212,7 @@ const related = (dbRelated || []).map(rp => ({
               ))}
             </div>
             <span class="text-white font-semibold text-sm">{product.rating.toFixed(1)}</span>
-            <span class="text-text-muted text-sm cursor-pointer hover:underline" onclick="document.querySelector('[data-tab=\\'reviews\\']').click(); document.getElementById('tab-reviews').scrollIntoView({behavior: 'smooth'})">({product.reviews} đánh giá)</span>
+            <span id="reviews-link" class="text-text-muted text-sm cursor-pointer hover:underline">({product.reviews} đánh giá)</span>
           </div>
 
           <!-- Price -->
@@ -578,6 +574,8 @@ const related = (dbRelated || []).map(rp => ({
   // Add to cart — thực sự lưu vào localStorage
   const cartBtn = document.getElementById('btn-add-cart') as HTMLButtonElement;
   cartBtn?.addEventListener('click', () => {
+    const orig = cartBtn.innerHTML;
+    
     // Lấy product data từ data-attributes
     const productId = cartBtn.dataset.productId!;
     const productName = cartBtn.dataset.productName!;
@@ -594,6 +592,10 @@ const related = (dbRelated || []).map(rp => ({
       priceFormatted: productPriceFormatted,
       image: productImage,
     });
+
+    cartBtn.classList.remove('bg-primary');
+    cartBtn.classList.add('bg-green-600');
+    cartBtn.innerHTML = '<span class="material-symbols-outlined">check</span>Đã thêm vào giỏ';
 
     setTimeout(() => {
       cartBtn.innerHTML = orig;
@@ -799,5 +801,14 @@ const related = (dbRelated || []).map(rp => ({
       el.style.opacity = '1';
     }
   }
+
+  // Reviews link click handler
+  const reviewsLink = document.getElementById('reviews-link');
+  reviewsLink?.addEventListener('click', () => {
+    const reviewsTab = document.querySelector('[data-tab="reviews"]') as HTMLElement;
+    reviewsTab?.click();
+    const tabReviews = document.getElementById('tab-reviews');
+    tabReviews?.scrollIntoView({ behavior: 'smooth' });
+  });
 
 </script>

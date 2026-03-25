@@ -63,6 +63,19 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
     };
 
+    if (!rememberMe) {
+      return new Response(JSON.stringify({
+        success: true,
+        tracked: false,
+        message: 'Temporary session is not persisted'
+      }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+    }
+
     const savedSession = await SessionManager.createSession(userId, sessionData);
     
     if (savedSession) {

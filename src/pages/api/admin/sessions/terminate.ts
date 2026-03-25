@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { SessionManager } from '../../../../lib/session-manager';
-import { ensureSameOrigin } from '../../../../lib/security';
+import { ADMIN_SESSION_COOKIE, ensureSameOrigin } from '../../../../lib/security';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
@@ -10,6 +10,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     const accessToken = cookies.get('sb-access-token');
     const refreshToken = cookies.get('sb-refresh-token');
+    const currentSessionToken = cookies.get(ADMIN_SESSION_COOKIE)?.value;
 
     if (!accessToken || !refreshToken) {
       return new Response(JSON.stringify({
@@ -42,7 +43,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     const body = await request.json();
     const { sessionId } = body;
-    
+
     if (!sessionId) {
       return new Response(JSON.stringify({
         success: false,
@@ -55,11 +56,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
     }
 
-    const currentRefreshToken = refreshToken.value;
-
     const { data: targetSession, error: targetError } = await supabase
       .from('user_sessions')
-      .select('id, is_active, refresh_token')
+      .select('id, is_active, session_token')
       .eq('id', sessionId)
       .eq('user_id', authData.user.id)
       .single();
@@ -76,6 +75,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
     }
 
+    const forceLogout = Boolean(currentSessionToken) && targetSession.session_token === currentSessionToken;
+
     if (targetSession.is_active) {
       const terminated = await SessionManager.terminateSession(sessionId, authData.user.id);
 
@@ -91,10 +92,14 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         });
       }
 
+      if (forceLogout) {
+        cookies.delete(ADMIN_SESSION_COOKIE, { path: '/' });
+      }
+
       return new Response(JSON.stringify({
         success: true,
         action: 'terminated',
-        forceLogout: targetSession.refresh_token === currentRefreshToken,
+        forceLogout,
         message: 'Đã kết thúc phiên thành công'
       }), {
         status: 200,
@@ -122,9 +127,14 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
     }
 
+    if (forceLogout) {
+      cookies.delete(ADMIN_SESSION_COOKIE, { path: '/' });
+    }
+
     return new Response(JSON.stringify({
       success: true,
       action: 'deleted',
+      forceLogout,
       message: 'Đã xóa phiên khỏi danh sách'
     }), {
       status: 200,
@@ -132,7 +142,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         'Content-Type': 'application/json'
       }
     });
-    
+
   } catch (error) {
     console.error('Terminate Session Error:', error);
     return new Response(JSON.stringify({

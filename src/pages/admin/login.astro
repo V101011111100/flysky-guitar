@@ -2,32 +2,69 @@
 import { supabase } from '../../lib/supabase';
 import { SessionManager } from '../../lib/session-manager';
 import { getClientIp } from '../../lib/logger';
+import { ADMIN_SESSION_COOKIE, getAdminMfaState, isAdminUser, PENDING_MFA_REMEMBER_COOKIE } from '../../lib/security';
 
 const isProduction = import.meta.env.PROD || import.meta.env.NODE_ENV === 'production';
 const useSecureCookies = isProduction ? true : Astro.url.protocol === 'https:';
+const persistentMaxAge = 30 * 24 * 60 * 60;
 
 const accessToken = Astro.cookies.get("sb-access-token");
 const refreshToken = Astro.cookies.get("sb-refresh-token");
-
-if (accessToken && refreshToken) {
-  const { data, error } = await supabase.auth.setSession({
-    access_token: accessToken.value,
-    refresh_token: refreshToken.value,
-  });
-
-  if (!error && data.user) {
-    // If already logged in and valid, redirect to admin Dashboard
-    return Astro.redirect("/admin");
-  } else {
-    // If tokens exist but are invalid, clear them
-    Astro.cookies.delete("sb-access-token", { path: "/" });
-    Astro.cookies.delete("sb-refresh-token", { path: "/" });
-    Astro.cookies.delete("sb-session-type", { path: "/" });
-  }
-}
+const pendingMfaRememberCookie = Astro.cookies.get(PENDING_MFA_REMEMBER_COOKIE);
 
 let errorMessage = "";
 let needsMfa = false;
+let mfaRememberMe = false;
+
+function clearAuthCookies() {
+  Astro.cookies.delete("sb-access-token", { path: "/" });
+  Astro.cookies.delete("sb-refresh-token", { path: "/" });
+  Astro.cookies.delete("sb-session-type", { path: "/" });
+  Astro.cookies.delete(ADMIN_SESSION_COOKIE, { path: "/" });
+  Astro.cookies.delete(PENDING_MFA_REMEMBER_COOKIE, { path: "/" });
+}
+
+function setAuthCookies(accessTokenValue: string, refreshTokenValue: string, sessionType: 'persistent' | 'temporary', maxAge?: number) {
+  Astro.cookies.set("sb-access-token", accessTokenValue, {
+    path: "/",
+    httpOnly: true,
+    secure: useSecureCookies,
+    sameSite: 'lax',
+    maxAge,
+  });
+  Astro.cookies.set("sb-refresh-token", refreshTokenValue, {
+    path: "/",
+    httpOnly: true,
+    secure: useSecureCookies,
+    sameSite: 'lax',
+    maxAge,
+  });
+  Astro.cookies.set("sb-session-type", sessionType, {
+    path: "/",
+    httpOnly: false,
+    secure: useSecureCookies,
+    sameSite: 'lax',
+    maxAge,
+  });
+}
+
+if (accessToken && refreshToken) {
+  const authState = await getAdminMfaState(accessToken.value, refreshToken.value);
+
+  if (authState.authenticated && authState.isAdmin) {
+    if (authState.requiresMfa) {
+      needsMfa = true;
+      mfaRememberMe = pendingMfaRememberCookie?.value === '1';
+    } else {
+      return Astro.redirect("/admin");
+    }
+  } else {
+    clearAuthCookies();
+    if (authState.authenticated && !authState.isAdmin) {
+      errorMessage = 'Tài khoản này không có quyền quản trị.';
+    }
+  }
+}
 
 if (Astro.request.method === "POST") {
   try {
@@ -45,67 +82,73 @@ if (Astro.request.method === "POST") {
       if (error) {
         errorMessage = error.message;
       } else if (authData.session && authData.user) {
-        // Set Supabase session cookies
-        Astro.cookies.set("sb-access-token", authData.session.access_token, {
-          path: "/",
-          httpOnly: true,
-          secure: useSecureCookies,
-          sameSite: 'lax',
-          maxAge: rememberMe ? 30 * 24 * 60 * 60 : undefined,
-        });
-        Astro.cookies.set("sb-refresh-token", authData.session.refresh_token, {
-          path: "/",
-          httpOnly: true,
-          secure: useSecureCookies,
-          sameSite: 'lax',
-          maxAge: rememberMe ? 30 * 24 * 60 * 60 : undefined,
-        });
-        // Client-readable flag for auto-logout logic (not httpOnly)
-        Astro.cookies.set("sb-session-type", rememberMe ? "persistent" : "temporary", {
-          path: "/",
-          httpOnly: false,
-          secure: useSecureCookies,
-          sameSite: 'lax',
-          maxAge: rememberMe ? 30 * 24 * 60 * 60 : undefined,
-        });
+        if (!isAdminUser(authData.user)) {
+          clearAuthCookies();
+          await supabase.auth.signOut();
+          errorMessage = 'Tài khoản này không có quyền quản trị.';
+        } else {
+          try {
+            const { data: mfaData, error: mfaListError } = await supabase.auth.mfa.listFactors();
+            if (mfaListError) throw mfaListError;
 
-        // Lấy thông tin request để lưu session
-        const userAgent = Astro.request.headers.get("user-agent") || '';
-        const clientIP = await getClientIp(Astro.request);
-        
-        const deviceInfo = SessionManager.parseUserAgent(userAgent);
+            const verifiedFactors = mfaData?.totp?.filter((f: any) => f.status === 'verified') || [];
+            if (verifiedFactors.length > 0) {
+              needsMfa = true;
+              mfaRememberMe = rememberMe;
 
-        // Lưu session vào custom table nếu remember me được check
-        if (rememberMe) {
-          const sessionData = {
-            device_name: deviceInfo.deviceName,
-            device_type: deviceInfo.deviceType,
-            browser: deviceInfo.browser,
-            ip_address: clientIP,
-            location: 'TP. Hồ Chí Minh, VN',
-            user_agent: userAgent,
-            refresh_token: authData.session.refresh_token
-          };
+              setAuthCookies(authData.session.access_token, authData.session.refresh_token, 'temporary');
+              Astro.cookies.delete(ADMIN_SESSION_COOKIE, { path: "/" });
+              Astro.cookies.set(PENDING_MFA_REMEMBER_COOKIE, rememberMe ? '1' : '0', {
+                path: "/",
+                httpOnly: true,
+                secure: useSecureCookies,
+                sameSite: 'lax',
+              });
+            } else {
+              setAuthCookies(
+                authData.session.access_token,
+                authData.session.refresh_token,
+                rememberMe ? 'persistent' : 'temporary',
+                rememberMe ? persistentMaxAge : undefined,
+              );
+              Astro.cookies.delete(PENDING_MFA_REMEMBER_COOKIE, { path: "/" });
 
-          const savedSession = await SessionManager.createSession(authData.user.id, sessionData);
-          if (savedSession) {
-            console.log('Session saved to database:', savedSession.id);
+              if (rememberMe) {
+                const userAgent = Astro.request.headers.get("user-agent") || '';
+                const clientIP = await getClientIp(Astro.request);
+                const deviceInfo = SessionManager.parseUserAgent(userAgent);
+                const savedSession = await SessionManager.createSession(authData.user.id, {
+                  device_name: deviceInfo.deviceName,
+                  device_type: deviceInfo.deviceType,
+                  browser: deviceInfo.browser,
+                  ip_address: clientIP,
+                  location: 'TP. Hồ Chí Minh, VN',
+                  user_agent: userAgent,
+                  expires_at: new Date(Date.now() + (persistentMaxAge * 1000)).toISOString(),
+                });
+
+                if (savedSession?.session_token) {
+                  Astro.cookies.set(ADMIN_SESSION_COOKIE, savedSession.session_token, {
+                    path: "/",
+                    httpOnly: true,
+                    secure: useSecureCookies,
+                    sameSite: 'lax',
+                    maxAge: persistentMaxAge,
+                  });
+                } else {
+                  Astro.cookies.delete(ADMIN_SESSION_COOKIE, { path: "/" });
+                }
+              } else {
+                Astro.cookies.delete(ADMIN_SESSION_COOKIE, { path: "/" });
+              }
+
+              return Astro.redirect("/admin");
+            }
+          } catch (mfaErr) {
+            clearAuthCookies();
+            await supabase.auth.signOut();
+            errorMessage = 'Không thể xác minh trạng thái 2FA. Vui lòng thử lại.';
           }
-        }
-
-        // Check if user has MFA enabled
-        try {
-          const { data: mfaData } = await supabase.auth.mfa.listFactors();
-          const verifiedFactors = mfaData?.totp?.filter((f: any) => f.status === 'verified') || [];
-          if (verifiedFactors.length > 0) {
-            needsMfa = true;
-            // Don't redirect yet — show 2FA form
-          } else {
-            return Astro.redirect("/admin");
-          }
-        } catch (mfaErr) {
-          // MFA check failed, allow login without 2FA
-          return Astro.redirect("/admin");
         }
       } else {
         errorMessage = "Vui lòng nhập Email và Mật khẩu.";
@@ -545,7 +588,7 @@ if (Astro.request.method === "POST") {
 
           <!-- Remember me -->
           <div class="remember-wrap">
-            <input type="checkbox" id="remember" class="remember-checkbox" />
+            <input type="checkbox" id="remember" name="remember" value="on" class="remember-checkbox" />
             <label for="remember" class="remember-label">Ghi nhớ đăng nhập</label>
           </div>
 
@@ -584,7 +627,7 @@ if (Astro.request.method === "POST") {
       </div>
 
       <!-- 2FA Verification form (shown after password auth when MFA is enabled) -->
-      <div class="form-card" id="mfa-card" style={needsMfa ? '' : 'display:none;'}>
+      <div class="form-card" id="mfa-card" data-remember={mfaRememberMe ? 'true' : 'false'} style={needsMfa ? '' : 'display:none;'}>
         <div style="text-align:center;margin-bottom:24px;">
           <div style="width:64px;height:64px;border-radius:16px;background:rgba(244,140,37,.1);display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px;">
             <span class="material-symbols-outlined" style="font-size:32px;color:#f48c25;">verified_user</span>

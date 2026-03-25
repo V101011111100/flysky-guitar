@@ -20,13 +20,10 @@ export interface UserSession {
 export class SessionManager {
   static async createSession(userId: string, sessionData: Partial<UserSession>): Promise<UserSession | null> {
     try {
-      console.log('Creating session for user:', userId);
-      console.log('Session data:', sessionData);
-      
       const session: Partial<UserSession> = {
         id: crypto.randomUUID(),
         user_id: userId,
-        session_token: this.generateSessionToken(),
+        session_token: sessionData.session_token || this.generateSessionToken(),
         device_name: sessionData.device_name || 'Unknown Device',
         device_type: sessionData.device_type || 'desktop',
         browser: sessionData.browser || 'Unknown',
@@ -36,11 +33,9 @@ export class SessionManager {
         is_active: true,
         last_activity: new Date().toISOString(),
         created_at: new Date().toISOString(),
-        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
         ...sessionData
       };
-
-      console.log('Prepared session object:', session);
 
       const { data, error } = await supabase
         .from('user_sessions')
@@ -50,20 +45,12 @@ export class SessionManager {
 
       if (error) {
         console.error('Supabase error creating session:', error);
-        console.error('Error details:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
         return null;
       }
 
-      console.log('Session created successfully:', data);
       return data;
     } catch (error: any) {
       console.error('SessionManager.createSession error:', error);
-      console.error('Error stack:', error.stack);
       return null;
     }
   }
@@ -150,47 +137,40 @@ export class SessionManager {
   }
 
   static generateSessionToken(): string {
-    // Try different methods for UUID generation
     try {
-      // Method 1: Try crypto.randomUUID() (Node.js 15.6+)
       if (typeof crypto !== 'undefined' && crypto.randomUUID) {
         return crypto.randomUUID().replace(/-/g, '');
       }
     } catch (e) {
-      // Method 2: Fallback to manual UUID generation
       return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     }
-    
-    // Method 3: Final fallback
+
     return btoa(Math.random().toString(36) + Date.now()).replace(/[^a-zA-Z0-9]/g, '').substr(0, 32);
   }
 
   static parseUserAgent(userAgent: string): { browser: string; deviceType: 'desktop' | 'mobile' | 'tablet'; deviceName: string } {
     const ua = userAgent.toLowerCase();
-    
-    // Detect browser
+
     let browser = 'Unknown';
     if (ua.includes('chrome')) browser = 'Chrome';
     else if (ua.includes('safari')) browser = 'Safari';
     else if (ua.includes('firefox')) browser = 'Firefox';
     else if (ua.includes('edge')) browser = 'Edge';
-    
-    // Detect device type
+
     let deviceType: 'desktop' | 'mobile' | 'tablet' = 'desktop';
     if (ua.includes('mobile') || ua.includes('android') || ua.includes('iphone')) {
       deviceType = 'mobile';
     } else if (ua.includes('tablet') || ua.includes('ipad')) {
       deviceType = 'tablet';
     }
-    
-    // Get device name
+
     let deviceName = 'Unknown Device';
     if (ua.includes('mac')) deviceName = 'MacBook Pro';
     else if (ua.includes('windows')) deviceName = 'Windows PC';
     else if (ua.includes('iphone')) deviceName = 'iPhone';
     else if (ua.includes('ipad')) deviceName = 'iPad';
     else if (ua.includes('android')) deviceName = 'Android Device';
-    
+
     return { browser, deviceType, deviceName };
   }
 }

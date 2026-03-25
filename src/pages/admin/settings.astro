@@ -1337,6 +1337,7 @@ const autoLogoutTimeout = getSetting('flysky_autoLogoutTimeout', '120');
             <span>${session.location}</span>
           </div>
           <p class="session-last">Hoạt động lần cuối: ${formatLastActivity(session.lastActivity)}</p>
+          <span class="session-badge" style="margin-top:8px;background:${session.sessionKind === 'temporary' ? 'rgba(59,130,246,.12)' : 'rgba(34,197,94,.12)'};color:${session.sessionKind === 'temporary' ? '#93c5fd' : '#86efac'};border-color:${session.sessionKind === 'temporary' ? 'rgba(59,130,246,.28)' : 'rgba(34,197,94,.28)'};">${session.sessionKind === 'temporary' ? 'Phiên tạm thời' : 'Ghi nhớ đăng nhập'}</span>
           ${session.isCurrent ? '<span class="session-badge current-badge"><span class="badge-dot"></span> Phiên hiện tại</span>' : ''}
           ${!session.isCurrent && !session.isActive ? '<span class="session-badge" style="margin-top:8px;background:rgba(148,163,184,.15);color:#cbd5e1;border-color:rgba(148,163,184,.35);">Đã kết thúc</span>' : ''}
         </div>
@@ -1438,7 +1439,7 @@ const autoLogoutTimeout = getSetting('flysky_autoLogoutTimeout', '120');
     if (!timeoutSelect || !saveBtn) return;
     
     try {
-      const response = await fetch('/api/admin/settings/update', {
+      const response = await fetch('/api/settings/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -1448,6 +1449,11 @@ const autoLogoutTimeout = getSetting('flysky_autoLogoutTimeout', '120');
       
       const data = await response.json();
       if (data.success) {
+        const nextTimeout = parseInt(timeoutSelect?.value || '120', 10);
+        (window as any)._autoLogoutMinutes = Number.isFinite(nextTimeout) ? nextTimeout : 120;
+        window.dispatchEvent(new CustomEvent('admin:auto-logout-timeout-updated', {
+          detail: { minutes: (window as any)._autoLogoutMinutes }
+        }));
         alert('Đã cập nhật thời gian tự động đăng xuất thành công!');
       } else {
         alert('Lỗi cập nhật: ' + data.error);

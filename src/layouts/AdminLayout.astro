@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import { supabase } from '../lib/supabase';
+import { ADMIN_SESSION_COOKIE, getAdminMfaState, PENDING_MFA_REMEMBER_COOKIE } from '../lib/security';
 
 interface Props {
   title?: string;
@@ -13,6 +14,14 @@ let userEmail = '';
 let shouldRedirect = false;
 let autoLogoutMinutes = 120; // default 2 hours
 
+function clearAdminCookies() {
+  Astro.cookies.delete("sb-access-token", { path: "/" });
+  Astro.cookies.delete("sb-refresh-token", { path: "/" });
+  Astro.cookies.delete("sb-session-type", { path: "/" });
+  Astro.cookies.delete(ADMIN_SESSION_COOKIE, { path: "/" });
+  Astro.cookies.delete(PENDING_MFA_REMEMBER_COOKIE, { path: "/" });
+}
+
 // --- SSR AUTH CHECK --- //
 const accessToken = Astro.cookies.get("sb-access-token");
 const refreshToken = Astro.cookies.get("sb-refresh-token");
@@ -20,18 +29,13 @@ const refreshToken = Astro.cookies.get("sb-refresh-token");
 if (!accessToken || !refreshToken) {
   shouldRedirect = true;
 } else {
-  const { data, error } = await supabase.auth.setSession({
-    access_token: accessToken.value,
-    refresh_token: refreshToken.value,
-  });
+  const authState = await getAdminMfaState(accessToken.value, refreshToken.value);
 
-  if (error || !data.user) {
-    Astro.cookies.delete("sb-access-token", { path: "/" });
-    Astro.cookies.delete("sb-refresh-token", { path: "/" });
+  if (!authState.authenticated || !authState.isAdmin || authState.requiresMfa) {
+    clearAdminCookies();
     shouldRedirect = true;
   } else {
-    userEmail = data.user.email || 'Admin';
-    // Load auto-logout timeout setting
+    userEmail = authState.user?.email || 'Admin';
     const { data: timeoutSetting } = await supabase
       .from('site_settings')
       .select('value')
@@ -871,9 +875,8 @@ if (!accessToken || !refreshToken) {
 
   // ── AUTO LOGOUT (only when "Ghi nhớ đăng nhập" was NOT checked) ──
   (function() {
-    const _minutes = (window as any)._autoLogoutMinutes || 120;
-    const SESSION_TIMEOUT_MS = _minutes === 0 ? 0 : _minutes * 60 * 1000;
-    if (SESSION_TIMEOUT_MS === 0) return; // "Không bao giờ" option
+    let timeoutMinutes = Number((window as any)._autoLogoutMinutes || 120);
+    let sessionTimeoutMs = timeoutMinutes === 0 ? 0 : timeoutMinutes * 60 * 1000;
     const WARNING_BEFORE_MS  = 60 * 1000; // Cảnh báo trước 1 phút
 
     function getCookie(name: string): string {
@@ -940,8 +943,10 @@ if (!accessToken || !refreshToken) {
       clearTimeout(warningTimer);
       removeWarningToast();
 
-      warningTimer = setTimeout(createWarningToast, SESSION_TIMEOUT_MS - WARNING_BEFORE_MS);
-      logoutTimer  = setTimeout(doLogout, SESSION_TIMEOUT_MS);
+      if (sessionTimeoutMs === 0) return; // "Không bao giờ" option
+
+      warningTimer = setTimeout(createWarningToast, sessionTimeoutMs - WARNING_BEFORE_MS);
+      logoutTimer  = setTimeout(doLogout, sessionTimeoutMs);
     }
 
     // Bắt đầu timer ngay khi load trang
@@ -959,6 +964,14 @@ if (!accessToken || !refreshToken) {
         }, 10000); // throttle 10 giây để tránh reset liên tục
       }, { passive: true });
     });
+
+    window.addEventListener('admin:auto-logout-timeout-updated', ((event: Event) => {
+      const customEvent = event as CustomEvent<{ minutes?: number }>;
+      const nextMinutes = Number(customEvent.detail?.minutes);
+      timeoutMinutes = Number.isFinite(nextMinutes) ? nextMinutes : Number((window as any)._autoLogoutMinutes || 120);
+      sessionTimeoutMs = timeoutMinutes === 0 ? 0 : timeoutMinutes * 60 * 1000;
+      resetTimers();
+    }) as EventListener);
   })();
 </script>
 )}

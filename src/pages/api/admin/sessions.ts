@@ -2,11 +2,34 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { SessionManager } from '../../../lib/session-manager';
 import { getClientIp } from '../../../lib/logger';
+import { ADMIN_SESSION_COOKIE } from '../../../lib/security';
+
+function sessionFingerprint(session: {
+  device_name?: string;
+  browser?: string;
+  device_type?: string;
+  ip_address?: string;
+  user_agent?: string;
+}): string {
+  return [
+    session.device_name || '',
+    session.browser || '',
+    session.device_type || '',
+    session.ip_address || '',
+    session.user_agent || '',
+  ].join('|');
+}
 
 export const GET: APIRoute = async ({ request, cookies }) => {
   try {
     const accessToken = cookies.get('sb-access-token');
     const refreshToken = cookies.get('sb-refresh-token');
+    const sessionType = cookies.get('sb-session-type')?.value || 'temporary';
+    const currentSessionToken = cookies.get(ADMIN_SESSION_COOKIE)?.value;
+    const shouldTrackCurrentSession = sessionType === 'persistent';
+    const isProduction = import.meta.env.PROD || import.meta.env.NODE_ENV === 'production';
+    const useSecureCookies = isProduction ? true : new URL(request.url).protocol === 'https:';
+    const persistentMaxAge = 30 * 24 * 60 * 60;
 
     if (!accessToken || !refreshToken) {
       return new Response(JSON.stringify({
@@ -24,7 +47,6 @@ export const GET: APIRoute = async ({ request, cookies }) => {
       access_token: accessToken.value,
       refresh_token: refreshToken.value,
     });
-    const currentRefreshToken = refreshToken.value;
 
     const user = authData?.user;
     if (authError || !user) {
@@ -39,25 +61,18 @@ export const GET: APIRoute = async ({ request, cookies }) => {
       });
     }
 
-    // Lấy thông tin request
     const userAgent = request.headers.get('user-agent') || '';
     const clientIP = await getClientIp(request);
-    
     const deviceInfo = SessionManager.parseUserAgent(userAgent);
-    
-    // Lấy tất cả sessions của user từ custom session table
+
     const sessions = await SessionManager.getUserSessions(user.id);
     const activeSessions = sessions.filter((session) => session.is_active);
-    
-    // Debug: Kiểm tra xem có sessions không
-    console.log('Sessions from database:', sessions);
-    console.log('Sessions count:', sessions.length);
-    
-    let currentSession = activeSessions.find((session) =>
-      Boolean(session.refresh_token) && session.refresh_token === currentRefreshToken
-    );
 
-    const reusableCurrent = !currentSession
+    let currentSession = shouldTrackCurrentSession && currentSessionToken
+      ? activeSessions.find((session) => session.session_token === currentSessionToken)
+      : undefined;
+
+    const reusableCurrent = shouldTrackCurrentSession && !currentSession
       ? activeSessions.find((session) =>
           (session.user_agent && session.user_agent === userAgent) ||
           (
@@ -69,36 +84,29 @@ export const GET: APIRoute = async ({ request, cookies }) => {
         )
       : undefined;
 
-    // Nếu chưa map được refresh token hiện tại vào session đang active, tạo mới session hiện tại.
-    if (!currentSession && reusableCurrent) {
+    if (shouldTrackCurrentSession && !currentSession && reusableCurrent) {
       currentSession = reusableCurrent;
-      console.log('Reusing existing active session and updating refresh token:', currentSession.id);
     }
 
-    if (!currentSession) {
-      console.log('Current refresh token is not mapped, creating current session...');
-
-      const currentSessionData = {
+    if (shouldTrackCurrentSession && !currentSession) {
+      const newSession = await SessionManager.createSession(user.id, {
         device_name: deviceInfo.deviceName,
         device_type: deviceInfo.deviceType,
         browser: deviceInfo.browser,
         ip_address: clientIP,
         location: 'TP. Hồ Chí Minh, VN',
         user_agent: userAgent,
-        refresh_token: currentRefreshToken,
-      };
+        expires_at: new Date(Date.now() + (persistentMaxAge * 1000)).toISOString(),
+      });
 
-      const newSession = await SessionManager.createSession(user.id, currentSessionData);
       if (newSession) {
-        console.log('Current session created:', newSession.id);
         sessions.push(newSession);
         activeSessions.push(newSession);
         currentSession = newSession;
       }
     }
 
-    // Cập nhật heartbeat cho phiên hiện tại để "Hoạt động lần cuối" luôn đúng.
-    if (currentSession) {
+    if (shouldTrackCurrentSession && currentSession) {
       const nowIso = new Date().toISOString();
       await supabase
         .from('user_sessions')
@@ -108,7 +116,6 @@ export const GET: APIRoute = async ({ request, cookies }) => {
           browser: deviceInfo.browser,
           ip_address: clientIP,
           user_agent: userAgent,
-          refresh_token: currentRefreshToken,
           last_activity: nowIso,
         })
         .eq('id', currentSession.id)
@@ -119,15 +126,38 @@ export const GET: APIRoute = async ({ request, cookies }) => {
       currentSession.browser = deviceInfo.browser;
       currentSession.ip_address = clientIP;
       currentSession.user_agent = userAgent;
-      currentSession.refresh_token = currentRefreshToken;
       currentSession.last_activity = nowIso;
-    }
-    
-    // Format sessions data cho frontend
-    const fallbackCurrent = activeSessions[0] || sessions[0];
-    const currentSessionId = currentSession?.id || fallbackCurrent?.id || '';
 
-    const formattedSessions = sessions.map(session => ({
+      cookies.set(ADMIN_SESSION_COOKIE, currentSession.session_token, {
+        path: '/',
+        httpOnly: true,
+        secure: useSecureCookies,
+        sameSite: 'lax',
+        maxAge: persistentMaxAge,
+      });
+    }
+
+    const fallbackCurrent = shouldTrackCurrentSession ? (activeSessions[0] || sessions[0]) : undefined;
+    const currentSessionId = shouldTrackCurrentSession ? (currentSession?.id || fallbackCurrent?.id || '') : '';
+    const currentFingerprint = currentSession ? sessionFingerprint(currentSession) : '';
+
+    if (shouldTrackCurrentSession && currentSession && currentFingerprint) {
+      for (const session of activeSessions) {
+        if (session.id === currentSession.id) continue;
+        if (sessionFingerprint(session) !== currentFingerprint) continue;
+
+        await SessionManager.terminateSession(session.id, user.id);
+        session.is_active = false;
+      }
+    }
+
+    const visibleSessions = sessions.filter((session) => {
+      if (session.is_active) return true;
+      if (!shouldTrackCurrentSession || !currentFingerprint) return true;
+      return sessionFingerprint(session) !== currentFingerprint;
+    });
+
+    const formattedSessions = visibleSessions.map(session => ({
       sessionId: session.id,
       deviceName: session.device_name || deviceInfo.deviceName,
       browser: session.browser || deviceInfo.browser,
@@ -136,9 +166,25 @@ export const GET: APIRoute = async ({ request, cookies }) => {
       location: session.location || 'TP. Hồ Chí Minh, VN',
       lastActivity: session.last_activity,
       isActive: session.is_active,
-      isCurrent: session.id === currentSessionId
+      isCurrent: session.id === currentSessionId,
+      sessionKind: 'persistent'
     }));
-    
+
+    if (!shouldTrackCurrentSession) {
+      formattedSessions.unshift({
+        sessionId: 'current-temporary-session',
+        deviceName: deviceInfo.deviceName,
+        browser: deviceInfo.browser,
+        deviceType: deviceInfo.deviceType,
+        ipAddress: clientIP,
+        location: 'TP. Hồ Chí Minh, VN',
+        lastActivity: new Date().toISOString(),
+        isActive: true,
+        isCurrent: true,
+        sessionKind: 'temporary'
+      });
+    }
+
     return new Response(JSON.stringify({
       success: true,
       sessions: formattedSessions
@@ -148,7 +194,7 @@ export const GET: APIRoute = async ({ request, cookies }) => {
         'Content-Type': 'application/json'
       }
     });
-    
+
   } catch (error) {
     console.error('Sessions API Error:', error);
     return new Response(JSON.stringify({
