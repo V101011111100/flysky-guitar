@@ -248,7 +248,12 @@ const outOfStock = items.filter(i => i.status === 'out').length;
         });
         const data = await res.json();
         if(data.success) {
-          alert(`Nhập thành công ${data.count} sản phẩm!`);
+          const skipped = Number(data.skippedCount || 0);
+          const failed = Number(data.failedCount || 0);
+          const parts = [`Nhập thành công ${data.count} sản phẩm!`];
+          if (skipped > 0) parts.push(`Bỏ qua ${skipped} dòng trống/không hợp lệ.`);
+          if (failed > 0) parts.push(`${failed} dòng bị lỗi khi lưu.`);
+          alert(parts.join('\n'));
           window.location.reload();
         } else {
           alert('Lỗi nhập dữ liệu: ' + data.error);

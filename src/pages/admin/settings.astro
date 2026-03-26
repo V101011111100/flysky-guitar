@@ -926,7 +926,7 @@ const autoLogoutTimeout = getSetting('flysky_autoLogoutTimeout', '120');
       <!-- Footer -->
       <div class="sec-footer">
         <span class="material-symbols-outlined footer-note-icon">music_note</span>
-        © 2024 FlySky Guitar Studio &amp; Wood. Bảo mật tuyệt đối.
+        © 2026 FlySky Guitar Studio &amp; Wood. Bảo mật tuyệt đối.
       </div>
     </div>
   </div>
@@ -1818,20 +1818,19 @@ const autoLogoutTimeout = getSetting('flysky_autoLogoutTimeout', '120');
       try {
         const url = await uploadSiteMedia(file);
         heroPreview.src = url;
+        if (heroImagesTextarea) {
+          heroImagesTextarea.value = '';
+        }
         await fetch('/api/settings/update', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ settings: [{ key: 'flysky_heroImageUrl', value: url }] }),
+          body: JSON.stringify({
+            settings: [
+              { key: 'flysky_heroImageUrl', value: url },
+              { key: 'flysky_heroImages', value: '' }
+            ]
+          }),
         });
-
-        if (heroImagesTextarea && !heroImagesTextarea.value.trim()) {
-          heroImagesTextarea.value = url;
-          await fetch('/api/settings/update', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ settings: [{ key: 'flysky_heroImages', value: url }] }),
-          });
-        }
 
         alert('Upload ảnh Hero thành công! Ảnh đã được lưu vĩnh viễn.');
       } catch (err: any) {

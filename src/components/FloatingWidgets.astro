@@ -146,10 +146,34 @@ const instagramUrl = getSetting('flysky_instagramUrl', 'https://instagram.com/fl
   <!-- Social links stack -->
   <div class="flex flex-col items-center gap-2" id="social-stack">
     {[
-      { label: 'Zalo', short: 'za', icon: 'chat', href: zaloUrl, color: 'hover:bg-[#0068FF]' },
-      { label: 'Facebook', short: 'f', icon: 'groups', href: facebookUrl, color: 'hover:bg-[#1877F2]' },
-      { label: 'WhatsApp', short: 'wa', icon: 'send', href: whatsappUrl, color: 'hover:bg-[#25D366]' },
-      { label: 'Instagram', short: 'ig', icon: 'photo_camera', href: instagramUrl, color: 'hover:bg-gradient-to-br hover:from-[#833ab4] hover:to-[#fd1d1d]' },
+      {
+        label: 'Zalo',
+        href: zaloUrl,
+        color: 'hover:bg-[#0068FF]',
+        iconType: 'image',
+        iconSrc: '/images/icons8-zalo.svg'
+      },
+      {
+        label: 'Messenger',
+        href: facebookUrl,
+        color: 'hover:bg-[#1877F2]',
+        iconType: 'lottie',
+        lottieSrc: '/images/icons8-facebook-messenger.json'
+      },
+      {
+        label: 'WhatsApp',
+        href: whatsappUrl,
+        color: 'hover:bg-[#25D366]',
+        iconType: 'lottie',
+        lottieSrc: '/images/icons8-whatsapp.json'
+      },
+      {
+        label: 'Instagram',
+        href: instagramUrl,
+        color: 'hover:bg-gradient-to-br hover:from-[#833ab4] hover:to-[#fd1d1d]',
+        iconType: 'material',
+        icon: 'photo_camera'
+      },
     ].map((s, i) => (
       <a
         href={s.href}
@@ -161,7 +185,15 @@ const instagramUrl = getSetting('flysky_instagramUrl', 'https://instagram.com/fl
                hover:text-white hover:border-transparent hover:scale-110 hover:shadow-lg ${s.color}`}
         style={`animation-delay: ${i * 80}ms;`}
       >
-        <span class="material-symbols-outlined text-[18px]">{s.icon}</span>
+        {s.iconType === 'lottie' && (
+          <span class="social-lottie-icon" data-lottie-src={s.lottieSrc} aria-hidden="true"></span>
+        )}
+        {s.iconType === 'image' && (
+          <img src={s.iconSrc} alt={s.label} class="social-img-icon" loading="lazy" />
+        )}
+        {s.iconType === 'material' && (
+          <span class="material-symbols-outlined text-[18px]">{s.icon}</span>
+        )}
       </a>
     ))}
     <!-- Vertical line connecting -->
@@ -176,6 +208,24 @@ const instagramUrl = getSetting('flysky_instagramUrl', 'https://instagram.com/fl
   }
   .social-btn {
     animation: floatUp 0.5s ease-out forwards;
+  }
+  .social-lottie-icon {
+    width: 18px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+  .social-lottie-icon > svg {
+    width: 100% !important;
+    height: 100% !important;
+  }
+  .social-img-icon {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    pointer-events: none;
   }
 
   /* Pulse ring for chat button */
@@ -206,6 +256,8 @@ const instagramUrl = getSetting('flysky_instagramUrl', 'https://instagram.com/fl
 </style>
 
 <script>
+  import lottie from 'lottie-web';
+
   // Chat toggle
   const toggleBtn = document.getElementById('chat-toggle')!;
   const panel = document.getElementById('chat-panel')!;
@@ -215,6 +267,22 @@ const instagramUrl = getSetting('flysky_instagramUrl', 'https://instagram.com/fl
   const successEl = document.getElementById('chat-success')!;
 
   let isOpen = false;
+
+  function initSocialLottieIcons() {
+    const lottieNodes = document.querySelectorAll<HTMLElement>('[data-lottie-src]');
+    lottieNodes.forEach((node) => {
+      const path = node.dataset.lottieSrc;
+      if (!path || node.dataset.lottieInit === '1') return;
+      node.dataset.lottieInit = '1';
+      lottie.loadAnimation({
+        container: node,
+        renderer: 'svg',
+        loop: true,
+        autoplay: true,
+        path,
+      });
+    });
+  }
 
   function openChat() {
     panel.classList.remove('hidden');
@@ -291,4 +359,6 @@ const instagramUrl = getSetting('flysky_instagramUrl', 'https://instagram.com/fl
       closeChat();
     }
   });
+
+  initSocialLottieIcons();
 </script>

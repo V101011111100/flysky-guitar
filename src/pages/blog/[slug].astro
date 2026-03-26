@@ -1,0 +1,212 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Navbar from '../../components/Navbar.astro';
+import Footer from '../../components/Footer.astro';
+import { supabase } from '../../lib/supabase';
+
+const { slug } = Astro.params;
+
+const { data: post } = await supabase
+  .from('blog_posts')
+  .select('*')
+  .eq('slug', slug)
+  .eq('status', 'published')
+  .single();
+
+if (!post) return Astro.redirect('/blog');
+
+// Increment view count (fire and forget)
+supabase.from('blog_posts').update({ view_count: (post.view_count ?? 0) + 1 }).eq('id', post.id);
+
+// Related posts
+const { data: related } = await supabase
+  .from('blog_posts')
+  .select('id, title, slug, cover_image, category, published_at')
+  .eq('status', 'published')
+  .eq('category', post.category)
+  .neq('id', post.id)
+  .order('published_at', { ascending: false })
+  .limit(3);
+
+const fmtDate = (d: string) => new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: 'long', year: 'numeric' });
+const publishedDate = post.published_at ? fmtDate(post.published_at) : fmtDate(post.created_at);
+---
+
+<Layout
+  title={post.seo_title || post.title + ' | FlySky Guitar'}
+  description={post.seo_desc || post.excerpt || ''}
+>
+  <Navbar />
+
+  <!-- Breadcrumb -->
+  <div class="bg-background-dark border-b border-border-dark/50">
+    <div class="mx-auto max-w-7xl px-4 lg:px-10 py-3 flex items-center gap-2 text-sm text-text-muted">
+      <a href="/" class="hover:text-primary transition-colors">Trang chủ</a>
+      <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+      <a href="/blog" class="hover:text-primary transition-colors">Blog</a>
+      <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+      <span class="text-white/60 line-clamp-1 max-w-xs">{post.title}</span>
+    </div>
+  </div>
+
+  <article class="py-12 lg:py-20 bg-background-dark min-h-screen">
+    <div class="mx-auto max-w-4xl px-4 lg:px-8">
+
+      <!-- Header -->
+      <header class="mb-10">
+        <div class="flex items-center gap-3 mb-5 flex-wrap">
+          <span class="bg-primary/15 text-primary text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-primary/20">
+            {post.category}
+          </span>
+          <span class="text-text-muted text-xs flex items-center gap-1">
+            <span class="material-symbols-outlined text-[14px]">calendar_today</span>
+            {publishedDate}
+          </span>
+          {post.view_count > 0 && (
+            <span class="text-text-muted text-xs flex items-center gap-1">
+              <span class="material-symbols-outlined text-[14px]">visibility</span>
+              {post.view_count} lượt xem
+            </span>
+          )}
+          <span class="text-text-muted text-xs flex items-center gap-1">
+            <span class="material-symbols-outlined text-[14px]">person</span>
+            {post.author_name || 'FlySky Guitar'}
+          </span>
+        </div>
+
+        <h1 class="text-white text-3xl lg:text-4xl font-extrabold leading-tight mb-5">{post.title}</h1>
+
+        {post.excerpt && (
+          <p class="text-text-muted text-lg leading-relaxed border-l-4 border-primary/40 pl-5 italic">
+            {post.excerpt}
+          </p>
+        )}
+      </header>
+
+      <!-- Cover image -->
+      {post.cover_image && (
+        <div class="mb-10 rounded-2xl overflow-hidden">
+          <img
+            src={post.cover_image}
+            alt={post.title}
+            class="w-full object-cover max-h-[500px]"
+            loading="lazy"
+          />
+        </div>
+      )}
+
+      <!-- Content -->
+      <div class="blog-content prose" set:html={post.content ?? '<p class="text-text-muted">Bài viết này chưa có nội dung.</p>'} />
+
+      <!-- Tags -->
+      {post.tags && post.tags.length > 0 && (
+        <div class="mt-10 pt-6 border-t border-border-dark/50 flex flex-wrap gap-2">
+          {post.tags.map((tag: string) => (
+            <span class="text-xs px-3 py-1 rounded-full bg-card-dark border border-border-dark text-text-muted">#{tag}</span>
+          ))}
+        </div>
+      )}
+
+      <!-- Back link -->
+      <div class="mt-10">
+        <a href="/blog" class="inline-flex items-center gap-2 text-primary hover:opacity-80 transition-opacity font-semibold text-sm">
+          <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+          Quay lại danh sách bài viết
+        </a>
+      </div>
+    </div>
+
+    <!-- Related posts -->
+    {related && related.length > 0 && (
+      <div class="mx-auto max-w-7xl px-4 lg:px-10 mt-20">
+        <h2 class="text-white text-xl font-bold mb-8">Bài viết liên quan</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {related.map((r: any) => (
+            <a href={`/blog/${r.slug}`} class="group flex flex-col bg-card-dark rounded-2xl border border-border-dark overflow-hidden hover:border-primary/50 transition-colors">
+              <div class="aspect-[16/10] overflow-hidden">
+                <img
+                  src={r.cover_image || 'https://images.unsplash.com/photo-1510915228340-29c85a43dcfe?q=80&w=800&auto=format&fit=crop'}
+                  alt={r.title}
+                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  loading="lazy"
+                />
+              </div>
+              <div class="p-4">
+                <span class="text-[10px] uppercase font-bold text-primary/70 tracking-wider">{r.category}</span>
+                <h3 class="text-white font-semibold mt-1 line-clamp-2 group-hover:text-primary transition-colors text-sm">{r.title}</h3>
+                <p class="text-text-muted text-[11px] mt-2">{r.published_at ? new Date(r.published_at).toLocaleDateString('vi-VN') : ''}</p>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    )}
+  </article>
+
+  <Footer />
+</Layout>
+
+<style>
+.blog-content {
+  color: #cbd5e1;
+  font-size: 16px;
+  line-height: 1.85;
+}
+.blog-content :global(h2) {
+  font-size: 22px;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 32px 0 12px;
+}
+.blog-content :global(h3) {
+  font-size: 18px;
+  font-weight: 600;
+  color: #f1f5f9;
+  margin: 24px 0 10px;
+}
+.blog-content :global(p) {
+  margin-bottom: 16px;
+}
+.blog-content :global(ul), .blog-content :global(ol) {
+  padding-left: 24px;
+  margin-bottom: 16px;
+}
+.blog-content :global(li) {
+  margin-bottom: 6px;
+}
+.blog-content :global(strong) {
+  color: #f1f5f9;
+  font-weight: 700;
+}
+.blog-content :global(a) {
+  color: var(--primary, #e07b39);
+  text-decoration: underline;
+}
+.blog-content :global(blockquote) {
+  border-left: 4px solid var(--primary, #e07b39);
+  padding: 12px 20px;
+  background: rgba(224,123,57,.06);
+  border-radius: 0 8px 8px 0;
+  margin: 20px 0;
+  color: #94a3b8;
+  font-style: italic;
+}
+.blog-content :global(img) {
+  width: 100%;
+  border-radius: 12px;
+  margin: 20px 0;
+}
+.blog-content :global(code) {
+  background: rgba(255,255,255,.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+.blog-content :global(pre) {
+  background: rgba(255,255,255,.05);
+  padding: 16px;
+  border-radius: 10px;
+  overflow-x: auto;
+  margin: 16px 0;
+}
+</style>

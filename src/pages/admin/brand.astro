@@ -1,0 +1,570 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+const { data: settingsRaw } = await supabase.from('site_settings').select('key, value');
+const s: Record<string, string> = {};
+(settingsRaw || []).forEach((r: any) => { s[r.key] = r.value ?? ''; });
+
+const g = (key: string, def: string) => s[key] ?? def;
+---
+
+<AdminLayout title="Câu chuyện thương hiệu" subtitle="Chỉnh sửa nội dung giới thiệu, giá trị cốt lõi và cột mốc" activeNav="brand">
+
+  <div class="brand-wrap">
+
+    <!-- ── NAV TABS ── -->
+    <div class="brand-tabs">
+      <button class="btab btab-active" data-tab="homepage">Trang chủ (Section)</button>
+      <button class="btab" data-tab="hero">Trang Giới thiệu — Hero</button>
+      <button class="btab" data-tab="values">Giá trị cốt lõi</button>
+      <button class="btab" data-tab="timeline">Cột mốc lịch sử</button>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════
+         TAB 1 — HOMEPAGE SECTION (BrandStory component)
+    ════════════════════════════════════════════════════ -->
+    <div id="tab-homepage" class="brand-panel">
+      <div class="panel-header">
+        <div>
+          <h3 class="panel-title">Section "Câu chuyện" trên trang chủ</h3>
+          <p class="panel-desc">Khu vực hiển thị tóm tắt ở giữa trang chủ bên cạnh ảnh thương hiệu.</p>
+        </div>
+        <button class="btn-save" data-section="homepage">
+          <span class="material-symbols-outlined">save</span> Lưu thay đổi
+        </button>
+      </div>
+
+      <div class="fields-grid">
+        <div class="field-group field-full">
+          <label class="field-label">Ảnh thương hiệu (URL)</label>
+          <div class="img-row">
+            <input class="field-input" id="flysky_brand_image" type="text"
+              value={g('flysky_brand_image', '/images/brand-story.jpg')}
+              placeholder="/images/brand-story.jpg" />
+            <div class="img-thumb" id="brand-img-thumb">
+              <img src={g('flysky_brand_image', '/images/brand-story.jpg')} alt="preview"
+                onerror="this.style.display='none'" />
+            </div>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Nhãn nhỏ phía trên tiêu đề</label>
+          <input class="field-input" id="flysky_brand_section_tag" type="text"
+            value={g('flysky_brand_section_tag', 'Quy trình của chúng tôi')} />
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Tiêu đề — dòng 1</label>
+          <input class="field-input" id="flysky_brand_title1" type="text"
+            value={g('flysky_brand_title1', 'Sinh ra từ gỗ.')} />
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Tiêu đề — dòng 2</label>
+          <input class="field-input" id="flysky_brand_title2" type="text"
+            value={g('flysky_brand_title2', 'Chế tác cho âm sắc.')} />
+        </div>
+
+        <div class="field-group field-full">
+          <label class="field-label">Đoạn mô tả</label>
+          <textarea class="field-input" id="flysky_brand_desc" rows="3"
+          >{g('flysky_brand_desc', 'Mỗi cây đàn FlySky đều bắt đầu từ một mảnh gỗ âm sắc được tuyển chọn kỹ lưỡng. Các nghệ nhân bậc thầy của chúng tôi kết hợp kỹ thuật truyền thống hàng thế kỷ với độ chính xác hiện đại để tạo ra những nhạc cụ không chỉ chơi nhạc mà còn truyền cảm hứng.')}</textarea>
+        </div>
+      </div>
+
+      <div class="features-block">
+        <p class="block-label">Điểm nổi bật (2 mục)</p>
+        <div class="feature-cards">
+          <div class="feat-card">
+            <div class="feat-num">1</div>
+            <div class="feat-fields">
+              <div class="field-group">
+                <label class="field-label">Tiêu đề</label>
+                <input class="field-input" id="flysky_brand_feat1_title" type="text"
+                  value={g('flysky_brand_feat1_title', 'Cần đàn chạm khắc thủ công')} />
+              </div>
+              <div class="field-group">
+                <label class="field-label">Mô tả</label>
+                <input class="field-input" id="flysky_brand_feat1_desc" type="text"
+                  value={g('flysky_brand_feat1_desc', 'Được tạo hình để mang lại sự thoải mái và khả năng chơi tối ưu.')} />
+              </div>
+            </div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-num">2</div>
+            <div class="feat-fields">
+              <div class="field-group">
+                <label class="field-label">Tiêu đề</label>
+                <input class="field-input" id="flysky_brand_feat2_title" type="text"
+                  value={g('flysky_brand_feat2_title', 'Hệ thống điện tử chính xác')} />
+              </div>
+              <div class="field-group">
+                <label class="field-label">Mô tả</label>
+                <input class="field-input" id="flysky_brand_feat2_desc" type="text"
+                  value={g('flysky_brand_feat2_desc', 'Bộ thu âm (pickups) được quấn thủ công cho độ trong trẻo nguyên bản.')} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════
+         TAB 2 — ABOUT PAGE HERO
+    ════════════════════════════════════════════════════ -->
+    <div id="tab-hero" class="brand-panel hidden">
+      <div class="panel-header">
+        <div>
+          <h3 class="panel-title">Trang Giới thiệu — Khu vực Hero</h3>
+          <p class="panel-desc">Phần đầu tiên khách hàng thấy khi vào trang /about.</p>
+        </div>
+        <button class="btn-save" data-section="hero">
+          <span class="material-symbols-outlined">save</span> Lưu thay đổi
+        </button>
+      </div>
+
+      <div class="fields-grid">
+        <div class="field-group">
+          <label class="field-label">Nhãn nhỏ</label>
+          <input class="field-input" id="flysky_about_hero_tag" type="text"
+            value={g('flysky_about_hero_tag', 'Về chúng tôi')} />
+        </div>
+        <div class="field-group">
+          <label class="field-label">Link ảnh Hero</label>
+          <input class="field-input" id="flysky_about_hero_image" type="text"
+            value={g('flysky_about_hero_image', 'https://images.unsplash.com/photo-1550985543-f47f38aeeaec?q=80&w=2070')} />
+        </div>
+        <div class="field-group">
+          <label class="field-label">Tiêu đề H1</label>
+          <input class="field-input" id="flysky_about_hero_h1" type="text"
+            value={g('flysky_about_hero_h1', 'Mang âm nhạc đích thực')} />
+        </div>
+        <div class="field-group">
+          <label class="field-label">Highlight H1 (in màu cam)</label>
+          <input class="field-input" id="flysky_about_hero_h1hi" type="text"
+            value={g('flysky_about_hero_h1hi', 'chạm đến tâm hồn bạn')} />
+        </div>
+        <div class="field-group field-full">
+          <label class="field-label">Đoạn mô tả Hero</label>
+          <textarea class="field-input" id="flysky_about_hero_desc" rows="3"
+          >{g('flysky_about_hero_desc', 'Hành trình của FlySky Guitar không chỉ là mua bán nhạc cụ. Chúng tôi được sinh ra từ niềm đam mê chế tác và khao khát kết nối những người yêu nhạc với những cây đàn có \'linh hồn\' thực sự.')}</textarea>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Badge: số năm kinh nghiệm</label>
+          <input class="field-input" id="flysky_about_hero_years" type="text"
+            value={g('flysky_about_hero_years', '10 Năm')} />
+        </div>
+        <div class="field-group">
+          <label class="field-label">Badge: mô tả kinh nghiệm</label>
+          <input class="field-input" id="flysky_about_hero_years_sub" type="text"
+            value={g('flysky_about_hero_years_sub', 'Kinh nghiệm phân phối & chế tác')} />
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════
+         TAB 3 — CORE VALUES
+    ════════════════════════════════════════════════════ -->
+    <div id="tab-values" class="brand-panel hidden">
+      <div class="panel-header">
+        <div>
+          <h3 class="panel-title">Giá trị cốt lõi</h3>
+          <p class="panel-desc">3 thẻ giá trị hiển thị trong section "Giá trị cốt lõi" trang /about.</p>
+        </div>
+        <button class="btn-save" data-section="values">
+          <span class="material-symbols-outlined">save</span> Lưu thay đổi
+        </button>
+      </div>
+
+      <div class="fields-grid">
+        <div class="field-group">
+          <label class="field-label">Tiêu đề section</label>
+          <input class="field-input" id="flysky_about_values_title" type="text"
+            value={g('flysky_about_values_title', 'Giá trị cốt lõi')} />
+        </div>
+        <div class="field-group">
+          <label class="field-label">Mô tả section</label>
+          <input class="field-input" id="flysky_about_values_desc" type="text"
+            value={g('flysky_about_values_desc', 'Chúng tôi cam kết duy trì 3 nguyên tắc vàng trong mọi sản phẩm và dịch vụ mà FlySky Guitar cung cấp đến tay khách hàng.')} />
+        </div>
+      </div>
+
+      <div class="value-cards">
+        {[1,2,3].map(n => (
+          <div class="val-card">
+            <div class="val-num">{n}</div>
+            <div class="val-fields fields-grid">
+              <div class="field-group">
+                <label class="field-label">Tiêu đề</label>
+                <input class="field-input" id={`flysky_about_val${n}_title`} type="text"
+                  value={g(`flysky_about_val${n}_title`, ['Chất lượng nguyên bản','Đồng hành tận tâm','Tinh thần nghệ sĩ'][n-1])} />
+              </div>
+              <div class="field-group field-full">
+                <label class="field-label">Mô tả</label>
+                <textarea class="field-input" id={`flysky_about_val${n}_desc`} rows="2"
+                >{g(`flysky_about_val${n}_desc`, [
+                  'Mọi cây đàn đều được trải qua quy trình đánh giá khắt khe trước khi lên kệ, đảm bảo âm thanh và cấu tạo hoàn hảo nhất.',
+                  'Không chỉ bán hàng, chúng tôi ở đây để hỗ trợ, tư vấn kỹ thuật và bảo hành bảo dưỡng trọn đời cho bạn.',
+                  'Tôn trọng sự đa dạng trong phong cách chơi. Mỗi cây đàn mang một câu chuyện phù hợp với cá tính của từng người thợ.'
+                ][n-1])}</textarea>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════
+         TAB 4 — TIMELINE
+    ════════════════════════════════════════════════════ -->
+    <div id="tab-timeline" class="brand-panel hidden">
+      <div class="panel-header">
+        <div>
+          <h3 class="panel-title">Cột mốc lịch sử</h3>
+          <p class="panel-desc">3 mốc thời gian hiển thị trong timeline trang /about.</p>
+        </div>
+        <button class="btn-save" data-section="timeline">
+          <span class="material-symbols-outlined">save</span> Lưu thay đổi
+        </button>
+      </div>
+
+      <div class="fields-grid" style="margin-bottom:20px">
+        <div class="field-group">
+          <label class="field-label">Tiêu đề section</label>
+          <input class="field-input" id="flysky_about_timeline_title" type="text"
+            value={g('flysky_about_timeline_title', 'Cột mốc đáng nhớ')} />
+        </div>
+        <div class="field-group">
+          <label class="field-label">Mô tả section</label>
+          <input class="field-input" id="flysky_about_timeline_desc" type="text"
+            value={g('flysky_about_timeline_desc', 'Những dấu ấn hình thành nên thương hiệu ngày hôm nay.')} />
+        </div>
+      </div>
+
+      <div class="timeline-cards">
+        {[1,2,3].map(n => (
+          <div class="tl-card">
+            <div class="tl-dot"></div>
+            <div class="tl-fields fields-grid">
+              <div class="field-group">
+                <label class="field-label">Năm / Giai đoạn</label>
+                <input class="field-input" id={`flysky_about_mile${n}_year`} type="text"
+                  value={g(`flysky_about_mile${n}_year`, ['2016','2019','2023 - NAY'][n-1])} />
+              </div>
+              <div class="field-group">
+                <label class="field-label">Tên cột mốc</label>
+                <input class="field-input" id={`flysky_about_mile${n}_title`} type="text"
+                  value={g(`flysky_about_mile${n}_title`, ['Lời chào sân','Showroom đầu tiên','Vươn xa mạnh mẽ'][n-1])} />
+              </div>
+              <div class="field-group field-full">
+                <label class="field-label">Mô tả</label>
+                <textarea class="field-input" id={`flysky_about_mile${n}_desc`} rows="2"
+                >{g(`flysky_about_mile${n}_desc`, [
+                  'FlySky Guitar được hình thành như một xưởng sửa chữa và chỉnh âm nhỏ tại Đà Nẵng, phục vụ anh em chơi nhạc indie địa phương.',
+                  'Sau 3 năm tích lũy, chúng tôi chính thức khai trương showroom offline đầu tiên trên đường Lê Thiện Trị và ký kết hợp đồng phân phối chính thức với các thương hiệu lớn.',
+                  'Trở thành đối tác lớn, nâng cấp trải nghiệm mua bán trực tuyến toàn quốc và mang đến những đặc quyền bảo hành chưa từng có.'
+                ][n-1])}</textarea>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Toast -->
+  <div class="toast hidden" id="toast"></div>
+
+</AdminLayout>
+
+<script>
+// ── Tab switching ─────────────────────────────────────────────────────────────
+document.querySelectorAll('.btab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.btab').forEach(b => b.classList.remove('btab-active'));
+    btn.classList.add('btab-active');
+    const tab = (btn as HTMLElement).dataset.tab!;
+    document.querySelectorAll('.brand-panel').forEach(p => p.classList.add('hidden'));
+    document.getElementById(`tab-${tab}`)?.classList.remove('hidden');
+  });
+});
+
+// ── Image preview ─────────────────────────────────────────────────────────────
+document.getElementById('flysky_brand_image')?.addEventListener('input', (e) => {
+  const url = (e.target as HTMLInputElement).value;
+  const img = document.querySelector('#brand-img-thumb img') as HTMLImageElement;
+  if (img) { img.src = url; img.style.display = ''; }
+});
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function showToast(msg: string, ok = true) {
+  const el = document.getElementById('toast')!;
+  el.textContent = msg;
+  el.className = `toast ${ok ? 'toast-ok' : 'toast-err'}`;
+  setTimeout(() => el.classList.add('hidden'), 3000);
+}
+
+// ── Section ID → field keys mapping ──────────────────────────────────────────
+const sectionKeys: Record<string, string[]> = {
+  homepage: [
+    'flysky_brand_image','flysky_brand_section_tag','flysky_brand_title1','flysky_brand_title2',
+    'flysky_brand_desc','flysky_brand_feat1_title','flysky_brand_feat1_desc',
+    'flysky_brand_feat2_title','flysky_brand_feat2_desc',
+  ],
+  hero: [
+    'flysky_about_hero_tag','flysky_about_hero_image','flysky_about_hero_h1',
+    'flysky_about_hero_h1hi','flysky_about_hero_desc',
+    'flysky_about_hero_years','flysky_about_hero_years_sub',
+  ],
+  values: [
+    'flysky_about_values_title','flysky_about_values_desc',
+    'flysky_about_val1_title','flysky_about_val1_desc',
+    'flysky_about_val2_title','flysky_about_val2_desc',
+    'flysky_about_val3_title','flysky_about_val3_desc',
+  ],
+  timeline: [
+    'flysky_about_timeline_title','flysky_about_timeline_desc',
+    'flysky_about_mile1_year','flysky_about_mile1_title','flysky_about_mile1_desc',
+    'flysky_about_mile2_year','flysky_about_mile2_title','flysky_about_mile2_desc',
+    'flysky_about_mile3_year','flysky_about_mile3_title','flysky_about_mile3_desc',
+  ],
+};
+
+// ── Save handler ──────────────────────────────────────────────────────────────
+document.querySelectorAll('.btn-save').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const section = (btn as HTMLElement).dataset.section!;
+    const keys = sectionKeys[section] || [];
+    const fields: Record<string, string> = {};
+    keys.forEach(k => {
+      const el = document.getElementById(k) as HTMLInputElement | HTMLTextAreaElement | null;
+      if (el) fields[k] = el.value;
+    });
+
+    btn.setAttribute('disabled', 'true');
+    const res = await fetch('/api/settings/bulk-update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+      body: JSON.stringify({ fields }),
+    });
+    btn.removeAttribute('disabled');
+
+    const json = await res.json().catch(() => ({}));
+    if (res.ok && json.success) {
+      showToast('Đã lưu thành công!');
+    } else {
+      showToast(json.error || 'Lưu thất bại.', false);
+    }
+  });
+});
+</script>
+
+<style>
+.brand-wrap { display: flex; flex-direction: column; gap: 0; }
+
+/* Tabs */
+.brand-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 12px;
+  padding: 6px;
+}
+.btab {
+  padding: 9px 18px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.btab:hover { color: #fff; background: rgba(255,255,255,.06); }
+.btab-active { background: var(--primary, #e07b39) !important; color: #fff !important; }
+
+/* Panel */
+.brand-panel { display: flex; flex-direction: column; gap: 20px; }
+.brand-panel.hidden { display: none; }
+
+.panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px;
+  background: var(--card-dark, #1a1a2e);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 14px;
+  flex-wrap: wrap;
+}
+.panel-title { color: #f1f5f9; font-size: 16px; font-weight: 700; margin: 0 0 4px; }
+.panel-desc  { color: #64748b; font-size: 13px; margin: 0; }
+
+.btn-save {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  background: var(--primary, #e07b39);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity .2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.btn-save:hover { opacity: .85; }
+.btn-save:disabled { opacity: .5; cursor: not-allowed; }
+.btn-save .material-symbols-outlined { font-size: 18px; }
+
+/* Fields */
+.fields-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 20px 24px;
+  background: var(--card-dark, #1a1a2e);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 14px;
+}
+.field-group { display: flex; flex-direction: column; gap: 6px; }
+.field-full  { grid-column: 1 / -1; }
+.field-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+.field-input {
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 9px;
+  padding: 10px 12px;
+  color: #f1f5f9;
+  font-size: 14px;
+  outline: none;
+  transition: border-color .15s;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+.field-input:focus { border-color: var(--primary, #e07b39); }
+textarea.field-input { resize: vertical; }
+
+.img-row { display: flex; align-items: center; gap: 12px; }
+.img-thumb {
+  width: 80px; height: 56px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.1);
+  flex-shrink: 0;
+  background: rgba(255,255,255,.04);
+  display: flex; align-items: center; justify-content: center;
+}
+.img-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Feature cards */
+.features-block {
+  padding: 20px 24px;
+  background: var(--card-dark, #1a1a2e);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 14px;
+}
+.block-label { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 16px; }
+.feature-cards { display: flex; flex-direction: column; gap: 14px; }
+.feat-card { display: flex; align-items: flex-start; gap: 14px; }
+.feat-num {
+  width: 28px; height: 28px;
+  flex-shrink: 0;
+  background: var(--primary, #e07b39);
+  color: #fff;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800;
+  margin-top: 6px;
+}
+.feat-fields { display: grid; grid-template-columns: 1fr 2fr; gap: 12px; flex: 1; }
+
+/* Value cards */
+.value-cards { display: flex; flex-direction: column; gap: 14px; }
+.val-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px;
+  background: var(--card-dark, #1a1a2e);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 12px;
+}
+.val-num {
+  width: 32px; height: 32px;
+  flex-shrink: 0;
+  background: rgba(99,102,241,.2);
+  color: #818cf8;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 800;
+  margin-top: 2px;
+}
+.val-fields { flex: 1; }
+
+/* Timeline cards */
+.timeline-cards { display: flex; flex-direction: column; gap: 0; position: relative; padding-left: 28px; }
+.timeline-cards::before {
+  content: '';
+  position: absolute;
+  left: 7px; top: 12px; bottom: 12px;
+  width: 2px;
+  background: rgba(255,255,255,.1);
+}
+.tl-card {
+  position: relative;
+  padding: 0 0 20px 20px;
+}
+.tl-dot {
+  position: absolute;
+  left: -21px; top: 10px;
+  width: 14px; height: 14px;
+  background: var(--primary, #e07b39);
+  border: 3px solid #0f0f1a;
+  border-radius: 50%;
+}
+.tl-fields {
+  background: var(--card-dark, #1a1a2e);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 12px;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  z-index: 9999;
+  pointer-events: none;
+}
+.toast.hidden { display: none; }
+.toast-ok  { background: #166534; color: #4ade80; border: 1px solid rgba(74,222,128,.3); }
+.toast-err { background: #7f1d1d; color: #f87171; border: 1px solid rgba(248,113,113,.3); }
+
+@media (max-width: 640px) {
+  .fields-grid, .feat-fields { grid-template-columns: 1fr; }
+  .panel-header { flex-direction: column; }
+}
+</style>

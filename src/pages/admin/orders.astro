@@ -469,7 +469,9 @@ function fmtDate(d: string) {
 
   // ── Export Excel ──
   document.getElementById('btn-export')?.addEventListener('click', () => {
-    window.location.href = '/api/orders/export';
+    const params = new URLSearchParams(window.location.search);
+    const qs = params.toString();
+    window.location.href = qs ? `/api/orders/export?${qs}` : '/api/orders/export';
   });
 </script>
 

@@ -3,17 +3,42 @@ import { supabase } from '../../../lib/supabase';
 import * as XLSX from 'xlsx';
 import { ensureSameOrigin } from '../../../lib/security';
 
+const MAX_IMPORT_FILE_BYTES = 10 * 1024 * 1024;
+const UPSERT_CHUNK_SIZE = 200;
+
+function slugify(input: string): string {
+  const base = input
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)+/g, '');
+  return base || 'item';
+}
+
+function toNumber(value: unknown, fallback = 0): number {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const cleaned = value.replace(/[^0-9.-]/g, '');
+    const parsed = Number(cleaned);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return fallback;
+}
+
 export const POST: APIRoute = async ({ request, cookies }) => {
   const originCheck = ensureSameOrigin(request);
-  if (originCheck) return originCheck;
+  if (!originCheck.ok) return originCheck.response;
 
   try {
-    // 1. Auth check
-    const accessToken = cookies.get("sb-access-token");
-    const refreshToken = cookies.get("sb-refresh-token");
+    const accessToken = cookies.get('sb-access-token');
+    const refreshToken = cookies.get('sb-refresh-token');
 
     if (!accessToken || !refreshToken) {
-      return new Response(JSON.stringify({ success: false, error: "Unauthorized" }), { status: 401 });
+      return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const { data: authData, error: authError } = await supabase.auth.setSession({
@@ -22,114 +47,184 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     });
 
     if (authError || !authData.user) {
-      return new Response(JSON.stringify({ success: false, error: "Unauthorized" }), { status: 401 });
+      return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
-    // 2. Parse FormData
     const formData = await request.formData();
     const file = formData.get('file') as File;
 
     if (!file) {
-      return new Response(JSON.stringify({ success: false, error: "No file uploaded" }), { status: 400 });
+      return new Response(JSON.stringify({ success: false, error: 'No file uploaded' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
-    // 3. Read Excel using node buffer
+    if (file.size > MAX_IMPORT_FILE_BYTES) {
+      return new Response(JSON.stringify({ success: false, error: 'File quá lớn. Giới hạn 10MB.' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const lowerName = file.name.toLowerCase();
+    if (!lowerName.endsWith('.xlsx') && !lowerName.endsWith('.xls') && !lowerName.endsWith('.csv')) {
+      return new Response(JSON.stringify({ success: false, error: 'Định dạng file không hợp lệ.' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     const buffer = Buffer.from(await file.arrayBuffer());
     const wb = XLSX.read(buffer, { type: 'buffer' });
     const wsname = wb.SheetNames[0];
+
+    if (!wsname) {
+      return new Response(JSON.stringify({ success: false, error: 'File Excel không có sheet dữ liệu.' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     const ws = wb.Sheets[wsname];
-    const data: any[] = XLSX.utils.sheet_to_json(ws);
+    const rows: any[] = XLSX.utils.sheet_to_json(ws, { defval: '', raw: false });
 
-    // 4. Process Data
-    let importedCount = 0;
+    if (!rows.length) {
+      return new Response(JSON.stringify({ success: false, error: 'File không có dữ liệu để nhập.' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
-    for (const item of data) {
-      const name = item['Tên sản phẩm'];
-      if (!name) continue; // Skip empty rows
+    const validRows = rows.filter((row) => String(row['Tên sản phẩm'] || '').trim().length > 0);
+    const skippedRows = rows.length - validRows.length;
 
-      const categoryName = item['Danh mục'];
-      const price = item['Giá bán'] || 0;
-      const stock = item['Số lượng'] || 0;
-      const imageUrl = item['Link Ảnh'] || '';
-      const description = item['Mô tả'] || '';
+    if (!validRows.length) {
+      return new Response(JSON.stringify({ success: false, error: 'Không tìm thấy dòng hợp lệ (thiếu Tên sản phẩm).' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
-      // Handle Category
-      let categoryId = null;
-      if (categoryName) {
-        // Query category by name
-        let { data: catData } = await supabase
-          .from('categories')
-          .select('id')
-          .ilike('name', categoryName) // case insensitive
-          .single();
+    const { data: existingCategories, error: categoryFetchError } = await supabase
+      .from('categories')
+      .select('id, name, slug');
 
-        if (catData) {
-          categoryId = catData.id;
-        } else {
-          // Create new category mapping Vietnamese to english slug roughly
-          const catSlug = categoryName.toLowerCase()
-            .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // remove accents
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/(^-|-$)+/g, '');
+    if (categoryFetchError) {
+      throw new Error('Không thể tải danh mục hiện có.');
+    }
 
-          const { data: newCat } = await supabase
-            .from('categories')
-            .insert({ name: categoryName, slug: catSlug })
-            .select('id')
-            .single();
+    const categoriesByNormalizedName = new Map<string, { id: string }>();
+    (existingCategories || []).forEach((cat: any) => {
+      categoriesByNormalizedName.set(cat.name.trim().toLowerCase(), { id: cat.id });
+    });
 
-          if (newCat) categoryId = newCat.id;
-        }
-      }
-
-      // Generate a clean slug for product (Mapping SKU to slug to ensure unique upserting)
-      let productSlug = name.toLowerCase()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)+/g, '');
-
-      if (item['SKU']) {
-        productSlug = item['SKU'].toString().toLowerCase().replace(/[^a-z0-9]+/g, '-');
-      }
-
-      // Auto-migrate tables if columns don't exist (Supabase specific hack for rapid prototyping)
-      // Executing one by one, ignore errors if it doesn't exist
-      if (importedCount === 0) {
-        try { await supabase.rpc('exec_sql', { sql_string: 'ALTER TABLE IF EXISTS public.products ADD COLUMN IF NOT EXISTS spec_body text;' }); } catch (err) { }
-        try { await supabase.rpc('exec_sql', { sql_string: 'ALTER TABLE IF EXISTS public.products ADD COLUMN IF NOT EXISTS spec_top text;' }); } catch (err) { }
-        try { await supabase.rpc('exec_sql', { sql_string: 'ALTER TABLE IF EXISTS public.products ADD COLUMN IF NOT EXISTS spec_neck text;' }); } catch (err) { }
-      }
-
-      // Upsert product relying on 'slug' as unique identifier
-      // Add image as first element in gallery
-      const galleryImages = imageUrl ? [imageUrl] : [];
-
-      const { error: upsertErr } = await supabase
-        .from('products')
-        .upsert({
-          name: name,
-          slug: productSlug,
-          category_id: categoryId,
-          price: price,
-          gallery_images: galleryImages.length > 0 ? galleryImages : null,
-          description: description,
-          status: stock > 0 ? 'active' : 'out_of_stock',
-          spec_body: item['Lưng Hông'] || null,
-          spec_top: item['Mặt Top'] || null,
-          spec_neck: item['Cần Đàn'] || null
-        }, { onConflict: 'slug' });
-
-      if (upsertErr) {
-        console.error("Lỗi khi nhập sản phẩm:", name, upsertErr);
-      } else {
-        importedCount++;
+    const missingCategories = new Map<string, { name: string; slug: string }>();
+    for (const row of validRows) {
+      const categoryName = String(row['Danh mục'] || '').trim();
+      if (!categoryName) continue;
+      const normalized = categoryName.toLowerCase();
+      if (!categoriesByNormalizedName.has(normalized) && !missingCategories.has(normalized)) {
+        missingCategories.set(normalized, { name: categoryName, slug: slugify(categoryName) });
       }
     }
 
-    return new Response(JSON.stringify({ success: true, count: importedCount }), { status: 200 });
+    if (missingCategories.size > 0) {
+      const { data: insertedCategories, error: insertCategoryError } = await supabase
+        .from('categories')
+        .upsert(Array.from(missingCategories.values()), { onConflict: 'slug' })
+        .select('id, name');
 
-  } catch (err: any) {
-    console.error("Import Error:", err);
-    return new Response(JSON.stringify({ success: false, error: err.message }), { status: 500 });
+      if (insertCategoryError) {
+        throw new Error('Không thể tạo danh mục mới từ file import.');
+      }
+
+      (insertedCategories || []).forEach((cat: any) => {
+        categoriesByNormalizedName.set(String(cat.name).trim().toLowerCase(), { id: cat.id });
+      });
+
+      if (insertedCategories && insertedCategories.length !== missingCategories.size) {
+        const { data: refreshedCategories } = await supabase.from('categories').select('id, name');
+        (refreshedCategories || []).forEach((cat: any) => {
+          categoriesByNormalizedName.set(String(cat.name).trim().toLowerCase(), { id: cat.id });
+        });
+      }
+    }
+
+    const upsertPayload = validRows.map((row, idx) => {
+      const name = String(row['Tên sản phẩm'] || '').trim();
+      const categoryName = String(row['Danh mục'] || '').trim();
+      const categoryKey = categoryName.toLowerCase();
+      const categoryId = categoryName ? categoriesByNormalizedName.get(categoryKey)?.id || null : null;
+
+      const sku = String(row['SKU'] || '').trim();
+      const slug = sku ? slugify(sku) : slugify(name || `product-${Date.now()}-${idx}`);
+
+      const price = Math.max(0, toNumber(row['Giá bán'], 0));
+      const stock = Math.max(0, Math.floor(toNumber(row['Số lượng'], 0)));
+      const imageUrl = String(row['Link Ảnh'] || row['Hình Ảnh'] || '').trim();
+
+      return {
+        name,
+        slug,
+        category_id: categoryId,
+        price,
+        stock_quantity: stock,
+        gallery_images: imageUrl ? [imageUrl] : null,
+        description: String(row['Mô tả'] || '').trim() || null,
+        status: stock > 0 ? 'active' : 'out_of_stock',
+        spec_body: String(row['Lưng Hông'] || '').trim() || null,
+        spec_top: String(row['Mặt Top'] || '').trim() || null,
+        spec_neck: String(row['Cần Đàn'] || '').trim() || null,
+      };
+    });
+
+    let importedCount = 0;
+    let failedCount = 0;
+
+    for (let i = 0; i < upsertPayload.length; i += UPSERT_CHUNK_SIZE) {
+      const chunk = upsertPayload.slice(i, i + UPSERT_CHUNK_SIZE);
+      const { error: chunkError } = await supabase
+        .from('products')
+        .upsert(chunk, { onConflict: 'slug' });
+
+      if (!chunkError) {
+        importedCount += chunk.length;
+        continue;
+      }
+
+      for (const row of chunk) {
+        const { error: rowError } = await supabase
+          .from('products')
+          .upsert(row, { onConflict: 'slug' });
+        if (rowError) {
+          failedCount += 1;
+        } else {
+          importedCount += 1;
+        }
+      }
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        count: importedCount,
+        failedCount,
+        skippedCount: skippedRows,
+      }),
+      {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+
+  } catch {
+    return new Response(JSON.stringify({ success: false, error: 'Không thể nhập file Excel lúc này.' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 };

@@ -37,8 +37,8 @@ export const GET: APIRoute = async ({ request, cookies }) => {
       "Tên sản phẩm": p.name,
       "Danh mục": p.categories?.name || 'Chưa phân loại',
       "Giá bán": p.price || 0,
-      "Số lượng": p.status === 'out_of_stock' ? 0 : 50, // Mock
-      "Hình Ảnh": p.gallery_images && p.gallery_images.length > 0 ? p.gallery_images[0] : '',
+      "Số lượng": p.stock_quantity ?? 0,
+      "Link Ảnh": p.gallery_images && p.gallery_images.length > 0 ? p.gallery_images[0] : '',
       "Mô tả": p.description || '',
       "Lưng Hông": p.spec_body || '',
       "Mặt Top": p.spec_top || '',
@@ -48,8 +48,8 @@ export const GET: APIRoute = async ({ request, cookies }) => {
     // 4. Create Workbook and Sheet
     const ws = XLSX.utils.json_to_sheet(excelData);
     const wscols = [
-      { wch: 20 }, { wch: 40 }, { wch: 20 }, { wch: 15 },
-      { wch: 10 }, { wch: 100 }, { wch: 60 }
+      { wch: 22 }, { wch: 40 }, { wch: 22 }, { wch: 16 },
+      { wch: 12 }, { wch: 80 }, { wch: 60 }, { wch: 24 }, { wch: 24 }, { wch: 24 }
     ];
     ws['!cols'] = wscols;
 
@@ -59,11 +59,15 @@ export const GET: APIRoute = async ({ request, cookies }) => {
     const excelBuffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
 
     // 5. Return File response
+    const now = new Date();
+    const fileDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
     return new Response(excelBuffer, {
       status: 200,
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'Content-Disposition': 'attachment; filename="flysky_export.xlsx"',
+        'Content-Disposition': `attachment; filename="flysky-products-${fileDate}.xlsx"`,
+        'Cache-Control': 'no-store',
       }
     });
 

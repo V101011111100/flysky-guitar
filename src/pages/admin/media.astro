@@ -237,7 +237,22 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
     });
   }
 
-  function renderStorageSidebar() {
+  function getFileExtension(fileName) {
+    const idx = String(fileName || '').lastIndexOf('.');
+    if (idx < 0) return '—';
+    return String(fileName).slice(idx + 1).toUpperCase() || '—';
+  }
+
+  function getImageDimensions(imageUrl) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      img.onerror = () => resolve(null);
+      img.src = imageUrl;
+    });
+  }
+
+  async function renderStorageSidebar() {
     const sidebar = document.getElementById('details-sidebar');
     const content = document.getElementById('details-content');
     const btnCopy = document.getElementById('btn-copy-url');
@@ -251,42 +266,47 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 
     const f = storageSelectedFile;
     const isImg = f.name.match(/\.(jpeg|jpg|gif|png|webp|avif|svg)$/i);
+    const fileExt = getFileExtension(f.name);
+    const sizeBytes = Number(f.size || 0);
     const sizeStr = formatBytes(f.size || 0);
+    const sizeBytesStr = `${sizeBytes.toLocaleString('vi-VN')} bytes`;
     const dateStr = f.createdAt ? formatDate(f.createdAt) : '—';
+    const updatedStr = f.updatedAt ? formatDate(f.updatedAt) : '—';
+    const fullUrl = String(f.url || '');
+    const safeHref = fullUrl.replaceAll('"', '%22');
 
     content.innerHTML = `
       <div class="preview-box">
         <div class="preview-img" style="${isImg ? `background-image:url('${f.url}')` : 'background:#3f3f46;display:flex;align-items:center;justify-content:center;'}">
           ${!isImg ? '<span class="material-symbols-outlined" style="font-size:48px;color:#94a3b8;">insert_drive_file</span>' : ''}
         </div>
-        <div class="file-meta">
-          <div class="meta-row"><span class="meta-label">Tên file</span><span class="meta-val break-words">${f.name}</span></div>
-          <div class="meta-row"><span class="meta-label">Đường dẫn</span><span class="meta-val break-words" style="font-size:11px;color:#64748b;">${f.path}</span></div>
-          <div class="meta-row"><span class="meta-label">Bucket</span><span class="meta-val">site-media</span></div>
-          <div class="meta-row"><span class="meta-label">Kích thước</span><span class="meta-val">${sizeStr}</span></div>
-          <div class="meta-row"><span class="meta-label">Loại</span><span class="meta-val">${f.contentType || '—'}</span></div>
-          <div class="meta-row"><span class="meta-label">Ngày tạo</span><span class="meta-val">${dateStr}</span></div>
-        </div>
+      </div>
+      <div class="file-meta meta-list">
+        <div class="meta-row"><span class="meta-label">Tên file</span><span class="meta-val break-words">${f.name}</span></div>
+        <div class="meta-row"><span class="meta-label">Định dạng</span><span class="meta-val">${fileExt}</span></div>
+        <div class="meta-row"><span class="meta-label">Đường dẫn bucket</span><span class="meta-val meta-val-long">${f.path}</span></div>
+        <div class="meta-row"><span class="meta-label">URL full size</span><a class="meta-val meta-link" href="${safeHref}" target="_blank" rel="noopener noreferrer" title="Mở ảnh full size">${fullUrl}</a></div>
+        <div class="meta-row"><span class="meta-label">Bucket</span><span class="meta-val">site-media</span></div>
+        <div class="meta-row"><span class="meta-label">Dung lượng</span><span class="meta-val">${sizeStr}</span></div>
+        <div class="meta-row"><span class="meta-label">Dung lượng (bytes)</span><span class="meta-val">${sizeBytesStr}</span></div>
+        <div class="meta-row"><span class="meta-label">Kích thước ảnh</span><span class="meta-val" id="storage-dimensions">${isImg ? 'Đang tải...' : '—'}</span></div>
+        <div class="meta-row"><span class="meta-label">Loại</span><span class="meta-val">${f.contentType || '—'}</span></div>
+        <div class="meta-row"><span class="meta-label">Ngày tạo</span><span class="meta-val">${dateStr}</span></div>
+        <div class="meta-row"><span class="meta-label">Cập nhật</span><span class="meta-val">${updatedStr}</span></div>
       </div>
     `;
 
     sidebar.style.display = 'flex';
 
-    // Rebind sidebar buttons for storage context
-    if (btnCopy) {
-      btnCopy.onclick = () => {
-        navigator.clipboard.writeText(f.url).then(() => {
-          const orig = btnCopy.innerHTML;
-          btnCopy.innerHTML = '<span class="material-symbols-outlined icon-norm">check</span> Đã sao chép!';
-          btnCopy.style.background = '#10b981';
-          showToast('Đã chép URL vào khay nhớ!', 'success');
-          setTimeout(() => { btnCopy.innerHTML = orig; btnCopy.style.background = ''; }, 2000);
-        });
-      };
+    if (isImg) {
+      const dims = await getImageDimensions(fullUrl);
+      const dimEl = document.getElementById('storage-dimensions');
+      if (dimEl && storageSelectedFile && storageSelectedFile.path === f.path) {
+        dimEl.textContent = dims ? `${dims.width} x ${dims.height} px` : 'Không đọc được';
+      }
     }
-    if (btnDel) {
-      btnDel.onclick = () => deleteStorageFile(f);
-    }
+
+    // Sidebar buttons are handled centrally in setupButtonListeners()
   }
 
   async function deleteStorageFile(file) {
@@ -738,13 +758,13 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
           background: #1e1e1e;
           padding: 24px;
           border-radius: 12px;
-          max-width: 400px;
+          width: min(92vw, 440px);
           text-align: center;
           box-shadow: 0 10px 40px rgba(0,0,0,0.5);
       `;
       
       modalContent.innerHTML = `
-          <p style="color: #fff; margin-bottom: 20px; font-size: 16px;">${message}</p>
+          <p style="color: #fff; margin-bottom: 20px; font-size: 16px; line-height: 1.5; white-space: pre-line; overflow-wrap: anywhere; word-break: break-word;">${message}</p>
           <div style="display: flex; gap: 12px; justify-content: center;">
               <button id="confirm-cancel" style="
                   padding: 10px 24px;
@@ -996,12 +1016,41 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
       
       const deleteBtn = document.getElementById('btn-delete-file');
       if (deleteBtn) {
-          deleteBtn.addEventListener('click', () => window.handleDelete());
+          deleteBtn.addEventListener('click', () => {
+            if (currentSource === 'supabase') {
+              if (!storageSelectedFile) {
+                showToast('Vui lòng chọn một tệp trước!', 'error');
+                return;
+              }
+              deleteStorageFile(storageSelectedFile);
+              return;
+            }
+            window.handleDelete();
+          });
       }
       
       const copyBtn = document.getElementById('btn-copy-url');
       if (copyBtn) {
-          copyBtn.addEventListener('click', () => window.copyToClipboard());
+          copyBtn.addEventListener('click', () => {
+            if (currentSource === 'supabase') {
+              if (!storageSelectedFile) {
+                showToast('Vui lòng chọn một tệp trước!', 'error');
+                return;
+              }
+              navigator.clipboard.writeText(storageSelectedFile.url).then(() => {
+                const orig = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<span class="material-symbols-outlined icon-norm">check</span> Đã sao chép!';
+                copyBtn.style.background = '#10b981';
+                showToast('Đã chép URL vào khay nhớ!', 'success');
+                setTimeout(() => {
+                  copyBtn.innerHTML = orig;
+                  copyBtn.style.background = '';
+                }, 2000);
+              });
+              return;
+            }
+            window.copyToClipboard();
+          });
       }
       
       // Toolbar delete button for multiple files
@@ -1546,6 +1595,52 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
     height: 100%;
     background-size: cover;
     background-position: center;
+  }
+
+  .meta-list {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .meta-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: rgba(39,39,42,0.55);
+    border: 1px solid rgba(244,140,37,0.08);
+  }
+  .meta-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+  }
+  .meta-val {
+    color: #f1f5f9;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .meta-val-long {
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    max-height: 62px;
+    overflow-y: auto;
+  }
+  .meta-link {
+    text-decoration: none;
+    color: #93c5fd;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    max-height: 86px;
+    overflow-y: auto;
+  }
+  .meta-link:hover {
+    color: #bfdbfe;
+    text-decoration: underline;
   }
 
   .info-group {

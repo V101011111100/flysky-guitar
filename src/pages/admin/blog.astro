@@ -1,0 +1,779 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+// Auth is handled by middleware + AdminLayout — no manual check needed here.
+
+// Fetch posts for listing — handles gracefully if table not yet created
+const { data: posts, error: dbError } = await supabase
+  .from('blog_posts')
+  .select('id, title, slug, category, status, view_count, published_at, created_at')
+  .order('created_at', { ascending: false });
+
+const tableNotReady = !!dbError;
+const allPosts = posts || [];
+const published = allPosts.filter(p => p.status === 'published').length;
+const drafts    = allPosts.filter(p => p.status === 'draft').length;
+---
+
+<AdminLayout title="Quản lý Blog" subtitle="Viết, chỉnh sửa và quản lý bài viết" activeNav="blog">
+
+  <!-- Migration warning banner -->
+  {tableNotReady && (
+    <div class="migration-banner">
+      <span class="material-symbols-outlined">warning</span>
+      <div>
+        <strong>Bảng dữ liệu chưa được tạo.</strong>
+        Hãy chạy file migration <code>supabase/migrations/20260326_create_blog_posts.sql</code> trong Supabase Dashboard → SQL Editor rồi reload lại trang này.
+      </div>
+    </div>
+  )}
+
+  <!-- ── STATS BAR ── -->
+  <div class="blog-stats">
+    <div class="stat-pill">
+      <span class="material-symbols-outlined">article</span>
+      <span>Tổng: <strong>{allPosts.length}</strong></span>
+    </div>
+    <div class="stat-pill published">
+      <span class="material-symbols-outlined">check_circle</span>
+      <span>Đã đăng: <strong>{published}</strong></span>
+    </div>
+    <div class="stat-pill draft">
+      <span class="material-symbols-outlined">edit_note</span>
+      <span>Nháp: <strong>{drafts}</strong></span>
+    </div>
+    <button class="btn-new-post" id="btn-new-post">
+      <span class="material-symbols-outlined">add</span>
+      Viết bài mới
+    </button>
+  </div>
+
+  <!-- ── POST LIST TABLE ── -->
+  <div class="blog-table-card">
+    <div class="table-toolbar">
+      <div class="search-box">
+        <span class="material-symbols-outlined">search</span>
+        <input type="text" id="search-input" placeholder="Tìm bài viết..." />
+      </div>
+      <div class="filter-tabs">
+        <button class="ftab active" data-filter="all">Tất cả</button>
+        <button class="ftab" data-filter="published">Đã đăng</button>
+        <button class="ftab" data-filter="draft">Nháp</button>
+      </div>
+    </div>
+
+    <table class="blog-table" id="blog-table">
+      <thead>
+        <tr>
+          <th>Tiêu đề</th>
+          <th>Danh mục</th>
+          <th>Trạng thái</th>
+          <th>Lượt xem</th>
+          <th>Ngày tạo</th>
+          <th>Thao tác</th>
+        </tr>
+      </thead>
+      <tbody id="post-list">
+        {allPosts.length === 0 && (
+          <tr><td colspan="6" class="empty-row">Chưa có bài viết nào. Hãy viết bài đầu tiên!</td></tr>
+        )}
+        {allPosts.map(p => (
+          <tr data-status={p.status} data-title={p.title.toLowerCase()}>
+            <td>
+              <div class="post-title-cell">
+                <span class="post-title">{p.title}</span>
+                <span class="post-slug">/{p.slug}</span>
+              </div>
+            </td>
+            <td><span class="cat-badge">{p.category}</span></td>
+            <td>
+              <span class={`status-badge ${p.status === 'published' ? 'status-pub' : 'status-draft'}`}>
+                {p.status === 'published' ? 'Đã đăng' : 'Nháp'}
+              </span>
+            </td>
+            <td class="num-cell">{p.view_count ?? 0}</td>
+            <td class="date-cell">{new Date(p.created_at).toLocaleDateString('vi-VN')}</td>
+            <td>
+              <div class="action-btns">
+                <button class="btn-edit" data-id={p.id} title="Chỉnh sửa">
+                  <span class="material-symbols-outlined">edit</span>
+                </button>
+                {p.status === 'draft' && (
+                  <button class="btn-publish" data-id={p.id} title="Đăng bài">
+                    <span class="material-symbols-outlined">publish</span>
+                  </button>
+                )}
+                {p.status === 'published' && (
+                  <a href={`/blog/${p.slug}`} target="_blank" class="btn-view" title="Xem bài">
+                    <span class="material-symbols-outlined">open_in_new</span>
+                  </a>
+                )}
+                <button class="btn-delete" data-id={p.id} title="Xóa">
+                  <span class="material-symbols-outlined">delete</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ══ EDITOR MODAL ══ -->
+  <div class="modal-backdrop hidden" id="editor-modal">
+    <div class="editor-modal">
+      <div class="modal-header">
+        <h2 id="modal-title">Viết bài mới</h2>
+        <button class="modal-close" id="modal-close">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <input type="hidden" id="post-id" />
+
+        <!-- Row 1: Title + Slug -->
+        <div class="field-row">
+          <div class="field-group" style="flex:2">
+            <label class="field-label">Tiêu đề bài viết <span class="req">*</span></label>
+            <input type="text" class="field-input" id="post-title" placeholder="Nhập tiêu đề hấp dẫn..." />
+          </div>
+          <div class="field-group" style="flex:1">
+            <label class="field-label">Slug (URL)</label>
+            <div class="slug-wrap">
+              <span class="slug-prefix">/blog/</span>
+              <input type="text" class="field-input slug-input" id="post-slug" placeholder="ten-bai-viet" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 2: Category + Status + Author -->
+        <div class="field-row">
+          <div class="field-group">
+            <label class="field-label">Danh mục</label>
+            <select class="field-input" id="post-category">
+              <option>Kiến thức</option>
+              <option>Bảo dưỡng</option>
+              <option>Review</option>
+              <option>Thiết bị</option>
+              <option>Tin tức</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Trạng thái</label>
+            <select class="field-input" id="post-status">
+              <option value="draft">Lưu nháp</option>
+              <option value="published">Đăng ngay</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Tác giả</label>
+            <input type="text" class="field-input" id="post-author" value="FlySky Guitar" />
+          </div>
+        </div>
+
+        <!-- Excerpt -->
+        <div class="field-group">
+          <label class="field-label">Tóm tắt (hiển thị ngoài danh sách)</label>
+          <textarea class="field-input" id="post-excerpt" rows="2" placeholder="Một câu mô tả ngắn gọn..."></textarea>
+        </div>
+
+        <!-- Cover Image -->
+        <div class="field-group">
+          <label class="field-label">Ảnh bìa (URL)</label>
+          <div class="cover-row">
+            <input type="text" class="field-input" id="post-cover" placeholder="https://... hoặc /images/..." />
+            <div class="cover-preview" id="cover-preview">
+              <span class="material-symbols-outlined">image</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Content editor -->
+        <div class="field-group">
+          <label class="field-label">Nội dung bài viết</label>
+          <div class="editor-toolbar">
+            <button type="button" class="tb-btn" data-cmd="bold" title="In đậm"><b>B</b></button>
+            <button type="button" class="tb-btn" data-cmd="italic" title="In nghiêng"><i>I</i></button>
+            <button type="button" class="tb-btn" data-cmd="underline" title="Gạch chân"><u>U</u></button>
+            <span class="tb-sep"></span>
+            <button type="button" class="tb-btn" data-cmd="formatBlock" data-val="h2" title="Tiêu đề H2">H2</button>
+            <button type="button" class="tb-btn" data-cmd="formatBlock" data-val="h3" title="Tiêu đề H3">H3</button>
+            <button type="button" class="tb-btn" data-cmd="formatBlock" data-val="p" title="Đoạn văn">P</button>
+            <span class="tb-sep"></span>
+            <button type="button" class="tb-btn" data-cmd="insertUnorderedList" title="Danh sách">≡</button>
+            <button type="button" class="tb-btn" data-cmd="insertOrderedList" title="Danh sách số">1.</button>
+            <span class="tb-sep"></span>
+            <button type="button" class="tb-btn" id="btn-link" title="Chèn link">🔗</button>
+            <button type="button" class="tb-btn" id="btn-img-insert" title="Chèn ảnh">🖼️</button>
+            <span class="tb-sep"></span>
+            <button type="button" class="tb-btn" data-cmd="undo" title="Hoàn tác">↩</button>
+            <button type="button" class="tb-btn" data-cmd="redo" title="Làm lại">↪</button>
+          </div>
+          <div class="content-editor" id="content-editor" contenteditable="true"></div>
+        </div>
+
+        <!-- SEO section -->
+        <details class="seo-section">
+          <summary>SEO (tuỳ chọn)</summary>
+          <div class="field-row" style="margin-top:12px">
+            <div class="field-group">
+              <label class="field-label">SEO Title</label>
+              <input type="text" class="field-input" id="seo-title" placeholder="Để trống = dùng tiêu đề bài viết" />
+            </div>
+            <div class="field-group">
+              <label class="field-label">SEO Description</label>
+              <input type="text" class="field-input" id="seo-desc" placeholder="Để trống = dùng tóm tắt" />
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <div class="modal-footer">
+        <span class="save-msg" id="save-msg"></span>
+        <button class="btn-cancel" id="btn-cancel">Hủy</button>
+        <button class="btn-save-draft" id="btn-save-draft">
+          <span class="material-symbols-outlined">save</span>
+          Lưu nháp
+        </button>
+        <button class="btn-publish-post" id="btn-publish-post">
+          <span class="material-symbols-outlined">publish</span>
+          Đăng bài
+        </button>
+      </div>
+    </div>
+  </div>
+
+</AdminLayout>
+
+<script>
+// ── Utilities ────────────────────────────────────────────────────────────────
+function slug(str: string) {
+  return str.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd').replace(/[^a-z0-9\s-]/g, '')
+    .trim().replace(/\s+/g, '-').replace(/-+/g, '-');
+}
+
+function showMsg(msg: string, ok = true) {
+  const el = document.getElementById('save-msg')!;
+  el.textContent = msg;
+  el.style.color = ok ? '#4ade80' : '#f87171';
+  setTimeout(() => el.textContent = '', 3500);
+}
+
+// ── Open / Close editor modal ────────────────────────────────────────────────
+const modal      = document.getElementById('editor-modal')!;
+const modalTitle = document.getElementById('modal-title')!;
+
+function openEditor(postData?: any) {
+  modal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  if (postData) {
+    modalTitle.textContent = 'Chỉnh sửa bài viết';
+    (document.getElementById('post-id')       as HTMLInputElement).value = postData.id;
+    (document.getElementById('post-title')    as HTMLInputElement).value = postData.title;
+    (document.getElementById('post-slug')     as HTMLInputElement).value = postData.slug;
+    (document.getElementById('post-category') as HTMLSelectElement).value = postData.category;
+    (document.getElementById('post-status')   as HTMLSelectElement).value = postData.status;
+    (document.getElementById('post-author')   as HTMLInputElement).value = postData.author_name ?? 'FlySky Guitar';
+    (document.getElementById('post-excerpt')  as HTMLTextAreaElement).value = postData.excerpt ?? '';
+    (document.getElementById('post-cover')    as HTMLInputElement).value = postData.cover_image ?? '';
+    (document.getElementById('seo-title')     as HTMLInputElement).value = postData.seo_title ?? '';
+    (document.getElementById('seo-desc')      as HTMLInputElement).value = postData.seo_desc ?? '';
+    (document.getElementById('content-editor') as HTMLDivElement).innerHTML = postData.content ?? '';
+    updateCoverPreview(postData.cover_image);
+  } else {
+    modalTitle.textContent = 'Viết bài mới';
+    (document.getElementById('post-id')       as HTMLInputElement).value = '';
+    (document.getElementById('post-title')    as HTMLInputElement).value = '';
+    (document.getElementById('post-slug')     as HTMLInputElement).value = '';
+    (document.getElementById('post-category') as HTMLSelectElement).value = 'Kiến thức';
+    (document.getElementById('post-status')   as HTMLSelectElement).value = 'draft';
+    (document.getElementById('post-author')   as HTMLInputElement).value = 'FlySky Guitar';
+    (document.getElementById('post-excerpt')  as HTMLTextAreaElement).value = '';
+    (document.getElementById('post-cover')    as HTMLInputElement).value = '';
+    (document.getElementById('seo-title')     as HTMLInputElement).value = '';
+    (document.getElementById('seo-desc')      as HTMLInputElement).value = '';
+    (document.getElementById('content-editor') as HTMLDivElement).innerHTML = '';
+    updateCoverPreview('');
+  }
+}
+
+function closeEditor() {
+  modal.classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+document.getElementById('btn-new-post')?.addEventListener('click', () => openEditor());
+document.getElementById('modal-close')?.addEventListener('click',  closeEditor);
+document.getElementById('btn-cancel')?.addEventListener('click',   closeEditor);
+modal.addEventListener('click', (e) => { if (e.target === modal) closeEditor(); });
+
+// ── Auto-slug from title ─────────────────────────────────────────────────────
+document.getElementById('post-title')?.addEventListener('input', (e) => {
+  const slugEl = document.getElementById('post-slug') as HTMLInputElement;
+  if (!slugEl.dataset.manual) {
+    slugEl.value = slug((e.target as HTMLInputElement).value);
+  }
+});
+document.getElementById('post-slug')?.addEventListener('input', (e) => {
+  (e.target as HTMLInputElement).dataset.manual = 'true';
+});
+
+// ── Cover image preview ──────────────────────────────────────────────────────
+function updateCoverPreview(url: string) {
+  const preview = document.getElementById('cover-preview')!;
+  if (url) {
+    preview.innerHTML = `<img src="${url}" alt="preview" style="width:100%;height:100%;object-fit:cover;border-radius:6px;" onerror="this.parentElement.innerHTML='<span class=material-symbols-outlined>broken_image</span>'"/>`;
+  } else {
+    preview.innerHTML = `<span class="material-symbols-outlined">image</span>`;
+  }
+}
+document.getElementById('post-cover')?.addEventListener('input', (e) => {
+  updateCoverPreview((e.target as HTMLInputElement).value);
+});
+
+// ── Rich text toolbar ────────────────────────────────────────────────────────
+document.querySelectorAll('.tb-btn[data-cmd]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const cmd = (btn as HTMLElement).dataset.cmd!;
+    const val = (btn as HTMLElement).dataset.val;
+    document.execCommand(cmd, false, val ?? undefined);
+    document.getElementById('content-editor')?.focus();
+  });
+});
+
+document.getElementById('btn-link')?.addEventListener('click', () => {
+  const url = prompt('Nhập URL:');
+  if (url) document.execCommand('createLink', false, url);
+  document.getElementById('content-editor')?.focus();
+});
+
+document.getElementById('btn-img-insert')?.addEventListener('click', () => {
+  const url = prompt('Nhập URL ảnh:');
+  if (url) document.execCommand('insertImage', false, url);
+  document.getElementById('content-editor')?.focus();
+});
+
+// ── Save / Publish ───────────────────────────────────────────────────────────
+async function savePost(forceStatus?: string) {
+  const id       = (document.getElementById('post-id')       as HTMLInputElement).value;
+  const title    = (document.getElementById('post-title')    as HTMLInputElement).value.trim();
+  const slugVal  = (document.getElementById('post-slug')     as HTMLInputElement).value.trim();
+  const category = (document.getElementById('post-category') as HTMLSelectElement).value;
+  const status   = forceStatus ?? (document.getElementById('post-status') as HTMLSelectElement).value;
+  const author   = (document.getElementById('post-author')   as HTMLInputElement).value.trim();
+  const excerpt  = (document.getElementById('post-excerpt')  as HTMLTextAreaElement).value.trim();
+  const cover    = (document.getElementById('post-cover')    as HTMLInputElement).value.trim();
+  const seoT     = (document.getElementById('seo-title')     as HTMLInputElement).value.trim();
+  const seoD     = (document.getElementById('seo-desc')      as HTMLInputElement).value.trim();
+  const content  = (document.getElementById('content-editor') as HTMLDivElement).innerHTML;
+
+  if (!title) { showMsg('Vui lòng nhập tiêu đề!', false); return; }
+
+  const payload = { id: id || undefined, title, slug: slugVal || slug(title), excerpt, content, cover_image: cover, category, tags: [], status, author_name: author, seo_title: seoT, seo_desc: seoD };
+
+  const method  = id ? 'PUT' : 'POST';
+  const endpoint = id ? '/api/blog/post' : '/api/blog/list';
+
+  const res  = await fetch(endpoint, { method, headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: JSON.stringify(payload) });
+  const json = await res.json();
+
+  if (!res.ok) { showMsg(json.error ?? 'Lưu thất bại.', false); return; }
+
+  showMsg(status === 'published' ? 'Đã đăng bài thành công!' : 'Đã lưu nháp!');
+  setTimeout(() => location.reload(), 1200);
+}
+
+document.getElementById('btn-save-draft')?.addEventListener('click',    () => savePost('draft'));
+document.getElementById('btn-publish-post')?.addEventListener('click',  () => savePost('published'));
+
+// ── Edit click ───────────────────────────────────────────────────────────────
+document.querySelectorAll('.btn-edit').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const id = (btn as HTMLElement).dataset.id!;
+    const res = await fetch(`/api/blog/post?id=${id}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+    if (!res.ok) { alert('Không tải được bài viết.'); return; }
+    const { post } = await res.json();
+    openEditor(post);
+  });
+});
+
+// ── Quick publish from table ─────────────────────────────────────────────────
+document.querySelectorAll('.btn-publish').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const id = (btn as HTMLElement).dataset.id!;
+    if (!confirm('Đăng bài này ngay?')) return;
+    const res = await fetch('/api/blog/post', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: JSON.stringify({ id, status: 'published' }) });
+    if (res.ok) location.reload();
+    else alert('Đăng bài thất bại.');
+  });
+});
+
+// ── Delete ───────────────────────────────────────────────────────────────────
+document.querySelectorAll('.btn-delete').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    if (!confirm('Xóa bài viết này? Không thể khôi phục.')) return;
+    const id = (btn as HTMLElement).dataset.id!;
+    const res = await fetch('/api/blog/post', { method: 'DELETE', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: JSON.stringify({ id }) });
+    if (res.ok) location.reload();
+    else alert('Xóa thất bại.');
+  });
+});
+
+// ── Filter tabs ──────────────────────────────────────────────────────────────
+document.querySelectorAll('.ftab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.ftab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const filter = (tab as HTMLElement).dataset.filter!;
+    document.querySelectorAll('#post-list tr[data-status]').forEach(row => {
+      const r = row as HTMLElement;
+      r.style.display = (filter === 'all' || r.dataset.status === filter) ? '' : 'none';
+    });
+  });
+});
+
+// ── Search ───────────────────────────────────────────────────────────────────
+document.getElementById('search-input')?.addEventListener('input', (e) => {
+  const q = (e.target as HTMLInputElement).value.toLowerCase();
+  document.querySelectorAll('#post-list tr[data-title]').forEach(row => {
+    const r = row as HTMLElement;
+    r.style.display = r.dataset.title!.includes(q) ? '' : 'none';
+  });
+});
+</script>
+
+<style>
+/* ── Migration banner ── */
+.migration-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 18px;
+  background: rgba(245,158,11,.1);
+  border: 1px solid rgba(245,158,11,.35);
+  border-radius: 12px;
+  color: #fbbf24;
+  font-size: 13.5px;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+.migration-banner .material-symbols-outlined { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+.migration-banner code { background: rgba(245,158,11,.2); padding: 1px 6px; border-radius: 4px; font-size: 12px; }
+
+/* ── Stats bar ── */
+.blog-stats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--card-dark, #1a1a2e);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 50px;
+  font-size: 13px;
+  color: #94a3b8;
+}
+.stat-pill .material-symbols-outlined { font-size: 16px; }
+.stat-pill strong { color: #fff; }
+.stat-pill.published .material-symbols-outlined { color: #4ade80; }
+.stat-pill.draft     .material-symbols-outlined { color: #f59e0b; }
+
+.btn-new-post {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  background: var(--primary, #e07b39);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity .2s;
+}
+.btn-new-post:hover { opacity: .85; }
+
+/* ── Table card ── */
+.blog-table-card {
+  background: var(--card-dark, #1a1a2e);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  flex-wrap: wrap;
+}
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 8px;
+  padding: 8px 12px;
+  flex: 1;
+  min-width: 200px;
+}
+.search-box .material-symbols-outlined { font-size: 18px; color: #64748b; }
+.search-box input { background: none; border: none; outline: none; color: #fff; font-size: 14px; width: 100%; }
+
+.filter-tabs { display: flex; gap: 4px; }
+.ftab {
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.1);
+  background: transparent;
+  color: #94a3b8;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.ftab.active, .ftab:hover { background: var(--primary, #e07b39); color: #fff; border-color: transparent; }
+
+.blog-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.blog-table th {
+  text-align: left;
+  padding: 12px 16px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.blog-table td {
+  padding: 13px 16px;
+  color: #cbd5e1;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  vertical-align: middle;
+}
+.blog-table tbody tr:hover { background: rgba(255,255,255,.03); }
+.empty-row { text-align: center; color: #64748b; padding: 40px !important; }
+
+.post-title-cell { display: flex; flex-direction: column; gap: 2px; }
+.post-title { color: #f1f5f9; font-weight: 600; }
+.post-slug  { font-size: 11px; color: #475569; }
+
+.cat-badge {
+  padding: 3px 10px;
+  background: rgba(99,102,241,.15);
+  color: #818cf8;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.status-badge {
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.status-pub   { background: rgba(74,222,128,.12); color: #4ade80; }
+.status-draft { background: rgba(245,158,11,.12);  color: #f59e0b; }
+
+.num-cell, .date-cell { text-align: right; color: #64748b; font-size: 12.5px; }
+
+.action-btns { display: flex; gap: 6px; justify-content: flex-end; }
+.action-btns button, .action-btns a {
+  display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.1);
+  background: rgba(255,255,255,.04);
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all .15s;
+  text-decoration: none;
+}
+.btn-edit:hover    { background: rgba(99,102,241,.2);  color: #818cf8; border-color: rgba(99,102,241,.4); }
+.btn-publish:hover { background: rgba(74,222,128,.15); color: #4ade80; border-color: rgba(74,222,128,.3); }
+.btn-view:hover    { background: rgba(56,189,248,.15); color: #38bdf8; border-color: rgba(56,189,248,.3); }
+.btn-delete:hover  { background: rgba(248,113,113,.15);color: #f87171; border-color: rgba(248,113,113,.3); }
+.action-btns .material-symbols-outlined { font-size: 17px; }
+
+/* ── Modal ── */
+.modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.7);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 24px 16px;
+  overflow-y: auto;
+}
+.modal-backdrop.hidden { display: none; }
+
+.editor-modal {
+  width: 100%;
+  max-width: 900px;
+  background: #1a1a2e;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  margin: auto;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.modal-header h2 { color: #fff; font-size: 18px; font-weight: 700; margin: 0; }
+.modal-close {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px;
+  background: rgba(255,255,255,.06);
+  border: none; border-radius: 8px;
+  color: #94a3b8; cursor: pointer;
+  transition: all .15s;
+}
+.modal-close:hover { background: rgba(248,113,113,.15); color: #f87171; }
+
+.modal-body { padding: 24px; display: flex; flex-direction: column; gap: 18px; }
+
+.field-row { display: flex; gap: 16px; flex-wrap: wrap; }
+.field-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 180px; }
+.field-label { font-size: 12px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: .05em; }
+.req { color: #f87171; }
+.field-input {
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 9px;
+  padding: 10px 12px;
+  color: #f1f5f9;
+  font-size: 14px;
+  outline: none;
+  transition: border-color .15s;
+  width: 100%;
+  box-sizing: border-box;
+}
+.field-input:focus { border-color: var(--primary, #e07b39); }
+select.field-input { cursor: pointer; }
+textarea.field-input { resize: vertical; }
+
+.slug-wrap {
+  display: flex;
+  align-items: center;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 9px;
+  overflow: hidden;
+}
+.slug-prefix { padding: 10px 10px 10px 12px; color: #475569; font-size: 13px; white-space: nowrap; }
+.slug-input { border: none !important; background: none !important; border-radius: 0 !important; padding-left: 0 !important; flex: 1; }
+
+.cover-row { display: flex; align-items: center; gap: 12px; }
+.cover-preview {
+  width: 80px; height: 52px;
+  background: rgba(255,255,255,.05);
+  border: 1px dashed rgba(255,255,255,.15);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  color: #475569; overflow: hidden; flex-shrink: 0;
+}
+.cover-preview .material-symbols-outlined { font-size: 22px; }
+
+/* ── Rich text toolbar ── */
+.editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  padding: 8px 10px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.08);
+  border-bottom: none;
+  border-radius: 9px 9px 0 0;
+}
+.tb-btn {
+  min-width: 30px; height: 28px;
+  padding: 0 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: #94a3b8;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all .1s;
+}
+.tb-btn:hover { background: rgba(255,255,255,.08); color: #fff; border-color: rgba(255,255,255,.1); }
+.tb-sep { width: 1px; background: rgba(255,255,255,.1); margin: 2px 4px; align-self: stretch; }
+
+.content-editor {
+  min-height: 300px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 0 0 9px 9px;
+  padding: 16px;
+  color: #f1f5f9;
+  font-size: 15px;
+  line-height: 1.7;
+  outline: none;
+}
+.content-editor:focus { border-color: var(--primary, #e07b39); }
+.content-editor h2 { font-size: 20px; font-weight: 700; margin: 16px 0 8px; }
+.content-editor h3 { font-size: 17px; font-weight: 600; margin: 12px 0 6px; }
+.content-editor p  { margin: 0 0 10px; }
+.content-editor ul, .content-editor ol { padding-left: 20px; margin-bottom: 10px; }
+
+/* SEO foldable */
+.seo-section {
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 10px;
+  padding: 12px 16px;
+}
+.seo-section summary {
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  user-select: none;
+}
+.seo-section[open] summary { color: #94a3b8; }
+
+/* Modal footer */
+.modal-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+.save-msg { margin-right: auto; font-size: 13px; font-weight: 600; }
+.btn-cancel, .btn-save-draft, .btn-publish-post {
+  display: flex; align-items: center; gap: 6px;
+  padding: 10px 18px;
+  border-radius: 9px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: opacity .2s;
+}
+.btn-cancel      { background: rgba(255,255,255,.07); color: #94a3b8; }
+.btn-save-draft  { background: rgba(245,158,11,.15); color: #f59e0b; border: 1px solid rgba(245,158,11,.3); }
+.btn-publish-post{ background: var(--primary, #e07b39); color: #fff; }
+.btn-cancel:hover, .btn-save-draft:hover, .btn-publish-post:hover { opacity: .85; }
+.btn-save-draft .material-symbols-outlined, .btn-publish-post .material-symbols-outlined { font-size: 18px; }
+</style>

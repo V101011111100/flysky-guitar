@@ -12,6 +12,7 @@ function isAdminApi(pathname: string): boolean {
 function isProtectedNonAdminApi(pathname: string, method: string): boolean {
   const protectedPrefixes = [
     '/api/media/',
+    '/api/orders/',
     '/api/payment-settings',
     '/api/products/',
     '/api/settings/',

@@ -2,6 +2,16 @@
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import { supabase } from '../../lib/supabase';
 
+const accessToken = Astro.cookies.get('sb-access-token');
+const refreshToken = Astro.cookies.get('sb-refresh-token');
+
+if (accessToken?.value && refreshToken?.value) {
+  await supabase.auth.setSession({
+    access_token: accessToken.value,
+    refresh_token: refreshToken.value,
+  });
+}
+
 // Fetch tất cả reviews
 const { data: reviewsArray, error } = await supabase
   .from('reviews')

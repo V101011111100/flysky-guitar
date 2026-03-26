@@ -80,7 +80,7 @@ CREATE TABLE IF NOT EXISTS public.discounts (
 
 -- Seed some active discounts
 INSERT INTO public.discounts (code, description, discount_type, discount_value, status, start_date, end_date, min_order_value, usage_limit, used_count) VALUES 
-('GUITARNEW2024', 'Giảm cho khách hàng mới', 'percent', 20, 'Đang hoạt động', timezone('utc'::text, now()) - interval '30 days', timezone('utc'::text, now()) + interval '60 days', 0, 100, 85),
+('GUITARNEW2026', 'Giảm cho khách hàng mới', 'percent', 20, 'Đang hoạt động', timezone('utc'::text, now()) - interval '30 days', timezone('utc'::text, now()) + interval '60 days', 0, 100, 85),
 ('WOODFEEL', 'Ưu đãi dòng Acoustic', 'fixed', 500000, 'Đang hoạt động', timezone('utc'::text, now()) - interval '10 days', timezone('utc'::text, now()) + interval '90 days', 2000000, 200, 42),
 ('VIPMEMBER', 'Dành riêng cho khách VIP', 'percent', 15, 'Đang hoạt động', timezone('utc'::text, now()) - interval '100 days', NULL, 0, 50, 12)
 ON CONFLICT DO NOTHING;
