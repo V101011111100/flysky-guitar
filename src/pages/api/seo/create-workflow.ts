@@ -13,41 +13,44 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     if (!authState.authenticated || !authState.isAdmin) {
       return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    const { id, isActive } = await request.json();
+    const body = await request.json().catch(() => ({}));
+    const title = typeof body?.title === 'string' ? body.title.trim() : '';
+    const description = typeof body?.description === 'string' ? body.description.trim() : '';
+    const icon = typeof body?.icon === 'string' ? body.icon.trim() : 'settings_suggest';
 
-    if (!id) {
-      return new Response(JSON.stringify({ success: false, error: 'Thiếu ID Workflow' }), {
+    if (!title) {
+      return new Response(JSON.stringify({ success: false, error: 'Thiếu tên workflow' }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    const { error } = await supabase
-      .from('marketing_workflows')
-      .update({ is_active: isActive })
-      .eq('id', id);
+    const { error } = await supabase.from('marketing_workflows').insert({
+      title,
+      description,
+      icon,
+      is_active: false,
+    });
 
     if (error) {
-      console.error('Lỗi cập nhật workflow:', error);
       return new Response(JSON.stringify({ success: false, error: error.message }), {
         status: 500,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       });
     }
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     });
   } catch (error: any) {
-    console.error('API Error (toggle-workflow):', error);
-    return new Response(JSON.stringify({ success: false, error: error.message }), {
+    return new Response(JSON.stringify({ success: false, error: error?.message || 'Server error' }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 };

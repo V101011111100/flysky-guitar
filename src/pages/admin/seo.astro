@@ -18,7 +18,9 @@ const seo = settingsData?.reduce((acc: any, curr: any) => {
 });
 
 // 2. Fetch Email Campaigns
-const { data: campaignsData } = await supabase.from('email_campaigns').select('*').order('created_at', { ascending: false }).limit(5);
+const showAllCampaigns = Astro.url.searchParams.get('all_campaigns') === '1';
+const campaignLimit = showAllCampaigns ? 100 : 5;
+const { data: campaignsData } = await supabase.from('email_campaigns').select('*').order('created_at', { ascending: false }).limit(campaignLimit);
 const emailCampaigns = campaignsData || [];
 
 // 3. Fetch Automated Workflows
@@ -52,9 +54,9 @@ const newsletterTemplates = templateData || [];
 
   <!-- TABS -->
   <div class="seo-tabs">
-    <button class="seo-tab seo-tab-active" onclick="switchSeoTab('meta', this)">Cấu hình SEO</button>
-    <button class="seo-tab" onclick="switchSeoTab('tools', this)">Marketing Tools</button>
-    <button class="seo-tab" onclick="switchSeoTab('newsletter', this)">Bản tin &amp; Khách hàng</button>
+    <button class="seo-tab seo-tab-active" data-seo-tab="meta" onclick="switchSeoTab('meta', this)">Cấu hình SEO</button>
+    <button class="seo-tab" data-seo-tab="tools" onclick="switchSeoTab('tools', this)">Marketing Tools</button>
+    <button class="seo-tab" data-seo-tab="newsletter" onclick="switchSeoTab('newsletter', this)">Bản tin &amp; Khách hàng</button>
   </div>
 
   <!-- TAB: CẤU HÌNH SEO -->
@@ -222,7 +224,7 @@ const newsletterTemplates = templateData || [];
           <h3 class="mkt-title">Tổng quan Marketing</h3>
           <p class="mkt-sub">Quản lý chiến dịch email và quy trình tự động hóa.</p>
         </div>
-        <button class="btn-orange mkt-create-btn">
+        <button class="btn-orange mkt-create-btn" id="btn-create-campaign">
           <span class="material-symbols-outlined">add_circle</span>
           Tạo chiến dịch mới
         </button>
@@ -237,7 +239,7 @@ const newsletterTemplates = templateData || [];
                 <span class="material-symbols-outlined seo-icon">mail</span>
                 <h4 class="seo-card-title">Chiến dịch Email gần đây</h4>
               </div>
-              <button class="mkt-view-all">Xem tất cả</button>
+              <button class="mkt-view-all" id="btn-view-all-campaigns">{showAllCampaigns ? 'Thu gọn' : 'Xem tất cả'}</button>
             </div>
             <div class="mkt-table-wrap">
               <table class="mkt-table">
@@ -304,7 +306,7 @@ const newsletterTemplates = templateData || [];
               {marketingWorkflows.length === 0 && <p style="color:#64748b; font-size:13px;">Chưa có workflow nào</p>}
             </div>
 
-            <button class="seo-dashed-btn mkt-add-wf-btn">
+            <button class="seo-dashed-btn mkt-add-wf-btn" id="btn-add-workflow">
               <span class="material-symbols-outlined">add</span>
               Thêm quy trình mới
             </button>
@@ -336,7 +338,7 @@ const newsletterTemplates = templateData || [];
           <p class="nl-stat-desc">Cập nhật lúc {new Date().toLocaleTimeString('vi-VN')}</p>
         </div>
         <div class="nl-stat-card nl-stat-action">
-          <button class="btn-orange nl-btn-full">
+          <button class="btn-orange nl-btn-full" id="btn-send-newsletter">
             <span class="material-symbols-outlined">send</span> Gửi bản tin mới
           </button>
         </div>
@@ -478,9 +480,14 @@ const newsletterTemplates = templateData || [];
   (window as any).switchSeoTab = switchSeoTab;
 
   document.addEventListener('DOMContentLoaded', () => {
-    // 1. Google Search Preview reactivity
-    const titleInput = document.getElementById('seo-meta-title') as HTMLInputElement;
-    const descInput = document.getElementById('seo-meta-desc') as HTMLTextAreaElement;
+    const activeTabFromUrl = new URLSearchParams(window.location.search).get('tab');
+    if (activeTabFromUrl) {
+      const tabBtn = document.querySelector(`.seo-tab[data-seo-tab="${activeTabFromUrl}"]`) as HTMLElement | null;
+      if (tabBtn) switchSeoTab(activeTabFromUrl, tabBtn);
+    }
+
+    const titleInput = document.getElementById('seo-meta-title') as HTMLInputElement | null;
+    const descInput = document.getElementById('seo-meta-desc') as HTMLTextAreaElement | null;
     const previewTitle = document.getElementById('gp-preview-title');
     const previewDesc = document.getElementById('gp-preview-desc');
 
@@ -496,17 +503,16 @@ const newsletterTemplates = templateData || [];
       });
     }
 
-    // 2. Save SEO Settings API Call
-    const btnSaveSeo = document.getElementById('btn-save-seo');
-    if (btnSaveSeo) {
+    const btnSaveSeo = document.getElementById('btn-save-seo') as HTMLButtonElement | null;
+    if (btnSaveSeo && titleInput && descInput) {
       btnSaveSeo.addEventListener('click', async () => {
         const payload = {
           meta_title: titleInput.value,
           meta_description: descInput.value,
-          meta_keywords: (document.getElementById('seo-meta-keywords') as HTMLInputElement).value,
-          gsc_id: (document.getElementById('seo-gsc-id') as HTMLInputElement).value,
-          ga4_id: (document.getElementById('seo-ga4-id') as HTMLInputElement).value,
-          fb_pixel_id: (document.getElementById('seo-fb-pixel') as HTMLInputElement).value,
+          meta_keywords: (document.getElementById('seo-meta-keywords') as HTMLInputElement)?.value || '',
+          gsc_id: (document.getElementById('seo-gsc-id') as HTMLInputElement)?.value || '',
+          ga4_id: (document.getElementById('seo-ga4-id') as HTMLInputElement)?.value || '',
+          fb_pixel_id: (document.getElementById('seo-fb-pixel') as HTMLInputElement)?.value || '',
         };
 
         const oldText = btnSaveSeo.innerHTML;
@@ -529,13 +535,13 @@ const newsletterTemplates = templateData || [];
               btnSaveSeo.style.background = '#f48c25';
               btnSaveSeo.style.color = '#221910';
               btnSaveSeo.style.opacity = '1';
-            }, 3000);
+            }, 2500);
           } else {
             alert('Lỗi lưu cấu hình: ' + (result.error || 'Unknown error'));
             btnSaveSeo.innerHTML = oldText;
             btnSaveSeo.style.opacity = '1';
           }
-        } catch (e) {
+        } catch {
           alert('Không thể kết nối lưu cấu hình.');
           btnSaveSeo.innerHTML = oldText;
           btnSaveSeo.style.opacity = '1';
@@ -543,7 +549,6 @@ const newsletterTemplates = templateData || [];
       });
     }
 
-    // 3. Workflow Automations Toggles
     const workflowToggles = document.querySelectorAll('.wf-toggle');
     workflowToggles.forEach(toggle => {
       toggle.addEventListener('change', async (e) => {
@@ -551,20 +556,116 @@ const newsletterTemplates = templateData || [];
         const id = el.dataset.id;
         const isActive = el.checked;
 
-        if (id) {
-          try {
-            await fetch('/api/seo/toggle-workflow', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ id, isActive })
-            });
-          } catch (err) {
-            console.error('Lỗi khi bật tắt workflow:', err);
-            el.checked = !isActive; // revert on fail
-          }
+        if (!id) return;
+
+        try {
+          const res = await fetch('/api/seo/toggle-workflow', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, isActive })
+          });
+          if (!res.ok) throw new Error('toggle failed');
+        } catch {
+          el.checked = !isActive;
+          alert('Không thể cập nhật workflow.');
         }
       });
     });
+
+    const runCampaignSend = async (btn: HTMLButtonElement) => {
+      const subject = prompt('Tiêu đề chiến dịch email', 'Bản tin mới từ FlySky Guitar')?.trim();
+      if (!subject) return;
+      const content = prompt('Nội dung chính của email', 'FlySky Guitar vừa có cập nhật mới dành cho bạn. Truy cập website để xem chi tiết.')?.trim();
+      if (!content) return;
+
+      const oldText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="material-symbols-outlined">sync</span> Đang gửi...';
+
+      try {
+        const res = await fetch('/api/seo/send-newsletter', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ subject, content }),
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || !data.success) {
+          alert(data.error || 'Gửi chiến dịch thất bại.');
+          return;
+        }
+
+        alert(`Đã gửi: ${data.sent}/${data.total} email. Lỗi: ${data.failed}.`);
+        window.location.reload();
+      } catch (err: any) {
+        alert('Không thể gửi chiến dịch: ' + (err?.message || 'Lỗi không xác định'));
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = oldText;
+      }
+    };
+
+    const btnSendNewsletter = document.getElementById('btn-send-newsletter') as HTMLButtonElement | null;
+    if (btnSendNewsletter) {
+      btnSendNewsletter.addEventListener('click', async () => {
+        await runCampaignSend(btnSendNewsletter);
+      });
+    }
+
+    const btnCreateCampaign = document.getElementById('btn-create-campaign') as HTMLButtonElement | null;
+    if (btnCreateCampaign) {
+      btnCreateCampaign.addEventListener('click', async () => {
+        await runCampaignSend(btnCreateCampaign);
+      });
+    }
+
+    const btnViewAllCampaigns = document.getElementById('btn-view-all-campaigns') as HTMLButtonElement | null;
+    if (btnViewAllCampaigns) {
+      btnViewAllCampaigns.addEventListener('click', () => {
+        const params = new URLSearchParams(window.location.search);
+        const showingAll = params.get('all_campaigns') === '1';
+        params.set('tab', 'tools');
+        if (showingAll) params.delete('all_campaigns');
+        else params.set('all_campaigns', '1');
+        window.location.search = params.toString();
+      });
+    }
+
+    const btnAddWorkflow = document.getElementById('btn-add-workflow') as HTMLButtonElement | null;
+    if (btnAddWorkflow) {
+      btnAddWorkflow.addEventListener('click', async () => {
+        const title = prompt('Tên workflow mới', 'Workflow mới')?.trim();
+        if (!title) return;
+        const description = prompt('Mô tả workflow', 'Mô tả ngắn cho workflow này')?.trim() || '';
+        const icon = prompt('Icon Material Symbols', 'settings_suggest')?.trim() || 'settings_suggest';
+
+        const oldText = btnAddWorkflow.innerHTML;
+        btnAddWorkflow.disabled = true;
+        btnAddWorkflow.innerHTML = '<span class="material-symbols-outlined">sync</span> Đang tạo...';
+
+        try {
+          const res = await fetch('/api/seo/create-workflow', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, description, icon }),
+          });
+          const data = await res.json().catch(() => ({}));
+
+          if (!res.ok || !data.success) {
+            alert(data.error || 'Tạo workflow thất bại.');
+            return;
+          }
+
+          alert('Đã tạo workflow mới thành công.');
+          window.location.reload();
+        } catch (err: any) {
+          alert('Không thể tạo workflow: ' + (err?.message || 'Lỗi không xác định'));
+        } finally {
+          btnAddWorkflow.disabled = false;
+          btnAddWorkflow.innerHTML = oldText;
+        }
+      });
+    }
   });
 </script>
 

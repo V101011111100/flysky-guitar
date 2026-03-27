@@ -17,25 +17,25 @@
       <div>
         <h4 class="text-white font-bold mb-4">Cửa hàng</h4>
         <ul class="flex flex-col gap-2 text-text-muted text-sm">
-          <li><a class="hover:text-primary transition-colors" href="#">Guitar Điện</a></li>
-          <li><a class="hover:text-primary transition-colors" href="#">Guitar Acoustic</a></li>
-          <li><a class="hover:text-primary transition-colors" href="#">Guitar Bass</a></li>
-          <li><a class="hover:text-primary transition-colors" href="#">Phụ kiện</a></li>
+          <li><a class="hover:text-primary transition-colors" href="/search?q=Guitar%20%C4%90i%E1%BB%87n">Guitar Điện</a></li>
+          <li><a class="hover:text-primary transition-colors" href="/search?q=Guitar%20Acoustic">Guitar Acoustic</a></li>
+          <li><a class="hover:text-primary transition-colors" href="/search?q=Guitar%20Bass">Guitar Bass</a></li>
+          <li><a class="hover:text-primary transition-colors" href="/search?q=Ph%E1%BB%A5%20ki%E1%BB%87n">Phụ kiện</a></li>
         </ul>
       </div>
       <div>
         <h4 class="text-white font-bold mb-4">Hỗ trợ</h4>
         <ul class="flex flex-col gap-2 text-text-muted text-sm">
-          <li><a class="hover:text-primary transition-colors" href="#">Thông tin bảo hành</a></li>
-          <li><a class="hover:text-primary transition-colors" href="#">Giao hàng &amp; Trả hàng</a></li>
-          <li><a class="hover:text-primary transition-colors" href="#">Hướng dẫn bảo quản</a></li>
+          <li><a class="hover:text-primary transition-colors" href="/blog" data-setting="flysky_supportWarrantyUrl">Thông tin bảo hành</a></li>
+          <li><a class="hover:text-primary transition-colors" href="/payment" data-setting="flysky_supportShippingReturnUrl">Giao hàng &amp; Trả hàng</a></li>
+          <li><a class="hover:text-primary transition-colors" href="/blog" data-setting="flysky_supportCareGuideUrl">Hướng dẫn bảo quản</a></li>
           <li><a class="hover:text-primary transition-colors" href="/contact">Liên hệ chúng tôi</a></li>
         </ul>
       </div>
       <div>
         <h4 class="text-white font-bold mb-4">Đăng ký nhận tin</h4>
         <p class="text-text-muted text-sm mb-4">Đăng ký để nhận thông tin về các mẫu mới nhất và tiêu điểm nghệ sĩ.</p>
-        <form class="flex gap-2" onsubmit="event.preventDefault(); alert('Cảm ơn bạn đã đăng ký nhận bản tin!'); this.reset();">
+        <form class="flex gap-2" id="footer-newsletter-form">
           <input required type="email" name="email" class="bg-card-dark border border-border-dark text-white text-sm rounded-lg px-4 py-2 w-full focus:ring-1 focus:ring-primary focus:border-primary outline-none" placeholder="Email của bạn" />
           <button type="submit" class="bg-primary hover:bg-primary/90 text-background-dark font-bold rounded-lg px-4 transition-colors cursor-pointer">
             <span class="material-symbols-outlined">send</span>
@@ -44,7 +44,7 @@
       </div>
     </div>
     <div class="border-t border-border-dark pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-      <p class="text-text-muted text-sm text-center md:text-left">© 2024 <span data-setting="flysky_storeName">FlySky Guitar</span>. Bảo lưu mọi quyền.</p>
+      <p class="text-text-muted text-sm text-center md:text-left">© 2026 <span data-setting="flysky_storeName">FlySky Guitar</span>. Bảo lưu mọi quyền.</p>
       <div class="flex gap-4">
         <a class="text-text-muted hover:text-white transition-colors" href="#"><span class="sr-only">Facebook</span>FB</a>
         <a class="text-text-muted hover:text-white transition-colors" href="#"><span class="sr-only">Instagram</span>IG</a>
@@ -54,3 +54,50 @@
     </div>
   </div>
 </footer>
+
+<script is:inline>
+  document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('footer-newsletter-form') as HTMLFormElement | null;
+    if (!form) return;
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const emailInput = form.querySelector('input[name="email"]') as HTMLInputElement | null;
+      const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement | null;
+      if (!emailInput || !submitBtn) return;
+
+      const email = emailInput.value.trim();
+      if (!email) return;
+
+      const oldHtml = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="material-symbols-outlined">sync</span>';
+
+      try {
+        const res = await fetch('/api/newsletter/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+        const data = await res.json();
+
+        if (!res.ok || !data?.success) {
+          alert(data?.error || 'Không thể đăng ký bản tin. Vui lòng thử lại.');
+        } else if (data.state === 'already_active') {
+          alert('Email này đã đăng ký bản tin trước đó rồi.');
+        } else if (data.state === 'reactivated') {
+          alert('Đã kích hoạt lại đăng ký bản tin cho email của bạn.');
+          form.reset();
+        } else {
+          alert('Cảm ơn bạn đã đăng ký nhận bản tin!');
+          form.reset();
+        }
+      } catch {
+        alert('Không thể kết nối máy chủ. Vui lòng thử lại sau.');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = oldHtml;
+      }
+    });
+  });
+</script>

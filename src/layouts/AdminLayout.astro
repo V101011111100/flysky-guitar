@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import { supabase } from '../lib/supabase';
 import { ADMIN_SESSION_COOKIE, getAdminMfaState, PENDING_MFA_REMEMBER_COOKIE } from '../lib/security';
+import { getAllowedFeaturesForUser, parseAdminPermissionMap, type AdminFeatureKey } from '../lib/admin-permissions';
 
 interface Props {
   title?: string;
@@ -13,6 +14,7 @@ const { title = 'Admin', subtitle = '', activeNav = 'dashboard' } = Astro.props;
 let userEmail = '';
 let shouldRedirect = false;
 let autoLogoutMinutes = 120; // default 2 hours
+let permissionMapRaw: unknown = null;
 
 function clearAdminCookies() {
   Astro.cookies.delete("sb-access-token", { path: "/" });
@@ -44,8 +46,18 @@ if (!accessToken || !refreshToken) {
     if (timeoutSetting?.value) {
       autoLogoutMinutes = parseInt(timeoutSetting.value) || 120;
     }
+
+    const { data: permissionSetting } = await supabase
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'flysky_admin_permissions')
+      .maybeSingle();
+    permissionMapRaw = permissionSetting?.value ?? null;
   }
 }
+const permissionMap = parseAdminPermissionMap(permissionMapRaw);
+const allowedFeatures = getAllowedFeaturesForUser(permissionMap, userEmail);
+const can = (feature: AdminFeatureKey) => allowedFeatures.has(feature);
 // --- END SSR AUTH CHECK --- //
 ---
 
@@ -431,39 +443,39 @@ if (!accessToken || !refreshToken) {
       <!-- Chính -->
       <div class="nav-group">
         <span class="nav-group-label">Chính</span>
-        <a href="/admin"            class={`nav-link ${activeNav==='dashboard'     ? 'active' : ''}`}><span class="material-symbols-outlined">dashboard</span>Bảng điều khiển</a>
-        <a href="/admin/pos"        class={`nav-link ${activeNav==='pos'           ? 'active' : ''}`}><span class="material-symbols-outlined">point_of_sale</span>POS (Bán hàng)</a>
-        <a href="/admin/media"      class={`nav-link ${activeNav==='media'         ? 'active' : ''}`}><span class="material-symbols-outlined">perm_media</span>Thư viện Media</a>
-        <a href="/admin/inventory"  class={`nav-link ${activeNav==='inventory'     ? 'active' : ''}`}><span class="material-symbols-outlined">inventory_2</span>Kho hàng</a>
-        <a href="/admin/orders"     class={`nav-link ${activeNav==='orders'        ? 'active' : ''}`}><span class="material-symbols-outlined">shopping_cart</span>Đơn hàng</a>
-        <a href="/admin/shipping"   class={`nav-link ${activeNav==='shipping'      ? 'active' : ''}`}><span class="material-symbols-outlined">local_shipping</span>Vận chuyển</a>
+        {can('dashboard') && <a href="/admin"            class={`nav-link ${activeNav==='dashboard'     ? 'active' : ''}`}><span class="material-symbols-outlined">dashboard</span>Bảng điều khiển</a>}
+        {can('pos') && <a href="/admin/pos"        class={`nav-link ${activeNav==='pos'           ? 'active' : ''}`}><span class="material-symbols-outlined">point_of_sale</span>POS (Bán hàng)</a>}
+        {can('media') && <a href="/admin/media"      class={`nav-link ${activeNav==='media'         ? 'active' : ''}`}><span class="material-symbols-outlined">perm_media</span>Thư viện Media</a>}
+        {can('inventory') && <a href="/admin/inventory"  class={`nav-link ${activeNav==='inventory'     ? 'active' : ''}`}><span class="material-symbols-outlined">inventory_2</span>Kho hàng</a>}
+        {can('orders') && <a href="/admin/orders"     class={`nav-link ${activeNav==='orders'        ? 'active' : ''}`}><span class="material-symbols-outlined">shopping_cart</span>Đơn hàng</a>}
+        {can('shipping') && <a href="/admin/shipping"   class={`nav-link ${activeNav==='shipping'      ? 'active' : ''}`}><span class="material-symbols-outlined">local_shipping</span>Vận chuyển</a>}
       </div>
       <!-- Quản lý -->
       <div class="nav-group">
         <span class="nav-group-label">Quản lý</span>
-        <a href="/admin/consultations" class={`nav-link ${activeNav==='consultations' ? 'active' : ''}`}><span class="material-symbols-outlined">group</span>Khách hàng</a>
-        <a href="/admin/reviews"       class={`nav-link ${activeNav==='reviews'       ? 'active' : ''}`}><span class="material-symbols-outlined">reviews</span>Đánh giá</a>
-        <a href="/admin/blog"          class={`nav-link ${activeNav==='blog'          ? 'active' : ''}`}><span class="material-symbols-outlined">article</span>Blog</a>
-        <a href="/admin/brand"         class={`nav-link ${activeNav==='brand'         ? 'active' : ''}`}><span class="material-symbols-outlined">storefront</span>Thương hiệu</a>
-        <a href="/admin/reports"       class={`nav-link ${activeNav==='reports'       ? 'active' : ''}`}><span class="material-symbols-outlined">bar_chart</span>Báo cáo</a>
-        <a href="/admin/seo"           class={`nav-link ${activeNav==='seo'           ? 'active' : ''}`}><span class="material-symbols-outlined">campaign</span>SEO &amp; Marketing</a>
+        {can('consultations') && <a href="/admin/consultations" class={`nav-link ${activeNav==='consultations' ? 'active' : ''}`}><span class="material-symbols-outlined">group</span>Khách hàng</a>}
+        {can('reviews') && <a href="/admin/reviews"       class={`nav-link ${activeNav==='reviews'       ? 'active' : ''}`}><span class="material-symbols-outlined">reviews</span>Đánh giá</a>}
+        {can('blog') && <a href="/admin/blog"          class={`nav-link ${activeNav==='blog'          ? 'active' : ''}`}><span class="material-symbols-outlined">article</span>Blog</a>}
+        {can('brand') && <a href="/admin/brand"         class={`nav-link ${activeNav==='brand'         ? 'active' : ''}`}><span class="material-symbols-outlined">storefront</span>Thương hiệu</a>}
+        {can('reports') && <a href="/admin/reports"       class={`nav-link ${activeNav==='reports'       ? 'active' : ''}`}><span class="material-symbols-outlined">bar_chart</span>Báo cáo</a>}
+        {can('seo') && <a href="/admin/seo"           class={`nav-link ${activeNav==='seo'           ? 'active' : ''}`}><span class="material-symbols-outlined">campaign</span>SEO &amp; Marketing</a>}
       </div>
 
       <!-- Hệ thống -->
       <div class="nav-group">
         <span class="nav-group-label">Hệ thống</span>
-        <a href="/admin/permissions" class={`nav-link ${activeNav==='permissions'   ? 'active' : ''}`}><span class="material-symbols-outlined">shield_person</span>Phân quyền</a>
-        <a href="/admin/activity-log" class={`nav-link ${activeNav==='activity-log'  ? 'active' : ''}`}><span class="material-symbols-outlined">history_edu</span>Nhật ký hoạt động</a>
-        <a href="/admin/settings"   class={`nav-link ${activeNav==='settings'      ? 'active' : ''}`}><span class="material-symbols-outlined">settings</span>Cài đặt</a>
+        {can('permissions') && <a href="/admin/permissions" class={`nav-link ${activeNav==='permissions'   ? 'active' : ''}`}><span class="material-symbols-outlined">shield_person</span>Phân quyền</a>}
+        {can('activity-log') && <a href="/admin/activity-log" class={`nav-link ${activeNav==='activity-log'  ? 'active' : ''}`}><span class="material-symbols-outlined">history_edu</span>Nhật ký hoạt động</a>}
+        {can('settings') && <a href="/admin/settings"   class={`nav-link ${activeNav==='settings'      ? 'active' : ''}`}><span class="material-symbols-outlined">settings</span>Cài đặt</a>}
       </div>
     </nav>
 
-    <div class="sidebar-add-btn">
+    {can('products') && <div class="sidebar-add-btn">
       <a href="/admin/products">
         <span class="material-symbols-outlined">add_circle</span>
         Thêm sản phẩm mới
       </a>
-    </div>
+    </div>}
   </aside>
 
   <!-- Sidebar overlay for mobile -->

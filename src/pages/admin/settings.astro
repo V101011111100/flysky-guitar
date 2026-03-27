@@ -1,6 +1,7 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import { supabase } from '../../lib/supabase';
+import { getAdminMfaState } from '../../lib/security';
 
 // Fetch settings from Database
 const { data: settingsData } = await supabase
@@ -33,6 +34,9 @@ const zaloUrl = getSetting('flysky_zaloUrl', 'https://zalo.me/0987654321');
 const facebookUrl = getSetting('flysky_facebookUrl', 'https://facebook.com/flyskyguitar');
 const whatsappUrl = getSetting('flysky_whatsappUrl', 'https://wa.me/84987654321');
 const instagramUrl = getSetting('flysky_instagramUrl', 'https://instagram.com/flyskyguitar');
+const supportWarrantyUrl = getSetting('flysky_supportWarrantyUrl', '/blog');
+const supportShippingReturnUrl = getSetting('flysky_supportShippingReturnUrl', '/payment');
+const supportCareGuideUrl = getSetting('flysky_supportCareGuideUrl', '/blog');
 
 const brandColor = getSetting('flysky_brandColor', '#F48C25');
 const heroH1 = getSetting('flysky_heroH1', 'Đánh Thức Đam Mê Âm Nhạc Của Bạn');
@@ -77,11 +81,25 @@ const reportEmailsInit = reportEmailsRaw
 
 // Auto-logout timeout
 const autoLogoutTimeout = getSetting('flysky_autoLogoutTimeout', '120');
+
+const accessToken = Astro.cookies.get('sb-access-token')?.value;
+const refreshToken = Astro.cookies.get('sb-refresh-token')?.value;
+const authState = await getAdminMfaState(accessToken, refreshToken);
+const currentAdminEmail = String(authState.user?.email || '').trim().toLowerCase();
+const ownerAdminEmails = String(import.meta.env.ADMIN_EMAILS || '')
+  .split(',')
+  .map((item) => item.trim().toLowerCase())
+  .filter(Boolean);
+if (ownerAdminEmails.length === 0) ownerAdminEmails.push('admin@flyskyguitar.com');
+const canManageSystemSettings = ownerAdminEmails.includes(currentAdminEmail);
+const settingsSubtitle = canManageSystemSettings
+  ? 'Quản lý cấu hình cửa hàng, giao diện và bảo mật tài khoản.'
+  : 'Quản lý bảo mật tài khoản và phiên đăng nhập.';
 ---
 
 <AdminLayout
   title="Cài đặt hệ thống"
-  subtitle="Quản lý cấu hình cửa hàng, giao diện và bảo mật tài khoản."
+  subtitle={settingsSubtitle}
   activeNav="settings"
 >
 
@@ -94,15 +112,15 @@ const autoLogoutTimeout = getSetting('flysky_autoLogoutTimeout', '120');
 
   <!-- ── TABS ── -->
   <div class="stg-tabs">
-    <button class="stg-tab" onclick="switchTab('general', this)">Cài đặt chung</button>
-    <button class="stg-tab" onclick="switchTab('appearance', this)">Giao diện</button>
-    <button class="stg-tab" onclick="switchTab('payment', this)">Thanh toán</button>
-    <button class="stg-tab" onclick="switchTab('email-notifications', this)">Email &amp; Thông báo</button>
+    <button class="stg-tab" data-requires-owner="true" onclick="switchTab('general', this)">Cài đặt chung</button>
+    <button class="stg-tab" data-requires-owner="true" onclick="switchTab('appearance', this)">Giao diện</button>
+    <button class="stg-tab" data-requires-owner="true" onclick="switchTab('payment', this)">Thanh toán</button>
+    <button class="stg-tab" data-requires-owner="true" onclick="switchTab('email-notifications', this)">Email &amp; Thông báo</button>
     <button class="stg-tab stg-tab-active" onclick="switchTab('security', this)">Bảo mật &amp; Tài khoản</button>
   </div>
 
   <!-- ── TAB: CÀI ĐẶT CHUNG ── -->
-  <div id="tab-general" class="tab-pane" style="display:none;">
+  <div id="tab-general" class="tab-pane" data-requires-owner="true" style="display:none;">
     <div class="stg-content">
       <section class="stg-section">
         <div class="section-head">
@@ -211,6 +229,18 @@ const autoLogoutTimeout = getSetting('flysky_autoLogoutTimeout', '120');
             <span class="material-symbols-outlined inp-icon">photo_camera</span>
             <input type="text" id="stg-instagram-url" class="form-input inp-with-icon" placeholder="https://instagram.com/..." value={instagramUrl} />
           </div>
+          <div class="icon-input-wrap" style="margin-top:12px;">
+            <span class="material-symbols-outlined inp-icon">article</span>
+            <input type="text" id="stg-support-warranty-url" class="form-input inp-with-icon" placeholder="Link bài viết chính sách bảo hành" value={supportWarrantyUrl} />
+          </div>
+          <div class="icon-input-wrap" style="margin-top:12px;">
+            <span class="material-symbols-outlined inp-icon">local_shipping</span>
+            <input type="text" id="stg-support-shipping-return-url" class="form-input inp-with-icon" placeholder="Link bài viết giao hàng & trả hàng" value={supportShippingReturnUrl} />
+          </div>
+          <div class="icon-input-wrap" style="margin-top:12px;">
+            <span class="material-symbols-outlined inp-icon">menu_book</span>
+            <input type="text" id="stg-support-care-guide-url" class="form-input inp-with-icon" placeholder="Link bài viết hướng dẫn bảo quản" value={supportCareGuideUrl} />
+          </div>
         </div>
       </section>
 
@@ -244,7 +274,7 @@ const autoLogoutTimeout = getSetting('flysky_autoLogoutTimeout', '120');
   </div>
 
   <!-- ── TAB: GIAO DIỆN ── -->
-  <div id="tab-appearance" class="tab-pane" style="display:none;">
+  <div id="tab-appearance" class="tab-pane" data-requires-owner="true" style="display:none;">
     <div class="app-content">
 
       <!-- Color Section -->
@@ -360,7 +390,7 @@ const autoLogoutTimeout = getSetting('flysky_autoLogoutTimeout', '120');
   </div>
 
   <!-- ── TAB: THANH TOÁN ── -->
-  <div id="tab-payment" class="tab-pane" style="display:none;">
+  <div id="tab-payment" class="tab-pane" data-requires-owner="true" style="display:none;">
     <div class="stg-content">
 
       <!-- ── BANK TRANSFER ── -->
@@ -489,7 +519,7 @@ const autoLogoutTimeout = getSetting('flysky_autoLogoutTimeout', '120');
   </div>
 
   <!-- ── TAB: EMAIL & THÔNG BÁO ── -->
-  <div id="tab-email-notifications" class="tab-pane" style="display:none;">
+  <div id="tab-email-notifications" class="tab-pane" data-requires-owner="true" style="display:none;">
     <div class="stg-content">
       <section class="stg-section">
         <div class="section-head">
@@ -933,13 +963,17 @@ const autoLogoutTimeout = getSetting('flysky_autoLogoutTimeout', '120');
 
 </AdminLayout>
 
-<script is:inline define:vars={{ reportEmailsInit, autoLogoutTimeout }}>
+<script is:inline define:vars={{ reportEmailsInit, autoLogoutTimeout, canManageSystemSettings }}>
   window._reportEmails = reportEmailsInit;
   window._autoLogoutTimeout = parseInt(autoLogoutTimeout) || 120;
+  window._canManageSystemSettings = !!canManageSystemSettings;
 </script>
 
 <script>
   function switchTab(tabId: string, btn: HTMLElement) {
+    if (!(window as any)._canManageSystemSettings && tabId !== 'security') {
+      return;
+    }
     document.querySelectorAll('.tab-pane').forEach((p: Element) => (p as HTMLElement).style.display = 'none');
     document.querySelectorAll('.stg-tab').forEach(b => b.classList.remove('stg-tab-active'));
     const pane = document.getElementById('tab-' + tabId);
@@ -1067,6 +1101,9 @@ const autoLogoutTimeout = getSetting('flysky_autoLogoutTimeout', '120');
       { id: 'stg-facebook-url', key: 'flysky_facebookUrl' },
       { id: 'stg-whatsapp-url', key: 'flysky_whatsappUrl' },
       { id: 'stg-instagram-url', key: 'flysky_instagramUrl' },
+      { id: 'stg-support-warranty-url', key: 'flysky_supportWarrantyUrl' },
+      { id: 'stg-support-shipping-return-url', key: 'flysky_supportShippingReturnUrl' },
+      { id: 'stg-support-care-guide-url', key: 'flysky_supportCareGuideUrl' },
       { id: 'stg-brand-color', key: 'flysky_brandColor' },
       { id: 'stg-hero-h1', key: 'flysky_heroH1' },
       { id: 'stg-hero-sub', key: 'flysky_heroSub' },
@@ -1465,6 +1502,18 @@ const autoLogoutTimeout = getSetting('flysky_autoLogoutTimeout', '120');
 
   // Initialize session management on page load
   document.addEventListener('DOMContentLoaded', () => {
+    if (!(window as any)._canManageSystemSettings) {
+      document.querySelectorAll('[data-requires-owner="true"]').forEach((el) => {
+        (el as HTMLElement).style.display = 'none';
+      });
+      const securityTabBtn = Array.from(document.querySelectorAll('.stg-tab')).find((el) =>
+        (el as HTMLElement).textContent?.includes('Bảo mật')
+      ) as HTMLElement | undefined;
+      if (securityTabBtn) {
+        switchTab('security', securityTabBtn);
+      }
+    }
+
     loadActiveSessions();
     
     // Expose functions to window for onclick handlers

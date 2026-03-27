@@ -1,5 +1,7 @@
 import type { MiddlewareHandler } from 'astro';
 import { getAdminMfaState } from './lib/security';
+import { getFeatureForAdminPath, getFeatureForApiPath, hasAdminFeature, parseAdminPermissionMap } from './lib/admin-permissions';
+import { supabase } from './lib/supabase';
 
 function isAdminPage(pathname: string): boolean {
   return pathname.startsWith('/admin') && pathname !== '/admin/login';
@@ -16,11 +18,14 @@ function isProtectedNonAdminApi(pathname: string, method: string): boolean {
     '/api/payment-settings',
     '/api/products/',
     '/api/settings/',
+    '/api/seo/',
+    '/api/templates/',
   ];
 
   const protectedExactRoutes = new Set([
     '/api/auth/create-session',
     '/api/email/test',
+    '/api/get-templates',
     '/api/notifications/send',
     '/api/notifications/subscribe',
     '/api/notifications/test',
@@ -84,6 +89,31 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   }
 
   if (!authState.requiresMfa) {
+    const userEmail = authState.user?.email || '';
+
+    const { data: permissionSetting } = await supabase
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'flysky_admin_permissions')
+      .maybeSingle();
+    const rawValue = permissionSetting?.value ?? null;
+
+    const permissionMap = parseAdminPermissionMap(rawValue);
+    const requiredFeature = isAdminPage(pathname)
+      ? getFeatureForAdminPath(pathname)
+      : getFeatureForApiPath(pathname);
+
+    if (requiredFeature && !hasAdminFeature(permissionMap, userEmail, requiredFeature)) {
+      if (isAdminApi(pathname) || isProtectedNonAdminApi(pathname, method)) {
+        return new Response(JSON.stringify({ success: false, error: 'Feature access denied' }), {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
+      return context.redirect('/admin?permission=denied');
+    }
+
     return next();
   }
 

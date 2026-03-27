@@ -45,7 +45,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     
     let allSuccess = true;
     for (const session of sessions) {
-      const result = await SessionManager.terminateSession(session.id);
+      const result = await SessionManager.terminateSession(session.id, authData.user.id);
       if (!result) allSuccess = false;
     }
     
