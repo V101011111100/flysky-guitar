@@ -1541,9 +1541,25 @@ const settingsSubtitle = canManageSystemSettings
     const strengthText = document.getElementById('pw-strength-text') as HTMLElement;
     const matchText = document.getElementById('pw-match-text') as HTMLElement;
 
-    function openPwModal() { if (pwModal) pwModal.style.display = 'flex'; }
+    let _pwScrollY = 0;
+    function openPwModal() {
+      if (!pwModal) return;
+      _pwScrollY = window.scrollY;
+      pwModal.style.display = 'flex';
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${_pwScrollY}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.overflow = 'hidden';
+    }
     function closePwModal() {
       if (pwModal) pwModal.style.display = 'none';
+      document.body.style.removeProperty('position');
+      document.body.style.removeProperty('top');
+      document.body.style.removeProperty('left');
+      document.body.style.removeProperty('right');
+      document.body.style.removeProperty('overflow');
+      window.scrollTo({ top: _pwScrollY, behavior: 'instant' });
       if (pwCurrent) pwCurrent.value = '';
       if (pwNew) pwNew.value = '';
       if (pwConfirm) pwConfirm.value = '';
@@ -1670,9 +1686,25 @@ const settingsSubtitle = canManageSystemSettings
     const totpInput = document.getElementById('totp-verify-code') as HTMLInputElement;
     let currentFactorId = '';
 
-    function open2faModal() { if (modal2fa) modal2fa.style.display = 'flex'; }
+    let _2faScrollY = 0;
+    function open2faModal() {
+      if (!modal2fa) return;
+      _2faScrollY = window.scrollY;
+      modal2fa.style.display = 'flex';
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${_2faScrollY}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.overflow = 'hidden';
+    }
     function close2faModal() {
       if (modal2fa) modal2fa.style.display = 'none';
+      document.body.style.removeProperty('position');
+      document.body.style.removeProperty('top');
+      document.body.style.removeProperty('left');
+      document.body.style.removeProperty('right');
+      document.body.style.removeProperty('overflow');
+      window.scrollTo({ top: _2faScrollY, behavior: 'instant' });
       if (totpInput) totpInput.value = '';
       currentFactorId = '';
     }

@@ -267,8 +267,14 @@ function showMsg(msg: string, ok = true) {
 const modal      = document.getElementById('editor-modal')!;
 const modalTitle = document.getElementById('modal-title')!;
 
+let _blogScrollY = 0;
 function openEditor(postData?: any) {
+  _blogScrollY = window.scrollY;
   modal.classList.remove('hidden');
+  document.body.style.position = 'fixed';
+  document.body.style.top = `-${_blogScrollY}px`;
+  document.body.style.left = '0';
+  document.body.style.right = '0';
   document.body.style.overflow = 'hidden';
   if (postData) {
     modalTitle.textContent = 'Chỉnh sửa bài viết';
@@ -303,7 +309,12 @@ function openEditor(postData?: any) {
 
 function closeEditor() {
   modal.classList.add('hidden');
-  document.body.style.overflow = '';
+  document.body.style.removeProperty('position');
+  document.body.style.removeProperty('top');
+  document.body.style.removeProperty('left');
+  document.body.style.removeProperty('right');
+  document.body.style.removeProperty('overflow');
+  window.scrollTo({ top: _blogScrollY, behavior: 'instant' });
 }
 
 document.getElementById('btn-new-post')?.addEventListener('click', () => openEditor());

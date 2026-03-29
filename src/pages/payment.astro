@@ -27,7 +27,7 @@ const momoPartnerCode: string = momoProvider?.config?.partner_code ?? '';
 <Layout title="Thanh toán đơn hàng | FlySky Guitar" description="Trang thanh toán đơn hàng an toàn.">
   <Navbar />
 
-  <section class="py-12 bg-background-dark min-h-screen">
+  <section class="py-12 bg-background-dark min-h-screen pb-28 md:pb-12">
     <div class="mx-auto max-w-4xl px-4 lg:px-10">
       
       <div id="payment-loading" class="text-center py-20">
@@ -71,10 +71,10 @@ const momoPartnerCode: string = momoProvider?.config?.partner_code ?? '';
 
           <!-- Payment Methods -->
           <div class="bg-card-dark border border-border-dark rounded-2xl overflow-hidden flex flex-col">
-            <div class="flex border-b border-border-dark">
-              <button id="tab-btn-bank" class="flex-1 py-4 text-sm font-bold text-white bg-primary/10 border-b-2 border-primary transition-all">Chuyển khoản / VietQR</button>
-              {momoEnabled && <button id="tab-btn-momo" class="flex-1 py-4 text-sm font-bold text-text-muted hover:text-white transition-all">Ví MoMo</button>}
-              <button id="tab-btn-visa" class="flex-1 py-4 text-sm font-bold text-text-muted hover:text-white transition-all">Thẻ Visa/Master</button>
+            <div class="flex border-b border-border-dark overflow-x-auto payment-tabs no-scrollbar">
+              <button id="tab-btn-bank" class="flex-none min-w-44 md:flex-1 py-4 px-4 text-sm font-bold text-white bg-primary/10 border-b-2 border-primary transition-all whitespace-nowrap">Chuyển khoản / VietQR</button>
+              {momoEnabled && <button id="tab-btn-momo" class="flex-none min-w-32 md:flex-1 py-4 px-4 text-sm font-bold text-text-muted hover:text-white transition-all whitespace-nowrap">Ví MoMo</button>}
+              <button id="tab-btn-visa" class="flex-none min-w-36 md:flex-1 py-4 px-4 text-sm font-bold text-text-muted hover:text-white transition-all whitespace-nowrap">Thẻ Visa/Master</button>
             </div>
 
             <div class="p-6 flex-1 bg-background-dark/30 relative">
@@ -102,7 +102,7 @@ const momoPartnerCode: string = momoProvider?.config?.partner_code ?? '';
                     <span class="text-text-muted text-xs">Số tài khoản:</span>
                     <span class="text-white text-sm font-bold flex items-center gap-2">
                        {bankAccountNumber}
-                       <button class="material-symbols-outlined text-[16px] text-primary hover:text-white transition-colors" onclick={`navigator.clipboard.writeText('${bankAccountNumber}');alert('Đã copy STK')`}>content_copy</button>
+                       <button id="btn-copy-account" type="button" class="material-symbols-outlined text-[16px] text-primary hover:text-white transition-colors">content_copy</button>
                     </span>
                   </div>
                   <div class="flex justify-between items-center">
@@ -160,15 +160,30 @@ const momoPartnerCode: string = momoProvider?.config?.partner_code ?? '';
         </div>
 
         <div class="mt-10 text-center">
-            <a href="/order-success" class="text-primary hover:text-white transition-colors text-sm font-bold flex items-center justify-center gap-1">
-              Đi đến trang hoàn tất đơn hàng <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
-            </a>
-            <p class="text-text-muted text-xs mt-2">Nhấn vào đây nếu bạn đã thanh toán xong.</p>
+            <button id="btn-payment-complete" type="button" class="text-primary hover:text-white transition-colors text-sm font-bold flex items-center justify-center gap-1 mx-auto">
+              Tôi đã thanh toán xong <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+            </button>
+            <p class="text-text-muted text-xs mt-2">Sau khi bấm xác nhận, hệ thống sẽ ghi nhận yêu cầu kiểm tra thanh toán.</p>
+            <div id="payment-notice" class="hidden mt-3 rounded-xl border px-3 py-2 text-sm max-w-md mx-auto"></div>
         </div>
       </div>
 
     </div>
   </section>
+
+  <!-- Sticky mobile payment action bar -->
+  <div id="sticky-payment-bar" class="fixed bottom-0 left-0 right-0 z-50 md:hidden hidden">
+    <div class="bg-card-dark border-t border-border-dark px-4 py-3 flex items-center justify-between gap-4 shadow-[0_-4px_20px_rgba(0,0,0,0.5)]">
+      <div class="min-w-0">
+        <p class="text-text-muted text-xs">Tổng tiền</p>
+        <p id="sticky-total" class="text-primary font-extrabold text-lg leading-tight"></p>
+      </div>
+      <button id="btn-sticky-complete" type="button" class="flex-shrink-0 bg-primary hover:bg-primary/90 text-background-dark font-bold py-3 px-4 rounded-xl transition-colors text-sm flex items-center gap-1.5">
+        Đã thanh toán
+        <span class="material-symbols-outlined text-[16px]">check_circle</span>
+      </button>
+    </div>
+  </div>
 
   <Footer />
 </Layout>
@@ -176,6 +191,16 @@ const momoPartnerCode: string = momoProvider?.config?.partner_code ?? '';
 <script define:vars={{ bankName, bankAccountNumber, bankAccountName, momoEnabled }}>
   function formatPrice(n) {
     return n.toLocaleString('vi-VN') + '₫';
+  }
+
+  const paymentNotice = document.getElementById('payment-notice');
+  const completeBtn = document.getElementById('btn-payment-complete');
+
+  function showPaymentNotice(message, type = 'success') {
+    if (!paymentNotice) return;
+    paymentNotice.textContent = message;
+    paymentNotice.className = `mt-3 rounded-xl border px-3 py-2 text-sm max-w-md mx-auto ${type === 'error' ? 'border-red-500/40 bg-red-500/10 text-red-300' : 'border-green-500/40 bg-green-500/10 text-green-300'}`;
+    paymentNotice.classList.remove('hidden');
   }
 
   // Build active tabs list dynamically based on enabled providers
@@ -222,6 +247,17 @@ const momoPartnerCode: string = momoProvider?.config?.partner_code ?? '';
       document.getElementById('display-phone').textContent = order.phone;
       document.getElementById('display-total').textContent = formatPrice(order.total);
 
+      // Sticky mobile bar
+      const stickyBar = document.getElementById('sticky-payment-bar');
+      const stickyTotal = document.getElementById('sticky-total');
+      if (stickyTotal) stickyTotal.textContent = formatPrice(order.total);
+      if (stickyBar) stickyBar.classList.remove('hidden');
+
+      document.getElementById('btn-sticky-complete')?.addEventListener('click', () => {
+        sessionStorage.setItem('flysky_payment_confirmed_order', order.orderNum);
+        window.location.href = '/order-success';
+      });
+
       // Remove spaces & diacritics from accountName just in case to avoid URL bugs
       const qrDesc = encodeURIComponent(order.orderNum);
       const qrAccName = encodeURIComponent(bankAccountName);
@@ -233,7 +269,17 @@ const momoPartnerCode: string = momoProvider?.config?.partner_code ?? '';
       
       document.getElementById('btn-copy-content')?.addEventListener('click', () => {
          navigator.clipboard.writeText(order.orderNum);
-         alert('Đã copy Nội dung chuyển khoản');
+        showPaymentNotice('Đã copy nội dung chuyển khoản.', 'success');
+      });
+
+      document.getElementById('btn-copy-account')?.addEventListener('click', () => {
+        navigator.clipboard.writeText(bankAccountNumber);
+        showPaymentNotice('Đã copy số tài khoản.', 'success');
+      });
+
+      completeBtn?.addEventListener('click', () => {
+        sessionStorage.setItem('flysky_payment_confirmed_order', order.orderNum);
+        window.location.href = '/order-success';
       });
 
       document.getElementById('payment-loading')?.classList.add('hidden');
@@ -251,6 +297,13 @@ const momoPartnerCode: string = momoProvider?.config?.partner_code ?? '';
 <style>
   .animate-fade-in {
     animation: fadeIn 0.4s ease forwards;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(5px); }

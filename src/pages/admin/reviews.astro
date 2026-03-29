@@ -262,16 +262,32 @@ const { data: products } = await supabase
   // Modals for Seed
   const modal = document.getElementById('seed-modal');
   const modalContent = document.getElementById('seed-modal-content');
-  
-  document.getElementById('btn-seed-review')?.addEventListener('click', () => {
+  let _seedScrollY = 0;
+
+  function openSeedModal() {
+    _seedScrollY = window.scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${_seedScrollY}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.overflow = 'hidden';
     modal?.classList.remove('opacity-0', 'pointer-events-none');
     modalContent?.classList.remove('scale-95');
-  });
-
-  document.getElementById('close-seed-modal')?.addEventListener('click', () => {
+  }
+  function closeSeedModal() {
     modal?.classList.add('opacity-0', 'pointer-events-none');
     modalContent?.classList.add('scale-95');
-  });
+    document.body.style.removeProperty('position');
+    document.body.style.removeProperty('top');
+    document.body.style.removeProperty('left');
+    document.body.style.removeProperty('right');
+    document.body.style.removeProperty('overflow');
+    window.scrollTo({ top: _seedScrollY, behavior: 'instant' });
+  }
+
+  document.getElementById('btn-seed-review')?.addEventListener('click', openSeedModal);
+
+  document.getElementById('close-seed-modal')?.addEventListener('click', closeSeedModal);
 
   // Seed form stars
   const starBtns = document.querySelectorAll('.seed-star-btn');

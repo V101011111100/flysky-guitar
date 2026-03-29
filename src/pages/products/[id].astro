@@ -152,7 +152,7 @@ const related = (dbRelated || []).map(rp => ({
           <!-- Main image -->
           <div
             id="main-image"
-            class="w-full aspect-square rounded-2xl bg-[#1e1510] border border-border-dark overflow-hidden flex items-center justify-center p-8 relative"
+            class="w-full aspect-square rounded-2xl bg-surface-product-media border border-border-dark overflow-hidden flex items-center justify-center p-8 relative"
           >
             {product.badge && (
               <div class="absolute top-4 left-4 bg-primary text-background-dark text-xs font-extrabold px-3 py-1.5 rounded uppercase tracking-wider z-10">
@@ -171,7 +171,7 @@ const related = (dbRelated || []).map(rp => ({
             <div class="flex gap-3">
               {product.images.map((img, i) => (
                 <button
-                  class={`thumb-btn flex-1 aspect-square rounded-xl bg-[#1e1510] border-2 overflow-hidden p-2 transition-all ${i === 0 ? 'border-primary' : 'border-border-dark hover:border-primary/60'}`}
+                  class={`thumb-btn flex-1 aspect-square rounded-xl bg-surface-product-media border-2 overflow-hidden p-2 transition-all ${i === 0 ? 'border-primary' : 'border-border-dark hover:border-primary/60'}`}
                   data-src={img}
                   data-index={i}
                 >
@@ -194,11 +194,11 @@ const related = (dbRelated || []).map(rp => ({
           <!-- Name + subtitle -->
           <div>
             <h1 
-              class="text-white text-3xl lg:text-4xl font-extrabold leading-tight"
+              class="text-white type-display-section"
               data-editable={isAdmin ? "name" : undefined}
               data-original={product.name}
             >{product.name}</h1>
-            <p class="text-text-muted text-lg mt-1">{product.subtitle}</p>
+            <p class="text-text-muted type-body-lead mt-1">{product.subtitle}</p>
           </div>
 
           <!-- Rating -->
@@ -283,7 +283,7 @@ const related = (dbRelated || []).map(rp => ({
   </section>
 
   <!-- Details Tabs -->
-  <section class="py-16 bg-[#100d08]">
+  <section class="py-16 bg-surface-section-alt">
     <div class="mx-auto max-w-7xl px-4 lg:px-10">
       <!-- Tab nav -->
       <div class="flex gap-1 border-b border-border-dark mb-10">
@@ -609,12 +609,32 @@ const related = (dbRelated || []).map(rp => ({
   const rvModalContent = document.getElementById('review-modal-content');
   const rvBtn = document.getElementById('btn-write-review');
   const rvCloseBtn = document.getElementById('close-review-modal');
-  
+
+  let _rvScrollY = 0;
+  function rvLockScroll() {
+    _rvScrollY = window.scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${_rvScrollY}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.overflow = 'hidden';
+  }
+  function rvUnlockScroll() {
+    document.body.style.removeProperty('position');
+    document.body.style.removeProperty('top');
+    document.body.style.removeProperty('left');
+    document.body.style.removeProperty('right');
+    document.body.style.removeProperty('overflow');
+    window.scrollTo({ top: _rvScrollY, behavior: 'instant' });
+  }
+
   const toggleModal = (show: boolean) => {
     if (show) {
+      rvLockScroll();
       rvModal?.classList.remove('opacity-0', 'pointer-events-none');
       rvModalContent?.classList.remove('scale-95');
     } else {
+      rvUnlockScroll();
       rvModal?.classList.add('opacity-0', 'pointer-events-none');
       rvModalContent?.classList.add('scale-95');
     }

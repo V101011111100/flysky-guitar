@@ -1,7 +1,7 @@
 ---
 ---
 
-<footer class="bg-[#120d08] border-t border-border-dark pt-16 pb-8">
+<footer class="bg-surface-footer border-t border-border-dark pt-16 pb-8">
   <div class="mx-auto max-w-7xl px-4 lg:px-10">
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
       <div class="flex flex-col gap-4">
@@ -41,15 +41,16 @@
             <span class="material-symbols-outlined">send</span>
           </button>
         </form>
+        <div id="footer-newsletter-notice" class="hidden mt-2 rounded-lg px-3 py-2 text-xs"></div>
       </div>
     </div>
     <div class="border-t border-border-dark pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
       <p class="text-text-muted text-sm text-center md:text-left">© 2026 <span data-setting="flysky_storeName">FlySky Guitar</span>. Bảo lưu mọi quyền.</p>
       <div class="flex gap-4">
-        <a class="text-text-muted hover:text-white transition-colors" href="#"><span class="sr-only">Facebook</span>FB</a>
-        <a class="text-text-muted hover:text-white transition-colors" href="#"><span class="sr-only">Instagram</span>IG</a>
-        <a class="text-text-muted hover:text-white transition-colors" href="#"><span class="sr-only">Twitter</span>TW</a>
-        <a class="text-text-muted hover:text-white transition-colors" href="#"><span class="sr-only">YouTube</span>YT</a>
+        <a class="text-text-muted hover:text-white transition-colors" href="#" data-setting="flysky_facebookUrl"><span class="sr-only">Facebook</span>FB</a>
+        <a class="text-text-muted hover:text-white transition-colors" href="#" data-setting="flysky_instagramUrl"><span class="sr-only">Instagram</span>IG</a>
+        <a class="text-text-muted hover:text-white transition-colors" href="#" data-setting="flysky_whatsappUrl"><span class="sr-only">WhatsApp</span>WA</a>
+        <a class="text-text-muted hover:text-white transition-colors" href="#" data-setting="flysky_youtubeUrl"><span class="sr-only">YouTube</span>YT</a>
       </div>
     </div>
   </div>
@@ -57,17 +58,28 @@
 
 <script is:inline>
   document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('footer-newsletter-form') as HTMLFormElement | null;
+    const form = document.getElementById('footer-newsletter-form');
     if (!form) return;
 
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
-      const emailInput = form.querySelector('input[name="email"]') as HTMLInputElement | null;
-      const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement | null;
+      const emailInput = form.querySelector('input[name="email"]');
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const notice = document.getElementById('footer-newsletter-notice');
       if (!emailInput || !submitBtn) return;
 
       const email = emailInput.value.trim();
       if (!email) return;
+
+      function showNotice(msg, ok) {
+        if (!notice) return;
+        notice.textContent = msg;
+        notice.className = 'mt-2 rounded-lg px-3 py-2 text-xs ' + (ok
+          ? 'bg-green-500/10 border border-green-500/30 text-green-400'
+          : 'bg-red-500/10 border border-red-500/30 text-red-400');
+        notice.classList.remove('hidden');
+        setTimeout(() => notice.classList.add('hidden'), 4000);
+      }
 
       const oldHtml = submitBtn.innerHTML;
       submitBtn.disabled = true;
@@ -82,18 +94,15 @@
         const data = await res.json();
 
         if (!res.ok || !data?.success) {
-          alert(data?.error || 'Không thể đăng ký bản tin. Vui lòng thử lại.');
+          showNotice(data?.error || 'Không thể đăng ký bản tin. Vui lòng thử lại.', false);
         } else if (data.state === 'already_active') {
-          alert('Email này đã đăng ký bản tin trước đó rồi.');
-        } else if (data.state === 'reactivated') {
-          alert('Đã kích hoạt lại đăng ký bản tin cho email của bạn.');
-          form.reset();
+          showNotice('Email này đã đăng ký bản tin trước đó rồi.', false);
         } else {
-          alert('Cảm ơn bạn đã đăng ký nhận bản tin!');
+          showNotice('Cảm ơn bạn đã đăng ký nhận bản tin!', true);
           form.reset();
         }
       } catch {
-        alert('Không thể kết nối máy chủ. Vui lòng thử lại sau.');
+        showNotice('Không thể kết nối máy chủ. Vui lòng thử lại sau.', false);
       } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = oldHtml;

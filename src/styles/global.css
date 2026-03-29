@@ -10,14 +10,45 @@
   --color-wood-dark: #1a1412;
   --color-wood-medium: #2d241e;
   --color-wood-light: #3e322b;
+  --color-wood-glow: #4a3220;
+  --color-surface-footer: #120d08;
+  --color-surface-panel: #2a2015;
+  --color-surface-product-media: #1e1510;
+  --color-surface-section-alt: #100d08;
   --color-accent-orange: #e67e22;
   --font-sans: "Inter", sans-serif;
   --font-serif: "Playfair Display", serif;
   --font-display: "Manrope", sans-serif;
+  --font-body: "Manrope", sans-serif;
 }
 
 body {
-  font-family: "Manrope", sans-serif;
+  font-family: var(--font-body);
+}
+
+.type-display-hero {
+  font-size: clamp(2.25rem, 5vw, 4.5rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  font-weight: 900;
+}
+
+.type-display-section {
+  font-size: clamp(1.75rem, 3vw, 3rem);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  font-weight: 800;
+}
+
+.type-title-card {
+  font-size: clamp(1rem, 1.4vw, 1.25rem);
+  line-height: 1.25;
+  font-weight: 700;
+}
+
+.type-body-lead {
+  font-size: clamp(1rem, 1.4vw, 1.125rem);
+  line-height: 1.7;
 }
 
 .material-symbols-outlined {
@@ -42,8 +73,8 @@ input::-webkit-inner-spin-button {
 }
 /* Remove arrows in Firefox */
 input[type=number] {
-  appearance: textfield;
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 /* --- Thanh cuộn (Scrollbar) --- */

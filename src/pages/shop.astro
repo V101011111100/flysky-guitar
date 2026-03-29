@@ -41,7 +41,7 @@ const products = (prodData || []).map(p => {
 });
 ---
 
-<Layout title="Cửa hàng Guitar | FlySky" description="Khám phá bộ sưu tập guitar điện, acoustic và bass cao cấp tại FlySky. Chất lượng thủ công, âm thanh đỉnh cao.">
+<Layout title="Cửa hàng Nhạc Cụ | FlySky" description="Khám phá bộ sưu tập guitar điện, acoustic, classic, bass, piano & keyboard và ukulele tại FlySky. Chất lượng thủ công, âm thanh đỉnh cao.">
   <Navbar />
 
   <!-- Page Hero -->
@@ -50,7 +50,7 @@ const products = (prodData || []).map(p => {
     <div class="mx-auto max-w-7xl px-4 lg:px-10 relative z-10 text-center">
       <span class="text-primary font-bold tracking-widest uppercase text-sm">FlySky Store</span>
       <h1 class="text-white text-4xl lg:text-5xl font-extrabold mt-3 mb-4">Bộ Sưu Tập Guitar</h1>
-      <p class="text-text-muted text-lg max-w-xl mx-auto">Khám phá từng cây đàn được chế tác tỉ mỉ — từ guitar điện cháy bỏng đến acoustic thuần khiết và bass trầm ấm.</p>
+      <p class="text-text-muted text-lg max-w-xl mx-auto">Khám phá từng nhạc cụ được chế tác tỉ mỉ — guitar điện, acoustic, classic, bass, piano & keyboard đến ukulele.</p>
     </div>
   </section>
 
@@ -59,20 +59,26 @@ const products = (prodData || []).map(p => {
     <div class="mx-auto max-w-7xl px-4 lg:px-10">
 
       <!-- Category Filter Tabs -->
-      <div class="flex flex-wrap items-center gap-3 mb-10" id="filter-tabs">
-        {categories.map((cat) => (
-          <button
-            data-cat={cat.id}
-            class="filter-btn px-5 py-2 rounded-full text-sm font-semibold border transition-all duration-200 bg-transparent text-white/70 border-border-dark hover:border-primary hover:text-primary"
-          >
-            {cat.label}
-          </button>
-        ))}
+      <div class="mb-10">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:flex lg:flex-wrap gap-2 lg:gap-3" id="filter-tabs">
+          {categories.map((cat) => (
+            <button
+              data-cat={cat.id}
+              class="filter-btn w-full lg:w-auto px-4 py-2 rounded-full text-sm font-semibold border transition-all duration-200 bg-transparent text-white/70 border-border-dark hover:border-primary hover:text-primary text-center"
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
 
-        <!-- Sort -->
-        <div class="ml-auto flex items-center gap-2">
-          <span class="text-text-muted text-sm hidden sm:inline">Sắp xếp:</span>
-          <select id="sort-select" class="bg-card-dark border border-border-dark text-white text-sm rounded-lg px-3 py-2 focus:ring-1 focus:ring-primary outline-none cursor-pointer">
+      </div>
+
+      <!-- Results count + Sort -->
+      <div class="mb-6 flex items-center justify-between gap-3">
+        <p class="text-text-muted text-sm">Hiển thị <span id="count-num">{products.length}</span> sản phẩm</p>
+        <div class="flex items-center gap-2">
+          <span class="text-text-muted text-sm">Sắp xếp:</span>
+          <select id="sort-select" class="bg-card-dark border border-border-dark text-white text-sm rounded-lg px-3 py-2 focus:ring-1 focus:ring-primary outline-none cursor-pointer min-w-[140px] sm:min-w-[160px]">
             <option value="default">Mặc định</option>
             <option value="price-asc">Giá tăng dần</option>
             <option value="price-desc">Giá giảm dần</option>
@@ -80,9 +86,6 @@ const products = (prodData || []).map(p => {
           </select>
         </div>
       </div>
-
-      <!-- Results count -->
-      <p class="text-text-muted text-sm mb-6">Hiển thị <span id="count-num">{products.length}</span> sản phẩm</p>
 
       <!-- Product Grid -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" id="product-grid">

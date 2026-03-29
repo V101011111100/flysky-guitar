@@ -456,16 +456,32 @@ function fmtDate(d: string) {
 
     drawer.classList.remove('drawer-closed');
     drawer.classList.add('drawer-open');
+    const _sy = window.scrollY;
+    drawer.dataset.scrollY = String(_sy);
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${_sy}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeDrawer() {
+    drawer.classList.remove('drawer-open');
+    drawer.classList.add('drawer-closed');
+    const sy = Number(drawer.dataset.scrollY || 0);
+    document.body.style.removeProperty('position');
+    document.body.style.removeProperty('top');
+    document.body.style.removeProperty('left');
+    document.body.style.removeProperty('right');
+    document.body.style.removeProperty('overflow');
+    window.scrollTo({ top: sy, behavior: 'instant' });
   }
 
   document.querySelectorAll<HTMLButtonElement>('.btn-detail').forEach(btn => {
     btn.addEventListener('click', () => openDrawer(btn.dataset.orderId!));
   });
 
-  document.getElementById('drawer-close')?.addEventListener('click', () => {
-    drawer.classList.remove('drawer-open');
-    drawer.classList.add('drawer-closed');
-  });
+  document.getElementById('drawer-close')?.addEventListener('click', closeDrawer);
 
   // ── Export Excel ──
   document.getElementById('btn-export')?.addEventListener('click', () => {

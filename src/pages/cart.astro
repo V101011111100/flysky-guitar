@@ -55,6 +55,12 @@ import Footer from '../components/Footer.astro';
             <p class="text-text-muted text-sm mb-6">Admin sẽ liên hệ lại với bạn sớm nhất có thể để xác nhận và tư vấn đơn hàng.</p>
 
             <form id="checkout-form" class="flex flex-col gap-5" novalidate>
+              <div id="mobile-checkout-steps" class="md:hidden mb-1 p-1 bg-background-dark rounded-xl border border-border-dark flex gap-1">
+                <button id="step-btn-contact" type="button" class="flex-1 rounded-lg py-2.5 text-xs font-bold bg-primary text-background-dark">1. Thông tin</button>
+                <button id="step-btn-payment" type="button" class="flex-1 rounded-lg py-2.5 text-xs font-bold text-text-muted">2. Thanh toán</button>
+              </div>
+
+              <div id="checkout-step-contact" class="flex flex-col gap-5">
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
                   <label class="block text-sm font-semibold text-white/80 mb-1.5" for="full-name">Họ và tên *</label>
@@ -119,23 +125,33 @@ import Footer from '../components/Footer.astro';
                   class="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-3 text-white placeholder-text-muted text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all resize-none"
                 ></textarea>
               </div>
+              </div>
+
+              <div id="mobile-step-contact-actions" class="md:hidden -mt-1">
+                <button id="btn-step-next" type="button" class="w-full bg-primary hover:bg-primary/90 text-background-dark font-bold py-3.5 rounded-xl transition-colors">Tiếp tục đến thanh toán</button>
+              </div>
 
               <!-- Payment method (display only, no backend yet) -->
-              <div>
+              <div id="checkout-step-payment" class="hidden md:block">
                 <label class="block text-sm font-semibold text-white/80 mb-3">Phương thức thanh toán</label>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {[
                     { id: 'bank', icon: 'account_balance', label: 'Chuyển khoản / Visa / MoMo' },
                     { id: 'cash', icon: 'payments', label: 'Tiền mặt khi nhận hàng' },
                     { id: 'installment', icon: 'credit_score', label: 'Trả góp 0%' },
                   ].map((m, i) => (
-                    <label class="payment-method flex items-center gap-3 bg-background-dark border-2 rounded-xl px-4 py-3 cursor-pointer transition-all border-border-dark hover:border-border-dark/80">
+                    <label class="payment-method flex items-center gap-3 bg-background-dark border-2 rounded-xl px-4 py-3.5 cursor-pointer transition-all border-border-dark hover:border-border-dark/80 min-h-14">
                       <input type="radio" name="payment" value={m.id} class="sr-only" />
                       <span class="material-symbols-outlined text-[20px] text-text-muted">{m.icon}</span>
-                      <span class="text-xs font-semibold leading-tight text-text-muted">{m.label}</span>
+                      <span class="text-sm font-semibold leading-tight text-text-muted">{m.label}</span>
                     </label>
                   ))}
                 </div>
+              </div>
+
+              <div id="mobile-step-payment-actions" class="hidden md:hidden grid grid-cols-2 gap-3 -mt-1">
+                <button id="btn-step-back" type="button" class="w-full bg-border-dark/70 hover:bg-border-dark text-white font-semibold py-3 rounded-xl transition-colors">Quay lại</button>
+                <button id="btn-step-review" type="button" class="w-full bg-primary hover:bg-primary/90 text-background-dark font-bold py-3 rounded-xl transition-colors">Xem tổng kết</button>
               </div>
 
             </form>
@@ -155,7 +171,7 @@ import Footer from '../components/Footer.astro';
 
         <!-- Right: Order summary -->
         <div class="flex flex-col gap-4">
-          <div class="bg-card-dark border border-border-dark rounded-2xl p-6 lg:sticky lg:top-24">
+          <div id="checkout-summary" class="bg-card-dark border border-border-dark rounded-2xl p-6 lg:sticky lg:top-24">
             <h2 class="text-white font-bold text-lg mb-5">Tóm tắt yêu cầu</h2>
 
             <!-- Discount Code Section -->
@@ -177,6 +193,13 @@ import Footer from '../components/Footer.astro';
                   </button>
                 </div>
               </div>
+              <button
+                id="remove-discount"
+                type="button"
+                class="hidden mt-2 text-xs text-text-muted hover:text-white underline underline-offset-2 transition-colors"
+              >
+                Xóa mã giảm giá
+              </button>
               <div id="discount-message" class="mt-2 text-xs hidden"></div>
             </div>
 
@@ -215,6 +238,8 @@ import Footer from '../components/Footer.astro';
               <span class="material-symbols-outlined">send</span>
               Gửi yêu cầu tư vấn
             </button>
+
+            <div id="checkout-notice" class="hidden mt-3 rounded-xl border px-3 py-2 text-sm"></div>
 
             <p class="text-text-muted text-xs text-center mt-4 leading-relaxed">
               Bấm gửi = bạn đồng ý để chúng tôi liên hệ tư vấn. Không có nghĩa vụ mua hàng.
@@ -460,6 +485,7 @@ import Footer from '../components/Footer.astro';
   // Discount code application
   const discountInput = document.getElementById('discount-code') as HTMLInputElement;
   const applyBtn = document.getElementById('apply-discount') as HTMLButtonElement;
+  const removeDiscountBtn = document.getElementById('remove-discount') as HTMLButtonElement | null;
   const discountMessage = document.getElementById('discount-message')!;
 
   // Sample discount codes (in real app, these would come from API/database)
@@ -514,6 +540,7 @@ import Footer from '../components/Footer.astro';
     applyBtn.disabled = true;
     applyBtn.classList.remove('bg-primary', 'hover:bg-primary/90');
     applyBtn.classList.add('bg-green-600', 'cursor-not-allowed');
+    removeDiscountBtn?.classList.remove('hidden');
     
     showDiscountMessage(`Đã áp dụng ${discount.description}`, false);
     renderCart();
@@ -529,6 +556,7 @@ import Footer from '../components/Footer.astro';
     applyBtn.disabled = false;
     applyBtn.classList.remove('bg-green-600', 'cursor-not-allowed');
     applyBtn.classList.add('bg-primary', 'hover:bg-primary/90');
+    removeDiscountBtn?.classList.add('hidden');
     
     renderCart();
   }
@@ -542,24 +570,150 @@ import Footer from '../components/Footer.astro';
     }
   });
 
-  // Double-click on applied discount to remove it
-  discountInput?.addEventListener('dblclick', () => {
-    if (discountInput.disabled) {
-      removeDiscount();
-      showDiscountMessage('Đã xóa mã giảm giá', false);
-    }
+  removeDiscountBtn?.addEventListener('click', () => {
+    removeDiscount();
+    showDiscountMessage('Đã xóa mã giảm giá', false);
   });
 
   // Submit
   const btn = document.getElementById('btn-submit') as HTMLButtonElement;
+  const checkoutNotice = document.getElementById('checkout-notice') as HTMLDivElement | null;
+  const stepBtnContact = document.getElementById('step-btn-contact') as HTMLButtonElement | null;
+  const stepBtnPayment = document.getElementById('step-btn-payment') as HTMLButtonElement | null;
+  const checkoutStepContact = document.getElementById('checkout-step-contact') as HTMLDivElement | null;
+  const checkoutStepPayment = document.getElementById('checkout-step-payment') as HTMLDivElement | null;
+  const btnStepNext = document.getElementById('btn-step-next') as HTMLButtonElement | null;
+  const btnStepBack = document.getElementById('btn-step-back') as HTMLButtonElement | null;
+  const btnStepReview = document.getElementById('btn-step-review') as HTMLButtonElement | null;
+  let currentCheckoutStep: 1 | 2 = 1;
+
+  function showCheckoutNotice(message: string, type: 'error' | 'success' = 'error') {
+    if (!checkoutNotice) return;
+    checkoutNotice.textContent = message;
+    checkoutNotice.className = `mt-3 rounded-xl border px-3 py-2 text-sm ${type === 'error' ? 'border-red-500/40 bg-red-500/10 text-red-300' : 'border-green-500/40 bg-green-500/10 text-green-300'}`;
+    checkoutNotice.classList.remove('hidden');
+  }
+
+  function clearCheckoutNotice() {
+    if (!checkoutNotice) return;
+    checkoutNotice.classList.add('hidden');
+  }
+
+  function isMobileCheckout() {
+    return window.matchMedia('(max-width: 767px)').matches;
+  }
+
+  function applyStepBtnState(activeStep: 1 | 2) {
+    if (stepBtnContact) {
+      stepBtnContact.classList.toggle('bg-primary', activeStep === 1);
+      stepBtnContact.classList.toggle('text-background-dark', activeStep === 1);
+      stepBtnContact.classList.toggle('text-text-muted', activeStep !== 1);
+    }
+    if (stepBtnPayment) {
+      stepBtnPayment.classList.toggle('bg-primary', activeStep === 2);
+      stepBtnPayment.classList.toggle('text-background-dark', activeStep === 2);
+      stepBtnPayment.classList.toggle('text-text-muted', activeStep !== 2);
+    }
+  }
+
+  function setCheckoutStep(step: 1 | 2) {
+    currentCheckoutStep = step;
+    if (!checkoutStepContact || !checkoutStepPayment) return;
+
+    if (!isMobileCheckout()) {
+      checkoutStepContact.classList.remove('hidden');
+      checkoutStepPayment.classList.remove('hidden', 'md:block');
+      checkoutStepPayment.classList.add('block');
+      document.getElementById('mobile-step-contact-actions')?.classList.add('hidden');
+      document.getElementById('mobile-step-payment-actions')?.classList.add('hidden');
+      return;
+    }
+
+    applyStepBtnState(step);
+
+    if (step === 1) {
+      checkoutStepContact.classList.remove('hidden');
+      checkoutStepPayment.classList.add('hidden');
+      document.getElementById('mobile-step-contact-actions')?.classList.remove('hidden');
+      document.getElementById('mobile-step-payment-actions')?.classList.add('hidden');
+    } else {
+      checkoutStepContact.classList.add('hidden');
+      checkoutStepPayment.classList.remove('hidden');
+      document.getElementById('mobile-step-contact-actions')?.classList.add('hidden');
+      document.getElementById('mobile-step-payment-actions')?.classList.remove('hidden');
+    }
+  }
+
+  function validateContactStep() {
+    const nameEl = document.getElementById('full-name') as HTMLInputElement | null;
+    const phoneEl = document.getElementById('phone') as HTMLInputElement | null;
+    const addressEl = document.getElementById('address') as HTMLInputElement | null;
+    if (!nameEl || !phoneEl || !addressEl) return true;
+
+    let valid = true;
+
+    if (!nameEl.value.trim()) {
+      nameEl.classList.add('ring-2', 'ring-red-500', 'border-red-500');
+      valid = false;
+    }
+
+    const phoneValidation = validateField(phoneEl);
+    if (!phoneValidation.isValid) {
+      showFieldError(phoneEl, phoneValidation.message);
+      valid = false;
+    }
+
+    const addressValidation = validateField(addressEl);
+    if (!addressValidation.isValid) {
+      showFieldError(addressEl, addressValidation.message);
+      valid = false;
+    }
+
+    if (!valid) {
+      showCheckoutNotice('Vui lòng hoàn tất thông tin liên hệ trước khi chọn thanh toán.', 'error');
+      const firstTarget = !nameEl.value.trim() ? nameEl : (!phoneValidation.isValid ? phoneEl : addressEl);
+      firstTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      firstTarget.focus();
+    }
+
+    return valid;
+  }
+
+  stepBtnContact?.addEventListener('click', () => setCheckoutStep(1));
+  stepBtnPayment?.addEventListener('click', () => {
+    if (!isMobileCheckout() || validateContactStep()) {
+      setCheckoutStep(2);
+    }
+  });
+
+  btnStepNext?.addEventListener('click', () => {
+    clearCheckoutNotice();
+    if (validateContactStep()) {
+      setCheckoutStep(2);
+    }
+  });
+
+  btnStepBack?.addEventListener('click', () => setCheckoutStep(1));
+  btnStepReview?.addEventListener('click', () => {
+    document.getElementById('checkout-summary')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  window.addEventListener('resize', () => setCheckoutStep(currentCheckoutStep));
+  setCheckoutStep(1);
+
   btn?.addEventListener('click', async () => {
-    const name = (document.getElementById('full-name') as HTMLInputElement).value.trim();
-    const phone = (document.getElementById('phone') as HTMLInputElement).value.trim();
-    const address = (document.getElementById('address') as HTMLInputElement).value.trim();
+    clearCheckoutNotice();
+    const nameEl = document.getElementById('full-name') as HTMLInputElement;
+    const phoneEl = document.getElementById('phone') as HTMLInputElement;
+    const addressEl = document.getElementById('address') as HTMLInputElement;
+    const name = nameEl.value.trim();
+    const phone = phoneEl.value.trim();
+    const address = addressEl.value.trim();
     const email = (document.getElementById('email') as HTMLInputElement).value.trim();
     const note = (document.getElementById('note') as HTMLTextAreaElement).value.trim();
     const paymentRadio = document.querySelector<HTMLInputElement>('input[name="payment"]:checked');
     const payment_method = paymentRadio?.value;
+    let firstInvalid: HTMLElement | null = null;
 
     if (!name || !phone || !address || !payment_method) {
       if (!payment_method) {
@@ -568,14 +722,35 @@ import Footer from '../components/Footer.astro';
           pmContainer.classList.add('ring-2', 'ring-red-500', 'rounded-xl', 'p-2');
           setTimeout(() => pmContainer.classList.remove('ring-2', 'ring-red-500', 'rounded-xl', 'p-2'), 2000);
         }
-        alert('Vui lòng chọn phương thức thanh toán.');
+        if (isMobileCheckout()) {
+          setCheckoutStep(2);
+        }
+        showCheckoutNotice('Vui lòng chọn phương thức thanh toán.', 'error');
       }
       [document.getElementById('full-name'), document.getElementById('phone'), document.getElementById('address')].forEach(el => {
         if (el && !(el as HTMLInputElement).value.trim()) {
           el.classList.add('ring-2', 'ring-red-500', 'border-red-500');
+          if (!firstInvalid) firstInvalid = el as HTMLElement;
           setTimeout(() => el.classList.remove('ring-2', 'ring-red-500', 'border-red-500'), 2000);
         }
       });
+      const phoneValidation = validateField(phoneEl);
+      if (!phoneValidation.isValid) {
+        showFieldError(phoneEl, phoneValidation.message);
+        if (!firstInvalid) firstInvalid = phoneEl;
+      }
+      const addressValidation = validateField(addressEl);
+      if (!addressValidation.isValid) {
+        showFieldError(addressEl, addressValidation.message);
+        if (!firstInvalid) firstInvalid = addressEl;
+      }
+      if (payment_method) {
+        showCheckoutNotice('Vui lòng điền đầy đủ các trường bắt buộc.', 'error');
+      }
+      if (firstInvalid) {
+        firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        (firstInvalid as HTMLInputElement).focus();
+      }
       return;
     }
 
@@ -655,7 +830,7 @@ import Footer from '../components/Footer.astro';
     } catch (err: any) {
       btn.disabled = false;
       btn.innerHTML = '<span class="material-symbols-outlined">send</span> Gửi yêu cầu tư vấn';
-      alert('Lỗi khi gửi đơn hàng: ' + (err.message || 'Vui lòng thử lại.'));
+      showCheckoutNotice('Lỗi khi gửi đơn hàng: ' + (err.message || 'Vui lòng thử lại.'), 'error');
     }
   });
 

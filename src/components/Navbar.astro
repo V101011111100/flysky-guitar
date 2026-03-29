@@ -1,4 +1,97 @@
 ---
+import { supabase } from '../lib/supabase';
+
+type CategoryRow = { name: string; slug: string };
+
+const { data: categoryRows } = await supabase
+  .from('categories')
+  .select('name, slug');
+
+const categories = (categoryRows || []) as CategoryRow[];
+
+const categoryAliases: Record<string, 'electric' | 'acoustic' | 'classic' | 'bass' | 'piano' | 'ukulele'> = {
+  electric: 'electric',
+  'guitar-dien': 'electric',
+  acoustic: 'acoustic',
+  'guitar-acoustic': 'acoustic',
+  classic: 'classic',
+  'guitar-classic': 'classic',
+  'guitar-classical': 'classic',
+  bass: 'bass',
+  'guitar-bass': 'bass',
+  piano: 'piano',
+  keyboard: 'piano',
+  'piano-keyboard': 'piano',
+  ukulele: 'ukulele',
+};
+
+const normalizedFromName = (name: string): keyof typeof categoryAliases | null => {
+  const n = name.toLowerCase();
+  if (n.includes('điện') || n.includes('dien')) return 'electric';
+  if (n.includes('acoustic')) return 'acoustic';
+  if (n.includes('classic') || n.includes('classical')) return 'classic';
+  if (n.includes('bass')) return 'bass';
+  if (n.includes('piano') || n.includes('keyboard')) return 'piano';
+  if (n.includes('ukulele')) return 'ukulele';
+  return null;
+};
+
+const byType = new Map<'electric' | 'acoustic' | 'classic' | 'bass' | 'piano' | 'ukulele', CategoryRow>();
+for (const c of categories) {
+  const bySlug = categoryAliases[c.slug?.toLowerCase() as keyof typeof categoryAliases] || null;
+  const byName = normalizedFromName(c.name || '');
+  const mapped = (bySlug || byName) as 'electric' | 'acoustic' | 'classic' | 'bass' | 'piano' | 'ukulele' | null;
+  if (mapped && !byType.has(mapped)) {
+    byType.set(mapped, c);
+  }
+}
+
+const shopMenuItems = [
+  {
+    type: 'electric' as const,
+    icon: 'electric_bolt',
+    label: 'Guitar Điện',
+    sub: 'Solid & Semi-Hollow',
+  },
+  {
+    type: 'acoustic' as const,
+    icon: 'forest',
+    label: 'Guitar Acoustic',
+    sub: 'Dreadnought & Jumbo',
+  },
+  {
+    type: 'classic' as const,
+    icon: 'music_note',
+    label: 'Guitar Classic',
+    sub: 'Nylon êm & cân bằng',
+  },
+  {
+    type: 'bass' as const,
+    icon: 'graphic_eq',
+    label: 'Guitar Bass',
+    sub: '4 & 5 dây',
+  },
+  {
+    type: 'piano' as const,
+    icon: 'piano',
+    label: 'Piano',
+    sub: 'Grand, Upright & Digital',
+  },
+  {
+    type: 'ukulele' as const,
+    icon: 'music_note',
+    label: 'Ukulele',
+    sub: 'Nhẹ, sáng và dễ chơi',
+  },
+].map((item) => {
+  const dbCategory = byType.get(item.type);
+  return {
+    href: `/shop?category=${encodeURIComponent(dbCategory?.slug || item.type)}`,
+    icon: item.icon,
+    label: dbCategory?.name || item.label,
+    sub: item.sub,
+  };
+});
 ---
 
 <header class="sticky top-0 z-50 w-full border-b border-solid border-border-dark bg-background-dark/95 backdrop-blur-none lg:backdrop-blur-sm px-4 lg:px-10 py-3">
@@ -28,12 +121,7 @@
                  opacity-0 invisible translate-y-2 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0
                  transition-all duration-200 ease-out"
         >
-          {[
-            { href: '/shop?category=electric', icon: 'electric_bolt', label: 'Guitar Điện', sub: 'Solid & Semi-Hollow' },
-            { href: '/shop?category=acoustic', icon: 'forest', label: 'Guitar Acoustic', sub: 'Dreadnought & Jumbo' },
-            { href: '/shop?category=bass', icon: 'graphic_eq', label: 'Guitar Bass', sub: '4 & 5 dây' },
-            { href: '/shop?category=piano', icon: 'piano', label: 'Piano', sub: 'Grand, Upright & Digital' },
-          ].map((item) => (
+          {shopMenuItems.map((item) => (
             <a
               href={item.href}
               class="flex items-center gap-3 px-4 py-3 hover:bg-border-dark/60 hover:text-primary transition-colors border-b border-border-dark/40 last:border-0"
@@ -67,7 +155,7 @@
         </form>
       </div>
       <div class="flex items-center gap-1">
-        <button class="md:hidden flex items-center justify-center rounded-lg size-10 text-white hover:bg-border-dark transition-colors">
+        <button class="md:hidden flex items-center justify-center rounded-lg size-10 text-white hover:bg-border-dark transition-colors" id="mobile-search-btn" aria-label="Tìm kiếm">
           <span class="material-symbols-outlined">search</span>
         </button>
         <!-- Cart button -->
@@ -85,6 +173,23 @@
         </button>
       </div>
     </div>
+  </div>
+
+  <!-- Mobile Search Bar -->
+  <div id="mobile-search-bar" class="hidden lg:hidden border-t border-border-dark py-3 px-2">
+    <form action="/search" method="get">
+      <div class="relative">
+        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-text-muted">
+          <span class="material-symbols-outlined text-[20px]">search</span>
+        </div>
+        <input id="mobile-search-input" name="q" autofocus
+          class="block w-full rounded-full border border-border-dark bg-border-dark/50 py-2 pl-10 pr-10 text-sm text-white placeholder-text-muted focus:ring-2 focus:ring-primary focus:bg-border-dark focus:border-primary transition-all outline-none"
+          placeholder="Tìm kiếm sản phẩm..." type="text" />
+        <button type="button" id="mobile-search-close" class="absolute inset-y-0 right-0 flex items-center pr-3 text-text-muted hover:text-white transition-colors">
+          <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+      </div>
+    </form>
   </div>
 
   <!-- Mobile Menu -->
@@ -142,11 +247,32 @@
   const mobileMenuPanel = document.getElementById('mobile-menu-panel');
   const mobileMenuClose = document.getElementById('mobile-menu-close');
 
+  let scrollLockY = 0;
+
+  function lockScroll() {
+    scrollLockY = window.scrollY;
+    document.documentElement.classList.add('scroll-locked');
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollLockY}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function unlockScroll() {
+    document.documentElement.classList.remove('scroll-locked');
+    document.body.style.removeProperty('position');
+    document.body.style.removeProperty('top');
+    document.body.style.removeProperty('left');
+    document.body.style.removeProperty('right');
+    document.body.style.removeProperty('overflow');
+    window.scrollTo({ top: scrollLockY, behavior: 'instant' });
+  }
+
   function openMobileMenu() {
     mobileMenu?.classList.remove('pointer-events-none');
     mobileMenu?.classList.add('pointer-events-auto');
-    document.documentElement.style.overflowX = 'hidden';
-    document.body.style.overflow = 'hidden';
+    lockScroll();
     setTimeout(() => {
       mobileMenuOverlay?.classList.remove('opacity-0');
       mobileMenuPanel?.classList.remove('translate-x-full');
@@ -159,12 +285,28 @@
     setTimeout(() => {
       mobileMenu?.classList.add('pointer-events-none');
       mobileMenu?.classList.remove('pointer-events-auto');
-      document.body.style.removeProperty('overflow');
+      unlockScroll();
     }, 300);
-    document.documentElement.style.removeProperty('overflow-x');
   }
 
   mobileMenuBtn?.addEventListener('click', openMobileMenu);
   mobileMenuClose?.addEventListener('click', closeMobileMenu);
   mobileMenuOverlay?.addEventListener('click', closeMobileMenu);
+
+  // Mobile search toggle
+  const mobileSearchBtn = document.getElementById('mobile-search-btn');
+  const mobileSearchBar = document.getElementById('mobile-search-bar');
+  const mobileSearchInput = document.getElementById('mobile-search-input') as HTMLInputElement | null;
+  const mobileSearchClose = document.getElementById('mobile-search-close');
+
+  mobileSearchBtn?.addEventListener('click', () => {
+    mobileSearchBar?.classList.toggle('hidden');
+    if (!mobileSearchBar?.classList.contains('hidden')) {
+      setTimeout(() => mobileSearchInput?.focus(), 50);
+    }
+  });
+  mobileSearchClose?.addEventListener('click', () => {
+    mobileSearchBar?.classList.add('hidden');
+    if (mobileSearchInput) mobileSearchInput.value = '';
+  });
 </script>

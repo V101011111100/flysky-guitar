@@ -119,6 +119,7 @@ const instagramUrl = getSetting('flysky_instagramUrl', 'https://instagram.com/fl
         <span class="material-symbols-outlined text-[18px]">send</span>
         Hoàn tất & Gửi tin nhắn
       </button>
+      <div id="chat-form-error" class="hidden mt-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400"></div>
     </form>
 
     <!-- Success state (hidden) -->
@@ -192,7 +193,7 @@ const instagramUrl = getSetting('flysky_instagramUrl', 'https://instagram.com/fl
           <img src={s.iconSrc} alt={s.label} class="social-img-icon" loading="lazy" />
         )}
         {s.iconType === 'material' && (
-          <span class="material-symbols-outlined text-[18px]">{s.icon}</span>
+          <span class="material-symbols-outlined text-[30px]">{s.icon}</span>
         )}
       </a>
     ))}
@@ -210,8 +211,8 @@ const instagramUrl = getSetting('flysky_instagramUrl', 'https://instagram.com/fl
     animation: floatUp 0.5s ease-out forwards;
   }
   .social-lottie-icon {
-    width: 18px;
-    height: 18px;
+    width: 34px;
+    height: 34px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -222,8 +223,8 @@ const instagramUrl = getSetting('flysky_instagramUrl', 'https://instagram.com/fl
     height: 100% !important;
   }
   .social-img-icon {
-    width: 18px;
-    height: 18px;
+    width: 34px;
+    height: 34px;
     object-fit: contain;
     pointer-events: none;
   }
@@ -265,6 +266,14 @@ const instagramUrl = getSetting('flysky_instagramUrl', 'https://instagram.com/fl
   const chatIcon = document.getElementById('chat-icon')!;
   const form = document.getElementById('chat-form') as HTMLFormElement;
   const successEl = document.getElementById('chat-success')!;
+  const chatErrorEl = document.getElementById('chat-form-error') as HTMLDivElement;
+
+  function showChatError(msg: string) {
+    if (!chatErrorEl) return;
+    chatErrorEl.textContent = msg;
+    chatErrorEl.classList.remove('hidden');
+    setTimeout(() => chatErrorEl.classList.add('hidden'), 4000);
+  }
 
   let isOpen = false;
 
@@ -343,10 +352,10 @@ const instagramUrl = getSetting('flysky_instagramUrl', 'https://instagram.com/fl
           closeChat();
         }, 3000);
       } else {
-        alert('Lỗi: ' + (data.error || 'Không thể gửi. Vui lòng thử lại.'));
+        showChatError('Lỗi: ' + (data.error || 'Không thể gửi. Vui lòng thử lại.'));
       }
     } catch {
-      alert('Lỗi kết nối. Vui lòng thử lại sau.');
+      showChatError('Lỗi kết nối. Vui lòng thử lại sau.');
     } finally {
       submitBtn.disabled = false;
       submitBtn.innerHTML = '<span class="material-symbols-outlined text-[18px]">send</span> Hoàn tất & Gửi tin nhắn';

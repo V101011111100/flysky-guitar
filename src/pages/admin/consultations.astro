@@ -364,6 +364,26 @@ const statusLabel: Record<string, string> = {
   const editNote  = document.getElementById('edit-note') as HTMLTextAreaElement;
   const editAllNames = document.getElementById('edit-all-names')!;
 
+  let _editScrollY = 0;
+  function openEditModal() {
+    _editScrollY = window.scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${_editScrollY}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.overflow = 'hidden';
+    editModal.classList.remove('hidden');
+  }
+  function closeEditModal() {
+    editModal.classList.add('hidden');
+    document.body.style.removeProperty('position');
+    document.body.style.removeProperty('top');
+    document.body.style.removeProperty('left');
+    document.body.style.removeProperty('right');
+    document.body.style.removeProperty('overflow');
+    window.scrollTo({ top: _editScrollY, behavior: 'instant' });
+  }
+
   let currentEditPhone = '';
 
   document.querySelectorAll<HTMLButtonElement>('.btn-edit-name').forEach(btn => {
@@ -390,13 +410,13 @@ const statusLabel: Record<string, string> = {
         editAllNames.innerHTML = '';
       }
 
-      editModal.classList.remove('hidden');
+      openEditModal();
       editInput.focus();
     });
   });
 
-  document.getElementById('edit-modal-close')?.addEventListener('click', () => editModal.classList.add('hidden'));
-  editModal.addEventListener('click', e => { if (e.target === editModal) editModal.classList.add('hidden'); });
+  document.getElementById('edit-modal-close')?.addEventListener('click', closeEditModal);
+  editModal.addEventListener('click', e => { if (e.target === editModal) closeEditModal(); });
 
   async function saveCustomerName(displayName: string | null) {
     const btn = document.getElementById('edit-save-btn') as HTMLButtonElement;
@@ -414,7 +434,7 @@ const statusLabel: Record<string, string> = {
       const data = await res.json();
       if (data.success) {
         showToast(displayName ? 'Đã lưu tên chính thức!' : 'Đã xóa tên chính thức!');
-        editModal.classList.add('hidden');
+        closeEditModal();
         setTimeout(() => location.reload(), 800);
       } else {
         throw new Error(data.error);
@@ -437,6 +457,26 @@ const statusLabel: Record<string, string> = {
   const modalName = document.getElementById('modal-cus-name')!;
   const modalPhone = document.getElementById('modal-cus-phone')!;
 
+  let _histScrollY = 0;
+  function openHistoryModal() {
+    _histScrollY = window.scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${_histScrollY}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.overflow = 'hidden';
+    modal.classList.remove('hidden');
+  }
+  function closeHistoryModal() {
+    modal.classList.add('hidden');
+    document.body.style.removeProperty('position');
+    document.body.style.removeProperty('top');
+    document.body.style.removeProperty('left');
+    document.body.style.removeProperty('right');
+    document.body.style.removeProperty('overflow');
+    window.scrollTo({ top: _histScrollY, behavior: 'instant' });
+}
+
   // Collect order data from inline data attributes (passed via row)
   document.querySelectorAll<HTMLButtonElement>('.btn-detail').forEach(btn => {
     btn.addEventListener('click', async () => {
@@ -445,7 +485,7 @@ const statusLabel: Record<string, string> = {
       modalName.textContent = name;
       modalPhone.textContent = phone;
       modalBody.innerHTML = '<div style="text-align:center;padding:32px;color:#64748b;"><span class="material-symbols-outlined" style="animation:spin 1s linear infinite;font-size:32px;">autorenew</span></div>';
-      modal.classList.remove('hidden');
+      openHistoryModal();
 
       // Fetch orders for this customer
       const res = await fetch(`/api/orders/by-phone?phone=${encodeURIComponent(phone)}`);
@@ -513,8 +553,8 @@ const statusLabel: Record<string, string> = {
     });
   });
 
-  document.getElementById('modal-close')?.addEventListener('click', () => modal.classList.add('hidden'));
-  modal.addEventListener('click', e => { if (e.target === modal) modal.classList.add('hidden'); });
+  document.getElementById('modal-close')?.addEventListener('click', closeHistoryModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeHistoryModal(); });
 </script>
 
 <style>

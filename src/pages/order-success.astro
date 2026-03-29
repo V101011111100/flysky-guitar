@@ -19,7 +19,7 @@ import Footer from '../components/Footer.astro';
           <div class="w-20 h-20 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center mx-auto mb-5 success-icon">
             <span class="material-symbols-outlined text-primary text-4xl" style="font-variation-settings: 'FILL' 1">check_circle</span>
           </div>
-          <h1 class="text-white text-3xl font-extrabold mb-2" id="success-title">Thanh toán thành công!</h1>
+          <h1 class="text-white text-3xl font-extrabold mb-2" id="success-title">Đơn hàng đã được ghi nhận!</h1>
           <p class="text-text-muted leading-relaxed max-w-md mx-auto" id="success-desc">
             Cảm ơn bạn đã tin tưởng FlySky Guitar. Đơn hàng của bạn đã được tiếp nhận và đang được chuẩn bị để giao đến bạn.
           </p>
@@ -40,7 +40,7 @@ import Footer from '../components/Footer.astro';
               <p class="text-text-muted text-xs uppercase font-bold tracking-wider mb-1">Trạng thái</p>
               <span id="status-badge" class="inline-flex items-center gap-1.5 bg-green-500/10 border border-green-500/30 text-green-400 text-xs font-bold px-3 py-1 rounded-full">
                 <span class="w-1.5 h-1.5 rounded-full bg-green-400"></span>
-                <span id="status-text">Đã tiếp nhận</span>
+                <span id="status-text">Chờ xác nhận</span>
               </span>
             </div>
           </div>
@@ -121,7 +121,16 @@ import Footer from '../components/Footer.astro';
     window.location.href = '/shop';
   } else {
     const order = JSON.parse(raw);
+
+    if (order?.paymentMethod === 'bank') {
+      const confirmedOrderNum = sessionStorage.getItem('flysky_payment_confirmed_order');
+      if (!confirmedOrderNum || confirmedOrderNum !== order.orderNum) {
+        window.location.href = `/payment?order=${encodeURIComponent(order.orderNum || '')}`;
+      }
+    }
+
     sessionStorage.removeItem('flysky_order'); // clean up
+    sessionStorage.removeItem('flysky_payment_confirmed_order');
 
     // Populate order number
     const numEl = document.getElementById('order-num');
@@ -176,10 +185,10 @@ import Footer from '../components/Footer.astro';
       if (noticeEl) noticeEl.innerHTML   = 'Email xác nhận yêu cầu trả góp đã được gửi đến địa chỉ của bạn. Nhân viên sẽ liên hệ trong vòng <span class="text-white font-semibold">24 giờ</span> để tư vấn.';
     } else {
       // bank — default
-      if (titleEl)  titleEl.textContent  = 'Thanh toán thành công!';
-      if (descEl)   descEl.textContent   = 'Cảm ơn bạn đã thanh toán. Đơn hàng đang được xử lý và sẽ giao đến bạn sớm nhất.';
-      if (statusEl) statusEl.textContent = 'Đã thanh toán';
-      if (noticeEl) noticeEl.innerHTML   = 'Email xác nhận thanh toán đã được gửi đến địa chỉ của bạn. Chúng tôi sẽ liên hệ trong vòng <span class="text-white font-semibold">24 giờ</span> để xác nhận đơn hàng.';
+      if (titleEl)  titleEl.textContent  = 'Yêu cầu thanh toán đã được ghi nhận!';
+      if (descEl)   descEl.textContent   = 'Chúng tôi đã nhận thông tin thanh toán của bạn và sẽ xác minh trong thời gian sớm nhất.';
+      if (statusEl) statusEl.textContent = 'Chờ xác nhận thanh toán';
+      if (noticeEl) noticeEl.innerHTML   = 'Thông báo xác nhận đã được gửi đến địa chỉ của bạn. Chúng tôi sẽ liên hệ trong vòng <span class="text-white font-semibold">24 giờ</span> sau khi đối soát.';
     }
 
     // Contact info

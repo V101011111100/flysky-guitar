@@ -566,6 +566,13 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 
     providerModal.classList.add('open');
     providerModal.setAttribute('aria-hidden', 'false');
+    const _sy = window.scrollY;
+    providerModal.dataset.scrollY = String(_sy);
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${_sy}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.overflow = 'hidden';
   }
 
   function closeProviderModal() {
@@ -573,6 +580,13 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
     providerModal.setAttribute('aria-hidden', 'true');
     providerForm.innerHTML = '';
     activeProviderCode = '';
+    const sy = Number(providerModal.dataset.scrollY || 0);
+    document.body.style.removeProperty('position');
+    document.body.style.removeProperty('top');
+    document.body.style.removeProperty('left');
+    document.body.style.removeProperty('right');
+    document.body.style.removeProperty('overflow');
+    window.scrollTo({ top: sy, behavior: 'instant' });
   }
 
   async function updateProvider(providerCode: string, patch: { enabled?: boolean; config?: Record<string, any> }) {

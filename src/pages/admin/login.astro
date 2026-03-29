@@ -241,6 +241,7 @@ if (Astro.request.method === "POST") {
       gap: 8px;
     }
     .topbar-tag span { color: #f48c25; }
+    .topbar-tag-icon { font-size: 16px; color: #f48c25; }
 
     /* ── Main area ── */
     .main {
@@ -317,6 +318,11 @@ if (Astro.request.method === "POST") {
       color: #f48c25;
       text-decoration: none;
       transition: opacity 0.15s;
+      background: transparent;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      font-family: inherit;
     }
     .forgot-link:hover { opacity: 0.8; }
 
@@ -425,6 +431,7 @@ if (Astro.request.method === "POST") {
     }
     .login-btn:active { transform: translateY(0); }
     .login-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .auth-btn-icon { font-size: 20px; }
 
     /* Error box */
     .error-box {
@@ -467,29 +474,37 @@ if (Astro.request.method === "POST") {
       align-items: center;
       gap: 14px;
     }
-    .social-links {
-      display: flex;
-      gap: 16px;
-    }
-    .social-link {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      border: 1px solid #2a2015;
-      background: #0c0a07;
-      display: flex;
+    .copyright { font-size: 11px; color: #4a3a2a; text-align: center; }
+
+    .mfa-header { text-align: center; margin-bottom: 24px; }
+    .mfa-badge {
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;
+      background: rgba(244,140,37,.1);
+      display: inline-flex;
       align-items: center;
       justify-content: center;
+      margin-bottom: 16px;
+    }
+    .mfa-badge-icon { font-size: 32px; color: #f48c25; }
+    .mfa-code-input {
+      letter-spacing: 8px;
+      font-size: 22px;
+      font-weight: 800;
+      text-align: center;
+      padding-left: 16px;
+    }
+    .mfa-verify-btn { margin-top: 8px; }
+    .mfa-back-wrap { text-align: center; margin-top: 20px; }
+    .mfa-back-link {
+      font-size: 13px;
+      color: #6b5a46;
       text-decoration: none;
-      transition: all 0.2s;
+      transition: color .15s;
     }
-    .social-link:hover {
-      border-color: #f48c25;
-      background: rgba(244,140,37,0.1);
-    }
-    .social-link svg { width: 16px; height: 16px; fill: #a08060; }
-    .social-link:hover svg { fill: #f48c25; }
-    .copyright { font-size: 11px; color: #4a3a2a; text-align: center; }
+    .mfa-back-link:hover { color: #f48c25; }
+    .mfa-back-link-icon { font-size: 14px; vertical-align: middle; }
 
     /* Shake animation */
     @keyframes shake {
@@ -527,7 +542,7 @@ if (Astro.request.method === "POST") {
         <span class="brand-name">FlySky Guitar</span>
       </a>
       <div class="topbar-tag">
-        <span class="material-symbols-outlined" style="font-size:16px;color:#f48c25;">admin_panel_settings</span>
+        <span class="material-symbols-outlined topbar-tag-icon">admin_panel_settings</span>
         Hệ thống quản trị
       </div>
     </nav>
@@ -569,7 +584,7 @@ if (Astro.request.method === "POST") {
           <div class="field">
             <div class="field-header">
               <label class="field-label" for="password">Mật khẩu</label>
-              <a href="#" class="forgot-link" onclick="return false;">Quên mật khẩu?</a>
+              <button type="button" class="forgot-link">Quên mật khẩu?</button>
             </div>
             <div class="input-wrap">
               <span class="material-symbols-outlined input-icon">lock</span>
@@ -594,7 +609,7 @@ if (Astro.request.method === "POST") {
 
           <!-- Submit -->
           <button class="login-btn" type="submit" id="login-btn">
-            <span class="material-symbols-outlined" style="font-size:20px;">login</span>
+            <span class="material-symbols-outlined auth-btn-icon">login</span>
             Đăng nhập Quản trị viên
           </button>
 
@@ -608,29 +623,15 @@ if (Astro.request.method === "POST") {
         <!-- Footer -->
         <div class="form-footer">
           <div class="divider">Theo dõi FlySky Guitar</div>
-          <div class="social-links">
-            <!-- Facebook -->
-            <a href="https://facebook.com" target="_blank" class="social-link" title="Facebook">
-              <svg viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-            </a>
-            <!-- Instagram -->
-            <a href="https://instagram.com" target="_blank" class="social-link" title="Instagram">
-              <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" style="fill:none;stroke:#a08060;stroke-width:2"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" style="stroke:#a08060;stroke-width:2;stroke-linecap:round"/></svg>
-            </a>
-            <!-- YouTube -->
-            <a href="https://youtube.com" target="_blank" class="social-link" title="YouTube">
-              <svg viewBox="0 0 24 24"><path d="M22.54 6.42A2.78 2.78 0 0 0 20.58 4.4C18.88 4 12 4 12 4s-6.88 0-8.58.46a2.78 2.78 0 0 0-1.95 2 29 29 0 0 0-.47 5.25 29 29 0 0 0 .47 5.25A2.78 2.78 0 0 0 3.42 19.6C5.12 20 12 20 12 20s6.88 0 8.58-.46a2.78 2.78 0 0 0 1.95-2 29 29 0 0 0 .47-5.25 29 29 0 0 0-.46-5.83z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" style="fill:#a08060"/></svg>
-            </a>
-          </div>
           <p class="copyright">© 2026 FlySky Guitar Admin Portal. All Rights Reserved.</p>
         </div>
       </div>
 
       <!-- 2FA Verification form (shown after password auth when MFA is enabled) -->
       <div class="form-card" id="mfa-card" data-remember={mfaRememberMe ? 'true' : 'false'} style={needsMfa ? '' : 'display:none;'}>
-        <div style="text-align:center;margin-bottom:24px;">
-          <div style="width:64px;height:64px;border-radius:16px;background:rgba(244,140,37,.1);display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px;">
-            <span class="material-symbols-outlined" style="font-size:32px;color:#f48c25;">verified_user</span>
+        <div class="mfa-header">
+          <div class="mfa-badge">
+            <span class="material-symbols-outlined mfa-badge-icon">verified_user</span>
           </div>
           <h2 class="form-title">Xác thực 2 lớp</h2>
           <p class="form-sub">Nhập mã 6 số từ ứng dụng Authenticator để tiếp tục</p>
@@ -650,22 +651,22 @@ if (Astro.request.method === "POST") {
               maxlength="6"
               autocomplete="one-time-code"
               inputmode="numeric"
-              style="letter-spacing:8px;font-size:22px;font-weight:800;text-align:center;padding-left:16px;"
+              class="form-input mfa-code-input"
               autofocus
             />
           </div>
         </div>
 
-        <button class="login-btn" type="button" id="verify-mfa-btn" style="margin-top:8px;">
-          <span class="material-symbols-outlined" style="font-size:20px;">check_circle</span>
+        <button class="login-btn mfa-verify-btn" type="button" id="verify-mfa-btn">
+          <span class="material-symbols-outlined auth-btn-icon">check_circle</span>
           Xác nhận đăng nhập
         </button>
 
         <div class="error-box" id="mfa-error" style="display:none;"></div>
 
-        <div style="text-align:center;margin-top:20px;">
-          <a href="/admin/login" style="font-size:13px;color:#6b5a46;text-decoration:none;transition:color .15s;" onmouseover="this.style.color='#f48c25'" onmouseout="this.style.color='#6b5a46'">
-            <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">arrow_back</span>
+        <div class="mfa-back-wrap">
+          <a href="/admin/login" class="mfa-back-link">
+            <span class="material-symbols-outlined mfa-back-link-icon">arrow_back</span>
             Quay lại đăng nhập
           </a>
         </div>
@@ -678,7 +679,7 @@ if (Astro.request.method === "POST") {
       const btn = document.getElementById('login-btn') as HTMLButtonElement | null;
       if (btn) {
         btn.disabled = true;
-        btn.innerHTML = '<span class="material-symbols-outlined btn-spinner" style="font-size:20px;">autorenew</span> Đang xác thực...';
+        btn.innerHTML = '<span class="material-symbols-outlined auth-btn-icon btn-spinner">autorenew</span> Đang xác thực...';
       }
     });
     
@@ -745,7 +746,7 @@ if (Astro.request.method === "POST") {
 
       if (mfaError) mfaError.style.display = 'none';
       verifyMfaBtn.disabled = true;
-      verifyMfaBtn.innerHTML = '<span class="material-symbols-outlined btn-spinner" style="font-size:20px;">autorenew</span> Đang xác thực...';
+      verifyMfaBtn.innerHTML = '<span class="material-symbols-outlined auth-btn-icon btn-spinner">autorenew</span> Đang xác thực...';
 
       try {
         // First get MFA factors to find the factorId
@@ -769,7 +770,7 @@ if (Astro.request.method === "POST") {
         const verifyData = await verifyRes.json();
 
         if (verifyData.success) {
-          verifyMfaBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size:20px;">check_circle</span> Thành công! Đang chuyển hướng...';
+          verifyMfaBtn.innerHTML = '<span class="material-symbols-outlined auth-btn-icon">check_circle</span> Thành công! Đang chuyển hướng...';
           window.location.href = '/admin';
         } else {
           if (mfaError) {
@@ -782,7 +783,7 @@ if (Astro.request.method === "POST") {
             totpCodeInput.focus();
           }
           verifyMfaBtn.disabled = false;
-          verifyMfaBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size:20px;">check_circle</span> Xác nhận đăng nhập';
+          verifyMfaBtn.innerHTML = '<span class="material-symbols-outlined auth-btn-icon">check_circle</span> Xác nhận đăng nhập';
         }
       } catch (err: any) {
         if (mfaError) {
@@ -790,7 +791,7 @@ if (Astro.request.method === "POST") {
           mfaError.style.display = 'block';
         }
         verifyMfaBtn.disabled = false;
-        verifyMfaBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size:20px;">check_circle</span> Xác nhận đăng nhập';
+        verifyMfaBtn.innerHTML = '<span class="material-symbols-outlined auth-btn-icon">check_circle</span> Xác nhận đăng nhập';
       }
     });
   </script>

@@ -18,10 +18,10 @@ const bestSellers = (dbData || []).map(p => ({
 }));
 ---
 
-<section class="py-16 bg-[#1a120b]">
+<section class="py-16 bg-wood-dark">
   <div class="mx-auto max-w-7xl px-4 lg:px-10">
     <div class="flex items-center justify-between mb-10">
-      <h2 class="text-white text-3xl font-bold">Sản phẩm bán chạy</h2>
+      <h2 class="text-white type-display-section">Sản phẩm bán chạy</h2>
       <a href="/shop" class="hidden md:flex items-center gap-1 text-primary font-medium hover:text-white transition-colors text-sm">
         Xem tất cả <span class="material-symbols-outlined text-sm">arrow_forward</span>
       </a>
@@ -32,7 +32,7 @@ const bestSellers = (dbData || []).map(p => ({
           href={`/products/${product.id}`}
           class="group flex flex-col bg-card-dark rounded-xl overflow-hidden hover:shadow-[0_0_20px_rgba(244,140,37,0.15)] transition-all border border-border-dark cursor-pointer"
         >
-          <div class="aspect-square w-full bg-[#2a2015] relative p-4 flex items-center justify-center overflow-hidden">
+          <div class="aspect-square w-full bg-surface-panel relative p-4 flex items-center justify-center overflow-hidden">
             <div
               class="w-full h-full bg-contain bg-center bg-no-repeat group-hover:scale-110 transition-transform duration-300"
               style={`background-image: url("${product.image}");`}
@@ -52,7 +52,7 @@ const bestSellers = (dbData || []).map(p => ({
           </div>
           <div class="p-4 flex flex-col gap-2 flex-grow">
             <p class="text-primary text-[10px] font-bold uppercase tracking-wider">{product.categoryLabel}</p>
-            <h3 class="text-white text-base font-bold group-hover:text-primary transition-colors leading-tight">{product.name}</h3>
+            <h3 class="text-white type-title-card group-hover:text-primary transition-colors leading-tight">{product.name}</h3>
             <div class="mt-auto flex items-center justify-between pt-2 border-t border-border-dark/50">
               <span class="text-white font-bold text-base">{product.priceFormatted}</span>
               <span class="bg-border-dark group-hover:bg-primary text-white group-hover:text-background-dark rounded-full p-2 transition-colors">
