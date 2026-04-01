@@ -1,10 +1,16 @@
 ---
 import { supabase } from '../lib/supabase';
 
+interface Props {
+  isAdmin?: boolean;
+}
+
+const { isAdmin = false } = Astro.props;
+
 const { data: heroSettings } = await supabase
   .from('site_settings')
   .select('key, value')
-  .in('key', ['flysky_heroImageUrl', 'flysky_heroImages', 'flysky_heroEffect', 'flysky_heroIntervalSec']);
+  .in('key', ['flysky_heroImageUrl', 'flysky_heroImages', 'flysky_heroEffect', 'flysky_heroIntervalSec', 'flysky_heroH1', 'flysky_heroSub']);
 
 const heroImageUrl =
   heroSettings?.find((s: any) => s.key === 'flysky_heroImageUrl')?.value ||
@@ -19,6 +25,9 @@ const heroImages = String(heroImagesRaw)
   .map((x: string) => x.trim())
   .filter(Boolean);
 
+const heroTitle = heroSettings?.find((s: any) => s.key === 'flysky_heroH1')?.value || 'Khơi dậy âm thanh của bạn';
+const heroSubtitle = heroSettings?.find((s: any) => s.key === 'flysky_heroSub')?.value || 'Đàn guitar thủ công cao cấp dành cho những nghệ sĩ hiện đại. Trải nghiệm giai điệu cộng hưởng với tâm hồn bạn.';
+
 const imageList = heroImages.length > 0 ? heroImages : [heroImageUrl];
 const heroEffect = heroEffectRaw === 'zoom' ? 'zoom' : 'fade';
 const heroIntervalSec = Math.max(2, Math.min(15, parseInt(String(heroIntervalRaw), 10) || 4));
@@ -32,12 +41,8 @@ const heroIntervalMs = heroIntervalSec * 1000;
   <div class="relative z-10 mx-auto max-w-7xl px-4 lg:px-10 py-16 lg:py-24">
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
       <div class="flex flex-col gap-6 text-left order-2 lg:order-1">
-        <h1 class="text-white type-display-hero" data-setting="flysky_heroH1">
-          Khơi dậy <br /><span class="text-primary">âm thanh của bạn</span>
-        </h1>
-        <h2 class="text-text-muted type-body-lead font-medium max-w-lg" data-setting="flysky_heroSub">
-          Đàn guitar thủ công cao cấp dành cho những nghệ sĩ hiện đại. Trải nghiệm giai điệu cộng hưởng với tâm hồn bạn.
-        </h2>
+        <h1 class={`text-white type-display-hero ${isAdmin ? 'quick-editable' : ''}`} data-setting-key={isAdmin ? 'flysky_heroH1' : undefined}>{heroTitle}</h1>
+        <h2 class={`text-text-muted type-body-lead font-medium max-w-lg ${isAdmin ? 'quick-editable' : ''}`} data-setting-key={isAdmin ? 'flysky_heroSub' : undefined}>{heroSubtitle}</h2>
         <div class="flex gap-4 mt-4">
           <a href="/shop" class="flex items-center justify-center rounded-lg h-12 px-8 bg-primary hover:bg-primary/90 text-background-dark text-base font-bold transition-transform hover:scale-105 cursor-pointer">
             Xem sản phẩm mới

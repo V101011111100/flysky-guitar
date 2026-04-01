@@ -22,7 +22,7 @@ function normalizeStringList(value: unknown): string[] {
 function getConfiguredAdminEmails(): string[] {
   const configured = (import.meta.env.ADMIN_EMAILS || '')
     .split(',')
-    .map((entry) => entry.trim().toLowerCase())
+    .map((entry: string) => entry.trim().toLowerCase())
     .filter(Boolean);
 
   if (configured.length > 0) {
@@ -85,6 +85,7 @@ export async function getAdminMfaState(accessToken?: string, refreshToken?: stri
       isAdmin: false,
       requiresMfa: false,
       user: null,
+      session: null,
     };
   }
 
@@ -99,6 +100,7 @@ export async function getAdminMfaState(accessToken?: string, refreshToken?: stri
       isAdmin: false,
       requiresMfa: false,
       user: null,
+      session: null,
     };
   }
 
@@ -111,5 +113,6 @@ export async function getAdminMfaState(accessToken?: string, refreshToken?: stri
     isAdmin,
     requiresMfa,
     user: data.user,
+    session: data.session ?? null,
   };
 }

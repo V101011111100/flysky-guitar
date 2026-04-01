@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { createClient } from '@supabase/supabase-js';
 import { ensureSameOrigin } from '../../../lib/security';
+import { triggerCustomWorkflowEvent, triggerWelcomeSeriesWorkflow } from '../../../lib/marketing';
 
 function getAdminClient() {
   const url = import.meta.env.SUPABASE_URL || '';
@@ -64,6 +65,12 @@ export const POST: APIRoute = async ({ request }) => {
         });
       }
 
+      await triggerWelcomeSeriesWorkflow(admin, email);
+      await triggerCustomWorkflowEvent(admin, 'newsletter_subscribed', email, {
+        email,
+        customer_name: body?.name || 'bạn',
+      });
+
       return new Response(JSON.stringify({ success: true, state: 'subscribed' }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
@@ -88,6 +95,12 @@ export const POST: APIRoute = async ({ request }) => {
         headers: { 'Content-Type': 'application/json' },
       });
     }
+
+    await triggerWelcomeSeriesWorkflow(admin, email);
+    await triggerCustomWorkflowEvent(admin, 'newsletter_subscribed', email, {
+      email,
+      customer_name: body?.name || 'bạn',
+    });
 
     return new Response(JSON.stringify({ success: true, state: 'reactivated' }), {
       status: 200,

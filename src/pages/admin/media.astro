@@ -8,9 +8,6 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
     <aside class="dir-sidebar">
       <div class="dir-header">
         <h3 class="dir-title">Thư mục</h3>
-        <button class="icon-btn" title="Thêm thư mục mới">
-          <span class="material-symbols-outlined">create_new_folder</span>
-        </button>
       </div>
       <nav class="dir-nav" id="dir-nav">
         <!-- Dynamically populated from R2 folders -->
@@ -34,20 +31,22 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
           </div>
         </div>
         <div class="header-actions">
+          <select class="sort-select sort-select-header" aria-label="Sắp xếp tệp">
+            <option>Mới nhất</option>
+            <option>Cũ nhất</option>
+            <option>Kích thước (Lớn nhất)</option>
+          </select>
           <label class="btn-upload" style="cursor: pointer;">
             <span class="material-upload"></span>
             <span class="material-symbols-outlined">cloud_upload</span>
             Tải lên mới
             <input type="file" id="file-upload" style="display: none;" accept="image/*,video/*" multiple />
           </label>
-          <button class="icon-btn">
-            <span class="material-symbols-outlined">notifications</span>
-          </button>
         </div>
       </header>
 
       <!-- Source Switcher -->
-      <div id="source-switcher" style="display:flex;align-items:center;gap:8px;padding:8px 20px;border-bottom:1px solid rgba(244,140,37,0.1);background:rgba(34,25,16,0.6);">
+      <div id="source-switcher" class="source-switcher">
         <button id="src-r2" class="src-tab src-tab-active" onclick="switchSource('r2')">
           <span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;">cloud</span>
           R2 (Sản phẩm)
@@ -56,7 +55,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
           <span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;">database</span>
           Supabase Storage
         </button>
-        <span id="storage-badge" style="margin-left:auto;font-size:11px;color:#64748b;">site-media bucket</span>
+        <span id="storage-badge" class="storage-badge">site-media bucket</span>
       </div>
 
       <!-- Toolbar / Filters -->
@@ -67,24 +66,25 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
           <button class="filter-chip">Videos</button>
           <button class="filter-chip">Thư mục</button>
           <div class="divider-y"></div>
-          <select class="sort-select">
+          <select class="sort-select toolbar-sort-select">
             <option>Mới nhất</option>
             <option>Cũ nhất</option>
             <option>Kích thước (Lớn nhất)</option>
           </select>
         </div>
         <div class="actions-flex">
-          <button class="action-icon text-red" id="btn-delete-multiple" title="Xóa tệp"><span class="material-symbols-outlined">delete</span></button>
-          <button class="action-icon text-primary" title="Di chuyển"><span class="material-symbols-outlined">folder_shared</span></button>
-          <button class="action-icon text-primary" title="Tải xuống"><span class="material-symbols-outlined">download</span></button>
+          <button class="action-icon text-red" id="btn-delete-multiple" title="Xóa tệp đã chọn"><span class="material-symbols-outlined">delete</span></button>
         </div>
       </div>
 
       <!-- R2 Media Grid -->
       <div class="grid-scroll-area" id="r2-grid-area">
-        <div id="media-loading" style="display: flex; justify-content: center; padding: 40px; color: #94a3b8;">
-          <span class="material-symbols-outlined" style="animation: spin 1s linear infinite;">autorenew</span>
-          <span style="margin-left: 8px;">Đang tải danh sách...</span>
+        <div id="media-loading" class="loading-state">
+          <span class="loading-ring" aria-hidden="true"></span>
+          <div>
+            <p class="loading-title">Đang đồng bộ thư viện</p>
+            <p class="loading-subtitle">Vui lòng chờ trong giây lát...</p>
+          </div>
         </div>
         <div class="media-grid" id="media-grid" style="display: none;">
           <!-- Dynamically populated -->
@@ -93,9 +93,12 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 
       <!-- Supabase Storage Grid -->
       <div class="grid-scroll-area" id="storage-grid-area" style="display:none;">
-        <div id="storage-loading" style="display:flex;justify-content:center;padding:40px;color:#94a3b8;">
-          <span class="material-symbols-outlined" style="animation: spin 1s linear infinite;">autorenew</span>
-          <span style="margin-left:8px;">Đang tải Supabase Storage...</span>
+        <div id="storage-loading" class="loading-state">
+          <span class="loading-ring" aria-hidden="true"></span>
+          <div>
+            <p class="loading-title">Đang tải Supabase Storage</p>
+            <p class="loading-subtitle">Đang lấy danh sách tệp trong bucket...</p>
+          </div>
         </div>
         <div class="media-grid" id="storage-grid" style="display:none;">
           <!-- Dynamically populated -->
@@ -454,7 +457,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
           const isLinked = file.linkedProducts && file.linkedProducts.length > 0;
           const linkBadge = isLinked ? `
             <div class="item-badge-linked" title="Đang được sử dụng bởi sản phẩm">
-              <span class="material-symbols-outlined material-fill" style="font-size: 14px;">lock</span>
+              <span class="material-symbols-outlined" style="font-size: 14px;">link</span>
             </div>
           ` : '';
           
@@ -1268,6 +1271,10 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
     align-items: center;
     gap: 12px;
   }
+  .sort-select-header {
+    display: none;
+    min-width: 138px;
+  }
   .btn-upload {
     display: flex;
     align-items: center;
@@ -1305,6 +1312,19 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
     color: #f48c25;
     border-bottom-color: #f48c25;
   }
+  .source-switcher {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+    border-bottom: 1px solid rgba(244,140,37,0.1);
+    background: rgba(34,25,16,0.6);
+  }
+  .storage-badge {
+    margin-left: auto;
+    font-size: 11px;
+    color: #64748b;
+  }
 
   /* Toolbar Filter */
   .toolbar {
@@ -1323,12 +1343,20 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
     overflow-x: auto;
   }
   .filter-chip {
-    padding: 6px 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 38px;
+    min-width: 86px;
+    padding: 0 16px;
     border-radius: 9999px;
     background: #27272a;
     color: #94a3b8;
     font-size: 14px;
     font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+    flex: 0 0 auto;
     border: 1px solid transparent;
     cursor: pointer;
     transition: all 0.2s;
@@ -1523,11 +1551,44 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
     bottom: 8px; right: 8px;
     z-index: 9;
     width: 24px; height: 24px;
-    background: rgba(239, 68, 68, 0.9);
+    background: rgba(15,23,42,0.78);
+    border: 1px solid rgba(245,158,11,0.45);
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    color: #fff;
+    color: #f59e0b;
     box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
+  }
+
+  .loading-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 40px 20px;
+    color: #cbd5e1;
+    border: 1px dashed rgba(244,140,37,0.18);
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(244,140,37,0.08), rgba(34,25,16,0.35));
+  }
+  .loading-title {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: #f8fafc;
+  }
+  .loading-subtitle {
+    margin: 2px 0 0;
+    font-size: 11px;
+    color: #94a3b8;
+  }
+  .loading-ring {
+    width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    border: 2px solid rgba(244,140,37,0.25);
+    border-top-color: #f48c25;
+    animation: spin .9s linear infinite;
+    flex-shrink: 0;
   }
 
   .item-overlay {
@@ -1741,7 +1802,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
     padding: 12px 16px; border-radius: 8px;
     color: white; font-size: 13px; font-weight: 600;
     box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-    background: #27272a; border: 1px solid #4a3a2a;
+    background: #27272a; border: 1px solid rgba(244,140,37,.1);
     transform: translateY(20px); opacity: 1; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .toast-success { border-left: 4px solid #10b981; }
@@ -1750,4 +1811,220 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
   .toast-error .material-symbols-outlined { color: #ef4444; }
   
   @keyframes spin { 100% { transform: rotate(360deg); } }
+
+  @media (max-width: 1024px) {
+    .dir-sidebar { width: 210px; }
+    .details-sidebar { width: 280px; }
+    .media-header { padding: 0 14px; }
+    .toolbar { padding: 12px 14px; }
+    .grid-scroll-area { padding: 14px; }
+  }
+
+  @media (max-width: 900px) {
+    .media-container {
+      flex-direction: column;
+      height: calc(100vh - 64px);
+      min-height: 0;
+    }
+    .dir-sidebar {
+      width: 100%;
+      border-right: none;
+      border-bottom: 1px solid rgba(244,140,37,0.1);
+      background: rgba(34,25,16,0.95);
+      max-height: 132px;
+    }
+    .dir-header {
+      padding: 10px 12px;
+    }
+    .dir-nav {
+      flex-direction: row;
+      gap: 8px;
+      padding: 0 12px 12px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      white-space: nowrap;
+    }
+    .dir-nav .nav-item {
+      flex: 0 0 auto;
+      min-width: fit-content;
+      padding: 8px 10px;
+      border: 1px solid rgba(244,140,37,0.12);
+      background: rgba(39,39,42,0.35);
+    }
+    .dir-nav .nav-item > div {
+      display: none !important;
+    }
+    .dir-nav .nav-item .material-symbols-outlined {
+      margin-left: 0 !important;
+      background: transparent !important;
+    }
+    .media-main {
+      min-height: 0;
+      flex: 1;
+    }
+    .media-header {
+      height: auto;
+      min-height: 58px;
+      padding: 10px 12px;
+      align-items: flex-start;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .breadcrumb {
+      width: 100%;
+      min-width: 0;
+      gap: 8px;
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .bc-flex {
+      font-size: 13px;
+      width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .header-actions {
+      width: 100%;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .sort-select-header {
+      display: inline-flex;
+      flex: 1;
+      min-width: 0;
+    }
+    .btn-upload {
+      font-size: 12px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      flex: 0 0 auto;
+    }
+    .source-switcher {
+      padding: 8px 10px;
+      gap: 4px;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    .src-tab {
+      padding: 8px 10px;
+      font-size: 12px;
+    }
+    .storage-badge {
+      display: none !important;
+    }
+    .toolbar {
+      padding: 10px;
+      gap: 10px;
+      align-items: stretch;
+    }
+    .filters-flex {
+      width: 100%;
+      gap: 6px;
+      padding-bottom: 4px;
+    }
+    .filter-chip {
+      font-size: 12px;
+      height: 36px;
+      min-width: 78px;
+      padding: 0 12px;
+    }
+    .sort-select {
+      min-width: 132px;
+      font-size: 12px;
+      background: rgba(39,39,42,0.7);
+      border: 1px solid rgba(244,140,37,0.12);
+      border-radius: 10px;
+      padding: 6px 10px;
+    }
+    .toolbar-sort-select {
+      display: none;
+    }
+    .actions-flex {
+      width: 100%;
+      border-left: none;
+      border-top: 1px solid rgba(244,140,37,0.1);
+      padding-top: 10px;
+      padding-left: 0;
+      margin-left: 0;
+      justify-content: flex-end;
+    }
+    .grid-scroll-area {
+      padding: 10px;
+      padding-bottom: 84px;
+    }
+    .media-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .grid-item {
+      border-radius: 10px;
+    }
+    .item-title {
+      font-size: 11px;
+    }
+    .details-sidebar {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      height: min(62vh, 520px);
+      z-index: 60;
+      border-left: none;
+      border-top: 1px solid rgba(244,140,37,0.2);
+      border-radius: 14px 14px 0 0;
+      box-shadow: 0 -14px 30px rgba(0,0,0,0.45);
+    }
+    .details-header {
+      padding: 12px;
+      position: relative;
+    }
+    .details-header::before {
+      content: '';
+      position: absolute;
+      top: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 44px;
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(148,163,184,0.55);
+    }
+    .details-scroll {
+      padding: 14px;
+      gap: 16px;
+    }
+    .details-actions {
+      padding: 12px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .btn-block {
+      font-size: 12px;
+      padding: 10px 8px;
+    }
+    #toast-container {
+      right: 10px !important;
+      left: 10px;
+      bottom: 10px !important;
+    }
+  }
+
+  @media (max-width: 900px) {
+    .bc-flex { display: none; }
+    .search-box { max-width: none; }
+  }
+
+  @media (max-width: 480px) {
+    .dir-sidebar { max-height: 120px; }
+    .media-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .loading-state { padding: 24px 12px; }
+    .loading-title { font-size: 12px; }
+    .loading-subtitle { font-size: 10px; }
+    .details-actions { grid-template-columns: 1fr; }
+    .sort-select-header { min-width: 118px; }
+    .btn-upload { padding: 8px 10px; }
+  }
 </style>

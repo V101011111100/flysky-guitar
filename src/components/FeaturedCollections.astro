@@ -1,6 +1,12 @@
 ---
 import { supabase } from '../lib/supabase';
 
+interface Props {
+  isAdmin?: boolean;
+}
+
+const { isAdmin = false } = Astro.props;
+
 type CategoryRow = { name: string; slug: string };
 
 const { data: categoryRows } = await supabase
@@ -8,6 +14,30 @@ const { data: categoryRows } = await supabase
   .select('name, slug');
 
 const categories = (categoryRows || []) as CategoryRow[];
+
+const featuredSettingKeys = [
+  'flysky_featured_section_tag',
+  'flysky_featured_title',
+  'flysky_featured_electric_vibe', 'flysky_featured_electric_cta', 'flysky_featured_electric_image',
+  'flysky_featured_acoustic_vibe', 'flysky_featured_acoustic_cta', 'flysky_featured_acoustic_image',
+  'flysky_featured_classic_vibe', 'flysky_featured_classic_cta', 'flysky_featured_classic_image',
+  'flysky_featured_bass_vibe', 'flysky_featured_bass_cta', 'flysky_featured_bass_image',
+  'flysky_featured_piano_vibe', 'flysky_featured_piano_cta', 'flysky_featured_piano_image',
+  'flysky_featured_ukulele_vibe', 'flysky_featured_ukulele_cta', 'flysky_featured_ukulele_image',
+];
+
+const { data: featuredSettingRows } = await supabase
+  .from('site_settings')
+  .select('key, value')
+  .in('key', featuredSettingKeys);
+
+const featuredSettings: Record<string, string> = {};
+(featuredSettingRows || []).forEach((row: any) => {
+  featuredSettings[row.key] = row.value ?? '';
+});
+
+const featuredSectionTag = featuredSettings.flysky_featured_section_tag || 'Khám phá';
+const featuredTitle = featuredSettings.flysky_featured_title || 'Bộ sưu tập nổi bật';
 
 const categoryMeta = {
   electric: {
@@ -91,9 +121,12 @@ const featuredCategories = instrumentOrder.map((type) => {
   const dbCategory = dbCategoryByType.get(type);
   const meta = categoryMeta[type];
   return {
+    type,
     slug: dbCategory?.slug || type,
     label: dbCategory?.name || meta.title,
-    ...meta,
+    vibe: featuredSettings[`flysky_featured_${type}_vibe`] || meta.vibe,
+    cta: featuredSettings[`flysky_featured_${type}_cta`] || meta.cta,
+    image: featuredSettings[`flysky_featured_${type}_image`] || meta.image,
   };
 });
 ---
@@ -102,8 +135,8 @@ const featuredCategories = instrumentOrder.map((type) => {
   <div class="mx-auto max-w-7xl px-4 lg:px-10">
     <div class="flex items-end justify-between mb-8">
       <div>
-        <span class="text-primary font-bold tracking-widest uppercase text-sm">Khám phá</span>
-        <h2 class="text-white type-display-section mt-2">Bộ sưu tập nổi bật</h2>
+        <span class={`text-primary font-bold tracking-widest uppercase text-sm ${isAdmin ? 'quick-editable' : ''}`} data-setting-key={isAdmin ? 'flysky_featured_section_tag' : undefined}>{featuredSectionTag}</span>
+        <h2 class={`text-white type-display-section mt-2 ${isAdmin ? 'quick-editable' : ''}`} data-setting-key={isAdmin ? 'flysky_featured_title' : undefined}>{featuredTitle}</h2>
       </div>
       <a class="hidden md:flex items-center gap-1 text-primary font-medium hover:text-white transition-colors" href="/shop">
         Xem tất cả <span class="material-symbols-outlined text-sm">arrow_forward</span>
@@ -113,15 +146,23 @@ const featuredCategories = instrumentOrder.map((type) => {
       {featuredCategories.map((cat) => (
         <a href={`/shop?category=${encodeURIComponent(cat.slug)}`} class="group relative overflow-hidden rounded-xl bg-card-dark border border-border-dark aspect-[4/5] md:aspect-[3/4] block">
           <div
-            class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110 opacity-60 group-hover:opacity-40"
+            class={`absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110 opacity-60 group-hover:opacity-40 ${isAdmin ? 'quick-image-editable' : ''}`}
+            data-image-setting={isAdmin ? `flysky_featured_${cat.type}_image` : undefined}
             style={`background-image: url('${cat.image}');`}
-          ></div>
+          >
+            {isAdmin && (
+              <div class="quick-image-overlay">
+                <span class="material-symbols-outlined text-[18px]">upload</span>
+                Kéo ảnh vào hoặc bấm để đổi
+              </div>
+            )}
+          </div>
           <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent"></div>
           <div class="absolute bottom-0 left-0 p-6 w-full">
-            <p class="text-primary font-bold text-sm mb-1 uppercase tracking-wider">{cat.vibe}</p>
+            <p class={`text-primary font-bold text-sm mb-1 uppercase tracking-wider ${isAdmin ? 'quick-editable' : ''}`} data-setting-key={isAdmin ? `flysky_featured_${cat.type}_vibe` : undefined}>{cat.vibe}</p>
             <h3 class="text-white text-2xl font-bold mb-3">{cat.label}</h3>
             <div class="flex items-center gap-2">
-              <span class="inline-flex items-center text-white text-sm font-medium border-b border-primary pb-0.5">{cat.cta}</span>
+              <span class={`inline-flex items-center text-white text-sm font-medium border-b border-primary pb-0.5 ${isAdmin ? 'quick-editable' : ''}`} data-setting-key={isAdmin ? `flysky_featured_${cat.type}_cta` : undefined}>{cat.cta}</span>
               <span class="material-symbols-outlined text-primary text-sm opacity-0 group-hover:opacity-100 transition-opacity">arrow_forward</span>
             </div>
           </div>

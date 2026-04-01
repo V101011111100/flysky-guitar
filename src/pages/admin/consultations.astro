@@ -568,8 +568,8 @@ const statusLabel: Record<string, string> = {
   @media (max-width: 1200px) { .cus-stats { grid-template-columns: 1fr 1fr; } }
 
   .stat-card {
-    background: #2d2218;
-    border: 1px solid #4a3a2a;
+    background: rgba(244,140,37,.05);
+    border: 1px solid rgba(244,140,37,.1);
     border-radius: 14px;
     padding: 20px 24px;
     transition: border-color .2s;
@@ -593,7 +593,7 @@ const statusLabel: Record<string, string> = {
   .s-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 20px; color: #64748b; }
   .search-in {
     width: 100%; padding: 10px 16px 10px 40px;
-    background: #2d2218; border: 1px solid #4a3a2a;
+    background: rgba(244,140,37,.05); border: 1px solid rgba(244,140,37,.1);
     border-radius: 10px; font-size: 13px; color: #f1f5f9;
     font-family: 'Manrope', sans-serif; outline: none; transition: border .2s;
   }
@@ -603,19 +603,19 @@ const statusLabel: Record<string, string> = {
 
   /* ── TABLE ── */
   .table-wrap {
-    background: rgba(45,34,24,.4);
-    border: 1px solid #4a3a2a;
+    background: rgba(244,140,37,.05);
+    border: 1px solid rgba(244,140,37,.1);
     border-radius: 16px; overflow: hidden;
   }
   .cus-table { width: 100%; border-collapse: collapse; text-align: left; }
-  .cus-table thead tr { background: rgba(45,34,24,.7); }
+  .cus-table thead tr { background: rgba(244,140,37,.08); }
   .cus-table th {
     padding: 14px 20px; font-size: 11px; font-weight: 700;
     text-transform: uppercase; letter-spacing: .1em;
     color: #94a3b8; white-space: nowrap;
   }
-  .cus-table tbody tr { border-top: 1px solid #4a3a2a; transition: background .15s; }
-  .cus-table tbody tr:hover { background: rgba(74,58,42,.2); }
+  .cus-table tbody tr { border-top: 1px solid rgba(244,140,37,.1); transition: background .15s; }
+  .cus-table tbody tr:hover { background: rgba(244,140,37,.1); }
   .cus-table td { padding: 16px 20px; vertical-align: middle; }
 
   .empty-row { text-align: center; padding: 60px; color: #64748b; }
@@ -661,7 +661,7 @@ const statusLabel: Record<string, string> = {
   }
   .edit-input {
     width: 100%; padding: 10px 12px;
-    background: rgba(34,25,16,.8); border: 1px solid #4a3a2a;
+    background: rgba(34,25,16,.8); border: 1px solid rgba(244,140,37,.1);
     border-radius: 8px; font-size: 13px; color: #f1f5f9;
     font-family: 'Manrope', sans-serif; outline: none;
     transition: border .15s;
@@ -686,7 +686,7 @@ const statusLabel: Record<string, string> = {
   .btn-save-name {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 10px 18px; border-radius: 8px;
-    background: #f48c25; color: #221910;
+    background: #f48c25; color: white;
     font-size: 13px; font-weight: 700;
     border: none; cursor: pointer; flex: 1;
     font-family: 'Manrope', sans-serif;
@@ -712,7 +712,7 @@ const statusLabel: Record<string, string> = {
     display: flex; align-items: center; gap: 8px;
     padding: 12px 16px; border-radius: 10px;
     font-size: 13px; font-weight: 600; color: #fff;
-    background: #2d2218; border: 1px solid #4a3a2a;
+    background: rgba(244,140,37,.05); border: 1px solid rgba(244,140,37,.1);
     box-shadow: 0 4px 16px rgba(0,0,0,.4);
     transition: opacity .3s;
     font-family: 'Manrope', sans-serif;
@@ -765,8 +765,8 @@ const statusLabel: Record<string, string> = {
 
   /* Footer */
   .table-footer {
-    padding: 14px 20px; background: rgba(45,34,24,.4);
-    border-top: 1px solid #4a3a2a;
+    padding: 14px 20px; background: rgba(244,140,37,.05);
+    border-top: 1px solid rgba(244,140,37,.1);
   }
   .page-info { font-size: 11px; color: #64748b; }
 
@@ -778,14 +778,14 @@ const statusLabel: Record<string, string> = {
   }
   .modal-backdrop.hidden { display: none; }
   .modal-box {
-    background: #2d2218; border: 1px solid #4a3a2a;
+    background: rgba(244,140,37,.05); border: 1px solid rgba(244,140,37,.1);
     border-radius: 16px; width: 100%; max-width: 560px;
     max-height: 80vh; display: flex; flex-direction: column;
     box-shadow: 0 24px 48px rgba(0,0,0,.5);
   }
   .modal-header {
     display: flex; align-items: flex-start; justify-content: space-between;
-    padding: 20px 24px; border-bottom: 1px solid #4a3a2a;
+    padding: 20px 24px; border-bottom: 1px solid rgba(244,140,37,.1);
     flex-shrink: 0;
   }
   .modal-title { font-size: 16px; font-weight: 700; color: #f9fafb; }
@@ -801,8 +801,8 @@ const statusLabel: Record<string, string> = {
 
   /* Order history item */
   .order-history-item {
-    background: rgba(34,25,16,.6);
-    border: 1px solid #4a3a2a;
+    background: rgba(244,140,37,.04);
+    border: 1px solid rgba(244,140,37,.1);
     border-radius: 10px;
     padding: 14px 16px;
   }

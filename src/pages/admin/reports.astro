@@ -67,11 +67,18 @@ const categories = Object.keys(categoryRev).map(name => ({
   pct: Math.round((categoryRev[name] / totalCatRev) * 100)
 })).sort((a,b) => b.pct - a.pct).slice(0, 4);
 
+const getCategoryName = (categoriesValue: any): string => {
+  if (Array.isArray(categoriesValue)) {
+    return categoriesValue[0]?.name || 'Accessories';
+  }
+  return categoriesValue?.name || 'Accessories';
+};
+
 // Top Products
 const topProducts = Object.keys(productRev).map(id => {
   const data = productRev[id];
   const prodInfo = (allProductsRaw || []).find((p:any) => p.id === id);
-  const catName = prodInfo?.categories?.name || 'Accessories';
+  const catName = getCategoryName(prodInfo?.categories);
   let catClass = 'cat-acc';
   if (catName.toLowerCase().includes('acoustic')) catClass = 'cat-acou';
   else if (catName.toLowerCase().includes('electric')) catClass = 'cat-elec';
@@ -281,7 +288,7 @@ const avgOrderValue = validOrdersCount > 0 ? totalRevenueYear / validOrdersCount
     transition: border-color .15s;
   }
   .year-btn:hover { border-color: rgba(244,140,37,.4); }
-  .year-active { background: #f48c25; color: #221910; font-weight: 700; border-color: #f48c25; }
+  .year-active { background: #f48c25; color: white; font-weight: 700; border-color: #f48c25; }
   .period-switcher {
     display: flex;
     background: rgba(30,41,59,.5);
@@ -295,7 +302,7 @@ const avgOrderValue = validOrdersCount > 0 ? totalRevenueYear / validOrdersCount
     font-family: 'Manrope', sans-serif; transition: all .15s;
   }
   .period-btn:hover { color: #f1f5f9; }
-  .period-active { background: #f48c25; color: #221910; box-shadow: 0 4px 12px rgba(244,140,37,.3); }
+  .period-active { background: #f48c25; color: white; box-shadow: 0 4px 12px rgba(244,140,37,.3); }
   .export-btns { display: flex; gap: 8px; }
   .btn-export-pdf {
     display: flex; align-items: center; gap: 6px;
@@ -500,7 +507,32 @@ const avgOrderValue = validOrdersCount > 0 ? totalRevenueYear / validOrdersCount
   @media (max-width: 1100px) {
     .chart-grid { grid-template-columns: 1fr; }
     .kpi-grid   { grid-template-columns: 1fr 1fr; }
-    .rpt-filter-bar { flex-direction: column; align-items: flex-start; }
+    .rpt-filter-bar { flex-direction: column; align-items: flex-start; gap: 12px; }
     .period-switcher { margin-left: 0; }
+    .export-btns { flex-wrap: wrap; }
+  }
+
+  @media (max-width: 768px) {
+    .kpi-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+    .kpi-card { padding: 16px; }
+    .kpi-val  { font-size: 18px; }
+    .year-btns { flex-wrap: wrap; }
+    .top-table th:nth-child(2), .top-table td:nth-child(2),
+    .top-table th:nth-child(5), .top-table td:nth-child(5) { display: none; }
+    .top-table th, .top-table td { padding: 10px 12px; }
+    .bar-chart-area { height: 200px; }
+    .chart-card { padding: 20px; }
+  }
+
+  @media (max-width: 480px) {
+    .kpi-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .kpi-card { padding: 12px; }
+    .kpi-val  { font-size: 16px; }
+    .kpi-label { font-size: 11px; }
+    .chart-card { padding: 16px; }
+    .year-btn { padding: 6px 10px; font-size: 12px; }
+    .period-btn { padding: 4px 10px; font-size: 11px; }
+    .top-table th:nth-child(3), .top-table td:nth-child(3) { display: none; }
+    .rpt-footer { font-size: 10px; }
   }
 </style>

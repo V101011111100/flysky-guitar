@@ -51,15 +51,38 @@ const outOfStock = items.filter(i => i.status === 'out').length;
       <input type="file" id="excel-import-input" accept=".xlsx, .xls, .csv" style="display: none;" />
       <button class="btn-ghost" onclick="document.getElementById('excel-import-input').click()">
         <span class="material-symbols-outlined">upload_file</span>
-        Nhập Excel
+        <span class="btn-label-full">Nhập Excel</span>
+        <span class="btn-label-short" style="display:none;">Nhập</span>
       </button>
-      <button class="btn-ghost" id="btn-export-excel">
-        <span class="material-symbols-outlined">download</span>
-        Xuất Excel
-      </button>
+      
+      <!-- Export Dropdown -->
+      <div class="export-dropdown-wrapper">
+        <button class="btn-ghost" id="btn-export-menu">
+          <span class="material-symbols-outlined">download</span>
+          <span class="btn-label-full">Xuất Excel</span>
+          <span class="btn-label-short" style="display:none;">Xuất</span>
+          <span class="material-symbols-outlined" style="font-size: 16px; margin-left: 4px;">expand_more</span>
+        </button>
+        <div class="export-menu hidden" id="export-menu">
+          <a href="/api/products/export?format=full" class="export-menu-item" title="Xuất toàn bộ sản phẩm">
+            <span class="material-symbols-outlined">inventory_2</span>
+            <span>Tất cả sản phẩm</span>
+          </a>
+          <a href="/api/products/export?format=active" class="export-menu-item" title="Chỉ xuất sản phẩm đang bán">
+            <span class="material-symbols-outlined">check_circle</span>
+            <span>Sản phẩm hoạt động</span>
+          </a>
+          <a href="/api/products/export?format=lowstock" class="export-menu-item" title="Xuất sản phẩm sắp hết hàng">
+            <span class="material-symbols-outlined">warning</span>
+            <span>Sắp hết hàng</span>
+          </a>
+        </div>
+      </div>
+      
       <a href="/admin/products" class="btn-add-inv" style="text-decoration: none;">
         <span class="material-symbols-outlined">add_circle</span>
-        Thêm sản phẩm mới
+        <span class="btn-label-full">Thêm sản phẩm mới</span>
+        <span class="btn-label-short" style="display:none;">Thêm mới</span>
       </a>
     </div>
   </div>
@@ -227,48 +250,217 @@ const outOfStock = items.filter(i => i.status === 'out').length;
     </div>
   </div>
 
+  <!-- Import Preview Modal -->
+  <div id="import-preview-modal" class="modal hidden">
+    <div class="modal-overlay" onclick="closeImportModal()"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Preview dữ liệu nhập</h2>
+        <button class="close-btn" onclick="closeImportModal()"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="preview-stats">
+          <div class="stat-box">
+            <span class="stat-label">Tổng dòng:</span>
+            <span class="stat-value" id="preview-total">0</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Hợp lệ:</span>
+            <span class="stat-value valid" id="preview-valid">0</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Lỗi:</span>
+            <span class="stat-value error" id="preview-errors">0</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Bỏ qua:</span>
+            <span class="stat-value warning" id="preview-skipped">0</span>
+          </div>
+        </div>
+
+        <div class="preview-warnings" id="preview-warnings-box" style="display: none;">
+          <p class="warning-title">⚠️ Các dòng bỏ qua:</p>
+          <ul id="preview-warnings-list"></ul>
+        </div>
+
+        <div class="preview-table-wrapper">
+          <p class="preview-label">Preview dữ liệu (10 dòng đầu):</p>
+          <table class="preview-table">
+            <thead>
+              <tr>
+                <th>Tên sản phẩm</th>
+                <th>SKU</th>
+                <th>Danh mục</th>
+                <th>Giá</th>
+                <th>Tồn kho</th>
+                <th>Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody id="preview-table-body">
+              <!-- Auto-populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeImportModal()">Hủy</button>
+        <button class="btn-confirm" id="btn-confirm-import" onclick="confirmImport()">
+          <span class="material-symbols-outlined">upload_file</span>
+          Tiếp tục nhập
+        </button>
+      </div>
+    </div>
+  </div>
+
 </AdminLayout>
 
 <script>
+  let pendingFile: File | null = null;
+
+  // Close import modal
+  (window as any).closeImportModal = () => {
+    const modal = document.getElementById('import-preview-modal');
+    if (modal) modal.classList.add('hidden');
+    pendingFile = null;
+    const fileInput = document.getElementById('excel-import-input') as HTMLInputElement;
+    if (fileInput) fileInput.value = '';
+  };
+
+  // Confirm import after preview
+  (window as any).confirmImport = async () => {
+    if (!pendingFile) return;
+    
+    const modal = document.getElementById('import-preview-modal');
+    const confirmBtn = document.getElementById('btn-confirm-import') as HTMLButtonElement;
+    
+    if (modal && confirmBtn) {
+      confirmBtn.disabled = true;
+      confirmBtn.innerHTML = '<span class="material-symbols-outlined">hourglass_bottom</span> Đang nhập...';
+    }
+
+    const formData = new FormData();
+    formData.append('file', pendingFile);
+
+    try {
+      const res = await fetch('/api/products/import', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        const skipped = Number(data.skippedCount || 0);
+        const failed = Number(data.failedCount || 0);
+        const parts = [`✅ Nhập thành công ${data.count} sản phẩm!`];
+        if (skipped > 0) parts.push(`📝 Bỏ qua ${skipped} dòng.`);
+        if (failed > 0) parts.push(`⚠️ ${failed} dòng lỗi.`);
+        
+        alert(parts.join('\n'));
+        window.location.reload();
+      } else {
+        alert('❌ Lỗi nhập: ' + (data.error || 'Không xác định'));
+      }
+    } catch (err) {
+      alert('❌ Lỗi kết nối máy chủ.');
+    } finally {
+      if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = '<span class="material-symbols-outlined">upload_file</span> Tiếp tục nhập';
+      }
+      (window as any).closeImportModal();
+    }
+  };
+
   const fileInput = document.getElementById('excel-import-input') as HTMLInputElement;
   if(fileInput) {
     fileInput.addEventListener('change', async () => {
       const file = fileInput.files?.[0];
       if(!file) return;
 
-      alert('Đang xử lý dữ liệu Excel, vui lòng đợi...');
+      pendingFile = file;
+      
+      // Show loading state
+      const modal = document.getElementById('import-preview-modal');
+      const tbody = document.getElementById('preview-table-body');
+      if (modal && tbody) {
+        modal.classList.remove('hidden');
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;"><span class="material-symbols-outlined" style="animation: spin 1s linear infinite;">hourglass_bottom</span> Đang xử lý file...</td></tr>';
+      }
 
       const formData = new FormData();
       formData.append('file', file);
 
       try {
-        const res = await fetch('/api/products/import', {
+        const res = await fetch('/api/products/import-preview', {
           method: 'POST',
           body: formData
         });
         const data = await res.json();
-        if(data.success) {
-          const skipped = Number(data.skippedCount || 0);
-          const failed = Number(data.failedCount || 0);
-          const parts = [`Nhập thành công ${data.count} sản phẩm!`];
-          if (skipped > 0) parts.push(`Bỏ qua ${skipped} dòng trống/không hợp lệ.`);
-          if (failed > 0) parts.push(`${failed} dòng bị lỗi khi lưu.`);
-          alert(parts.join('\n'));
-          window.location.reload();
-        } else {
-          alert('Lỗi nhập dữ liệu: ' + data.error);
+
+        if (!data.success) {
+          alert('❌ ' + (data.error || 'Lỗi xử lý file'));
+          (window as any).closeImportModal();
+          return;
         }
+
+        // Update stats
+        document.getElementById('preview-total')!.textContent = data.totalRows;
+        document.getElementById('preview-valid')!.textContent = data.validRows;
+        document.getElementById('preview-errors')!.textContent = data.errorCount;
+        document.getElementById('preview-skipped')!.textContent = data.skippedCount;
+
+        // Show warnings if any
+        const warningsBox = document.getElementById('preview-warnings-box');
+        const warningsList = document.getElementById('preview-warnings-list');
+        if (data.skippedDetails && data.skippedDetails.length > 0 && warningsBox && warningsList) {
+          warningsList.innerHTML = data.skippedDetails.map((skip: any) => 
+            `<li>Dòng ${skip.rowIndex}: ${skip.reason}</li>`
+          ).join('');
+          warningsBox.style.display = 'block';
+        } else if (warningsBox) {
+          warningsBox.style.display = 'none';
+        }
+
+        // Populate preview table
+        if (tbody && data.preview) {
+          tbody.innerHTML = data.preview.map((row: any) => `
+            <tr ${row.errors.length > 0 ? 'class="row-error"' : ''}>
+              <td><strong>${row.formatted.name}</strong></td>
+              <td>${row.formatted.sku}</td>
+              <td>${row.formatted.category}</td>
+              <td>${row.formatted.price.toLocaleString('vi-VN')} ₫</td>
+              <td>${row.formatted.stock}</td>
+              <td>${row.errors.length > 0 ? `<span class="error-badge">${row.errors.join('; ')}</span>` : '<span class="ok-badge">✓</span>'}</td>
+            </tr>
+          `).join('');
+        }
+
       } catch (err) {
-        alert('Lỗi kết nối máy chủ khi nhập Excel.');
+        alert('❌ Lỗi xử lý file. Vui lòng thử lại.');
+        (window as any).closeImportModal();
       }
-      fileInput.value = ''; // Reset input
     });
   }
 
-  const btnExport = document.getElementById('btn-export-excel');
-  if(btnExport) {
-    btnExport.addEventListener('click', () => {
-      window.location.href = '/api/products/export';
+  const btnExport = document.getElementById('btn-export-menu');
+  const exportMenu = document.getElementById('export-menu');
+  
+  if(btnExport && exportMenu) {
+    btnExport.addEventListener('click', (e) => {
+      e.stopPropagation();
+      exportMenu.classList.toggle('hidden');
+    });
+    
+    // Close menu when clicking outside
+    document.addEventListener('click', () => {
+      exportMenu.classList.add('hidden');
+    });
+    
+    // Prevent closing when clicking on menu items
+    exportMenu.addEventListener('click', (e) => {
+      e.stopPropagation();
     });
   }
 
@@ -371,7 +563,7 @@ const outOfStock = items.filter(i => i.status === 'out').length;
   }
   .search-input::placeholder { color: rgba(244,140,37,.35); }
   .search-input:focus { border-color: #f48c25; }
-  .header-btns-group { display: flex; gap: 8px; align-items: center; }
+  .header-btns-group { display: flex; gap: 8px; align-items: center; position: relative; }
   .btn-ghost {
     display: flex; align-items: center; gap: 6px;
     padding: 8px 16px; border-radius: 8px;
@@ -569,7 +761,7 @@ const outOfStock = items.filter(i => i.status === 'out').length;
     background: rgba(244,140,37,.2); color: #f48c25;
     border: none; transition: all .15s;
   }
-  .btn-restock:hover { background: #f48c25; color: #221910; }
+  .btn-restock:hover { background: #f48c25; color: white; }
   .btn-urgent {
     padding: 6px 12px; border-radius: 8px;
     font-size: 11px; font-weight: 900; text-transform: uppercase;
@@ -607,14 +799,249 @@ const outOfStock = items.filter(i => i.status === 'out').length;
     transition: background .15s;
   }
   .pnum:hover { background: rgba(244,140,37,.1); }
-  .pnum-active { background: #f48c25 !important; color: #221910 !important; border-color: #f48c25 !important; }
+  .pnum-active { background: #f48c25 !important; color: white !important; border-color: #f48c25 !important; }
   .pellipsis { color: #64748b; font-size: 13px; padding: 0 4px; }
 
+  /* ── RESPONSIVE ── */
   @media (max-width: 1100px) {
     .inv-stats { grid-template-columns: 1fr 1fr; }
   }
-  @media (max-width: 640px) {
-    .inv-stats { grid-template-columns: 1fr; gap: 12px; }
-    .inv-stat-card { padding: 16px; }
+
+  @media (max-width: 768px) {
+    /* Header actions: search full-width on top, buttons wrap below */
+    .inv-actions {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 10px;
+    }
+    .search-box {
+      order: -1;
+      width: 100%;
+    }
+    .search-input {
+      width: 100%;
+    }
+    .header-btns-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    /* Shorten "Nhập Excel" and "Xuất Excel" text on mobile */
+    .btn-ghost .btn-label-full { display: none; }
+    .btn-ghost .btn-label-short { display: inline; }
+    .btn-add-inv .btn-label-full { display: none; }
+    .btn-add-inv .btn-label-short { display: inline; }
+    /* Stats: 2×2 grid */
+    .inv-stats { grid-template-columns: 1fr 1fr; gap: 12px; }
+    .inv-card { padding: 14px; }
+    .inv-card-val { font-size: 26px; }
+    /* Table: hide less critical columns */
+    .inv-table th:nth-child(3),
+    .inv-table td:nth-child(3),
+    .inv-table th:nth-child(5),
+    .inv-table td:nth-child(5) { display: none; }
+    .inv-table th, .inv-table td { padding: 12px 12px; }
+    /* Pagination: stack */
+    .inv-pagination { flex-direction: column; align-items: flex-start; gap: 10px; }
+    /* Tabs smaller */
+    .inv-tab { padding: 10px 12px; font-size: 12px; }
   }
+
+  @media (max-width: 480px) {
+    .inv-stats { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .inv-card { padding: 12px; gap: 8px; }
+    .inv-card-val { font-size: 22px; }
+    /* Also hide price column on very small screens */
+    .inv-table th:nth-child(4),
+    .inv-table td:nth-child(4) { display: none; }
+    .inv-table th, .inv-table td { padding: 10px 8px; }
+    .prod-name { font-size: 12px; }
+    .sku-col { font-size: 11px; }
+  }
+
+  /* ── MODAL STYLES ── */
+  .modal {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 1000;
+    display: flex; align-items: center; justify-content: center;
+    transition: opacity .2s;
+  }
+  .modal.hidden { display: none; }
+  .modal-overlay {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    cursor: pointer;
+  }
+  .modal-content {
+    position: relative; z-index: 1001;
+    background: #1e293b; border-radius: 16px;
+    max-width: 800px; width: 90%;
+    max-height: 85vh; overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    display: flex; flex-direction: column;
+  }
+  .modal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 24px; border-bottom: 1px solid rgba(244, 140, 37, 0.1);
+    flex-shrink: 0;
+  }
+  .modal-header h2 {
+    margin: 0; font-size: 18px; font-weight: 700;
+    color: #f9fafb;
+  }
+  .close-btn {
+    background: none; border: none; color: rgba(244, 140, 37, 0.5);
+    cursor: pointer; font-size: 24px; padding: 0;
+    transition: color .2s;
+    display: flex; align-items: center;
+  }
+  .close-btn:hover { color: #f48c25; }
+  
+  .modal-body {
+    padding: 24px; flex: 1; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 20px;
+  }
+  .preview-stats {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .stat-box {
+    background: rgba(244, 140, 37, 0.08);
+    border: 1px solid rgba(244, 140, 37, 0.15);
+    border-radius: 8px; padding: 12px;
+    display: flex; flex-direction: column; gap: 4px;
+    align-items: center; text-align: center;
+  }
+  .stat-label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    color: rgba(244, 140, 37, 0.6);
+  }
+  .stat-value {
+    font-size: 24px; font-weight: 900; color: #f9fafb;
+  }
+  .stat-value.valid { color: #34d399; }
+  .stat-value.error { color: #f87171; }
+  .stat-value.warning { color: #fb923c; }
+
+  .preview-warnings {
+    background: rgba(251, 146, 60, 0.1);
+    border: 1px solid rgba(251, 146, 60, 0.3);
+    border-radius: 8px; padding: 12px;
+  }
+  .warning-title {
+    margin: 0 0 8px 0; font-size: 12px; font-weight: 700;
+    color: #fb923c;
+  }
+  .preview-warnings ul {
+    margin: 0; padding-left: 16px;
+    list-style: disc;
+  }
+  .preview-warnings li {
+    font-size: 12px; color: rgba(244, 140, 37, 0.7);
+    margin: 2px 0;
+  }
+
+  .preview-label {
+    margin: 0; font-size: 12px; font-weight: 700;
+    text-transform: uppercase; color: rgba(244, 140, 37, 0.6);
+  }
+  .preview-table-wrapper {
+    overflow-x: auto;
+  }
+  .preview-table {
+    width: 100%; border-collapse: collapse; font-size: 12px;
+  }
+  .preview-table thead tr {
+    background: rgba(244, 140, 37, 0.08);
+  }
+  .preview-table th {
+    padding: 10px; font-weight: 700; text-transform: uppercase;
+    font-size: 10px; color: rgba(244, 140, 37, 0.6);
+    border-bottom: 1px solid rgba(244, 140, 37, 0.15);
+  }
+  .preview-table td {
+    padding: 10px; border-bottom: 1px solid rgba(244, 140, 37, 0.08);
+    color: #f1f5f9;
+  }
+  .preview-table tbody tr.row-error {
+    background: rgba(239, 68, 68, 0.05);
+  }
+  .error-badge {
+    background: rgba(239, 68, 68, 0.15); color: #fca5a5;
+    padding: 2px 6px; border-radius: 4px; font-size: 10px;
+    font-weight: 600;
+  }
+  .ok-badge {
+    color: #34d399; font-weight: 700;
+  }
+
+  .modal-footer {
+    display: flex; justify-content: flex-end; gap: 12px;
+    padding: 16px 24px;
+    border-top: 1px solid rgba(244, 140, 37, 0.1);
+    flex-shrink: 0;
+  }
+  .btn-cancel {
+    padding: 9px 18px; border-radius: 8px;
+    background: rgba(244, 140, 37, 0.1);
+    border: 1px solid rgba(244, 140, 37, 0.3);
+    color: #f48c25; font-size: 13px; font-weight: 700;
+    cursor: pointer; font-family: 'Manrope', sans-serif;
+    transition: all .2s;
+  }
+  .btn-cancel:hover { background: rgba(244, 140, 37, 0.2); }
+  
+  .btn-confirm {
+    display: flex; align-items: center; gap: 6px;
+    padding: 9px 18px; border-radius: 8px;
+    background: #f48c25; color: #221910;
+    border: none; font-size: 13px; font-weight: 700;
+    cursor: pointer; font-family: 'Manrope', sans-serif;
+    transition: filter .2s;
+  }
+  .btn-confirm:hover:not(:disabled) { filter: brightness(1.1); }
+  .btn-confirm:disabled {
+    opacity: 0.6; cursor: not-allowed;
+  }
+  .btn-confirm .material-symbols-outlined { font-size: 16px; }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* ── EXPORT MENU ── */
+  .export-dropdown-wrapper {
+    position: relative;
+  }
+  .export-menu {
+    position: absolute; top: 100%; right: 0; margin-top: 4px;
+    background: #1e293b; border: 1px solid rgba(244, 140, 37, 0.2);
+    border-radius: 8px; min-width: 220px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    z-index: 100;
+    overflow: hidden;
+    transition: opacity .2s, visibility .2s;
+  }
+  .export-menu.hidden {
+    visibility: hidden; opacity: 0;
+  }
+  .export-menu-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px;
+    color: #f1f5f9;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(244, 140, 37, 0.08);
+    transition: background .15s;
+    font-size: 13px;
+  }
+  .export-menu-item:last-child { border-bottom: none; }
+  .export-menu-item:hover {
+    background: rgba(244, 140, 37, 0.1);
+    color: #f48c25;
+  }
+  .export-menu-item .material-symbols-outlined {
+    font-size: 18px;
+  }
+
 </style>

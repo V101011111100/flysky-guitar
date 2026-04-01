@@ -1226,4 +1226,16 @@ const featureDefs = ADMIN_FEATURES;
       align-items: flex-start;
     }
   }
+
+  @media (max-width: 480px) {
+    .create-user-box { padding: 10px; }
+    .roles-list { max-height: 400px; }
+    .editor-header h3 { font-size: 16px; }
+    .advanced-card { margin: 10px; padding: 12px; }
+    .toggle-item { flex-direction: column; align-items: stretch; gap: 8px; }
+    .switch-wrap { align-self: flex-end; }
+    .btn-ghost, .btn-primary { font-size: 12px; padding: 0 10px; }
+    .roles-label { font-size: 9px; }
+    .perm-message { padding: 0 12px 12px; font-size: 12px; }
+  }
 </style>

@@ -64,7 +64,31 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
 
   const accessToken = context.cookies.get('sb-access-token')?.value;
   const refreshToken = context.cookies.get('sb-refresh-token')?.value;
+  const sessionType = context.cookies.get('sb-session-type')?.value;
   const authState = await getAdminMfaState(accessToken, refreshToken);
+
+  if (authState.authenticated && authState.session?.access_token && authState.session?.refresh_token) {
+    const isProduction = import.meta.env.PROD || import.meta.env.NODE_ENV === 'production';
+    const useSecureCookies = isProduction ? true : new URL(context.request.url).protocol === 'https:';
+    const isPersistent = sessionType === 'persistent';
+    const maxAge = isPersistent ? 30 * 24 * 60 * 60 : undefined;
+
+    context.cookies.set('sb-access-token', authState.session.access_token, {
+      path: '/',
+      httpOnly: true,
+      secure: useSecureCookies,
+      sameSite: 'lax',
+      maxAge,
+    });
+
+    context.cookies.set('sb-refresh-token', authState.session.refresh_token, {
+      path: '/',
+      httpOnly: true,
+      secure: useSecureCookies,
+      sameSite: 'lax',
+      maxAge,
+    });
+  }
 
   if (!authState.authenticated) {
     if (isAdminApi(pathname) || isProtectedNonAdminApi(pathname, method)) {

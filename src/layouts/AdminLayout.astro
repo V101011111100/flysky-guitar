@@ -10,6 +10,7 @@ interface Props {
   activeNav?: string;
 }
 const { title = 'Admin', subtitle = '', activeNav = 'dashboard' } = Astro.props;
+const pageClass = `page-${activeNav}`;
 
 let userEmail = '';
 let shouldRedirect = false;
@@ -79,6 +80,31 @@ const can = (feature: AdminFeatureKey) => allowedFeatures.has(feature);
       font-family: 'Manrope', sans-serif;
       background: #221910;
       color: #f1f5f9;
+    }
+
+    /* Ensure native select popups keep strong contrast on Windows and Chromium */
+    :global(.main-area select) {
+      background: rgba(45, 34, 24, 0.92);
+      color: #f4c99e;
+      border: 1px solid rgba(244, 140, 37, 0.28);
+      color-scheme: dark;
+    }
+    :global(.main-area select:focus) {
+      background: rgba(52, 38, 24, 0.96);
+    }
+    :global(.main-area select option) {
+      background: #2a1f15;
+      color: #f4c99e;
+    }
+    :global(.main-area select option:checked) {
+      background: #c8761f;
+      color: #1f160f;
+      font-weight: 700;
+    }
+    :global(.main-area select option:hover),
+    :global(.main-area select option:focus) {
+      background: #5a3a22;
+      color: #f8e6d3;
     }
 
     /* ══ LAYOUT ══ */
@@ -204,7 +230,7 @@ const can = (feature: AdminFeatureKey) => allowedFeatures.has(feature);
       background: rgba(34,25,16,.9);
       border-bottom: 1px solid #4a3a2a;
       backdrop-filter: blur(12px);
-      position: sticky; top: 0; z-index: 20;
+      position: sticky; top: 0; z-index: 1200;
     }
     @media (min-width: 768px) {
       .topbar { padding: 20px 32px; }
@@ -255,93 +281,6 @@ const can = (feature: AdminFeatureKey) => allowedFeatures.has(feature);
         display: flex; align-items: center; justify-content: center;
         padding: 0 3px;
         transition: opacity 0.2s;
-      }
-
-      /* Notification Dropdown */
-      .notif-wrap { position: relative; }
-      .notif-dropdown {
-        position: absolute;
-        top: calc(100% + 10px);
-        right: 0;
-        width: min(360px, calc(100vw - 28px));
-        max-height: 480px;
-        background: rgba(45,34,24,0.97);
-        border: 1px solid rgba(244,140,37,0.22);
-        border-radius: 14px;
-        box-shadow: 0 20px 48px rgba(0,0,0,0.6);
-        backdrop-filter: blur(8px);
-        z-index: 200;
-        display: none;
-        flex-direction: column;
-        overflow: hidden;
-        animation: fadeSlideDown 0.18s ease;
-      }
-      @media (max-width: 640px) {
-        .notif-dropdown {
-          right: -42px;
-          max-height: 62vh;
-        }
-      }
-      .notif-dropdown.open { display: flex; }
-      @keyframes fadeSlideDown {
-        from { opacity: 0; transform: translateY(-6px); }
-        to   { opacity: 1; transform: translateY(0); }
-      }
-      .notif-drop-header {
-        display: flex; align-items: center; justify-content: space-between;
-        padding: 14px 16px 10px;
-        border-bottom: 1px solid rgba(244,140,37,0.12);
-      }
-      .notif-drop-title { font-size: 13px; font-weight: 800; color: #f1f5f9; }
-      .notif-drop-link {
-        font-size: 11.5px; font-weight: 600; color: #f48c25;
-        text-decoration: none;
-      }
-      .notif-drop-link:hover { text-decoration: underline; }
-      .notif-list {
-        overflow-y: auto;
-        flex: 1;
-      }
-      .notif-list::-webkit-scrollbar { width: 4px; }
-      .notif-list::-webkit-scrollbar-thumb { background: #4a3a2a; border-radius: 4px; }
-      .notif-item {
-        display: flex; gap: 10px; align-items: flex-start;
-        padding: 11px 14px;
-        border-bottom: 1px solid rgba(255,255,255,0.04);
-        transition: background 0.12s;
-      }
-      .notif-item:hover { background: rgba(244,140,37,0.06); }
-      .notif-item:last-child { border-bottom: none; }
-      .notif-icon-wrap {
-        width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 15px;
-      }
-      .notif-body { flex: 1; min-width: 0; }
-      .notif-text {
-        font-size: 12.5px; font-weight: 600; color: #e2e8f0;
-        line-height: 1.35;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        word-break: break-word;
-      }
-      .notif-meta {
-        font-size: 11px; color: #64748b; margin-top: 2px;
-        display: flex; gap: 6px; flex-wrap: wrap;
-      }
-      .notif-module { color: #94a3b8; font-weight: 500; }
-      .notif-drop-empty {
-        padding: 36px 16px;
-        text-align: center;
-        color: #64748b;
-        font-size: 13px;
-      }
-      .notif-loading {
-        padding: 28px 16px;
-        display: flex; align-items: center; justify-content: center;
-        gap: 8px; color: #64748b; font-size: 13px;
       }
     .topbar-divider { width: 1px; height: 40px; background: #4a3a2a; }
     .topbar-user { display: flex; align-items: center; gap: 12px; }
@@ -427,7 +366,7 @@ const can = (feature: AdminFeatureKey) => allowedFeatures.has(feature);
     Đang chuyển hướng đến trang đăng nhập...
   </div>
 ) : (
-<div class="app-shell">
+<div class={`app-shell ${pageClass}`}>
 
   <!-- ══ SIDEBAR ══ -->
   <aside class="sidebar">
@@ -497,23 +436,8 @@ const can = (feature: AdminFeatureKey) => allowedFeatures.has(feature);
         <div class="notif-wrap">
           <button class="notif-btn" id="notif-btn" aria-label="Thông báo" aria-expanded="false">
             <span class="material-symbols-outlined">notifications</span>
-            <span class="notif-dot" id="notif-badge" style="display:none;"></span>
+            <span class="notif-dot notif-dot-hidden" id="notif-badge"></span>
           </button>
-          <div class="notif-dropdown" id="notif-dropdown" role="menu">
-            <div class="notif-drop-header">
-              <span class="notif-drop-title">Hoạt động gần đây</span>
-              <div style="display:flex;align-items:center;gap:10px;">
-                <button type="button" class="notif-drop-link" id="notif-read-all-btn" style="background:none;border:none;cursor:pointer;padding:0;">Read all</button>
-                <a href="/admin/activity-log" class="notif-drop-link">Xem tất cả</a>
-              </div>
-            </div>
-            <div class="notif-list" id="notif-list">
-              <div class="notif-loading" id="notif-loading">
-                <span class="material-symbols-outlined" style="animation:spin 1s linear infinite;font-size:18px;">autorenew</span>
-                Đang tải...
-              </div>
-            </div>
-          </div>
         </div>
         <div class="topbar-divider"></div>
         <div class="topbar-user">
@@ -535,6 +459,27 @@ const can = (feature: AdminFeatureKey) => allowedFeatures.has(feature);
       </div>
     </header>
 
+    <div class="notif-backdrop" id="notif-backdrop"></div>
+
+    <div class="notif-dropdown" id="notif-dropdown" role="menu">
+      <div class="notif-drop-header">
+        <span class="notif-drop-title">Hoạt động gần đây</span>
+        <div class="notif-drop-actions">
+          <button type="button" class="notif-drop-link notif-drop-link-btn" id="notif-read-all-btn">Read all</button>
+          <a href="/admin/activity-log" class="notif-drop-link">Xem tất cả</a>
+          <button type="button" class="notif-close-btn" id="notif-close-btn" aria-label="Đóng thông báo">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+      </div>
+      <div class="notif-list" id="notif-list">
+        <div class="notif-loading" id="notif-loading">
+          <span class="material-symbols-outlined notif-spin-icon">autorenew</span>
+          Đang tải...
+        </div>
+      </div>
+    </div>
+
     <div class="content-scroll">
       <slot />
     </div>
@@ -550,12 +495,34 @@ const can = (feature: AdminFeatureKey) => allowedFeatures.has(feature);
   @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 <style is:global>
+  body.notif-open {
+    overflow: hidden;
+  }
+  body.notif-open .content-scroll,
+  body.notif-open .main-area {
+    overflow: hidden !important;
+  }
+  .notif-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.34);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease;
+    z-index: 1100;
+  }
+  .notif-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
   /* Ensure notification dropdown styles apply to JS-rendered items */
+  .notif-dot-hidden { display: none !important; }
   .notif-wrap { position: relative; }
   .notif-dropdown {
-    position: absolute;
-    top: calc(100% + 10px);
-    right: 0;
+    position: fixed;
+    top: 76px;
+    right: 24px;
     width: min(380px, calc(100vw - 24px));
     max-height: 500px;
     background: rgba(31, 22, 14, 0.98);
@@ -563,10 +530,16 @@ const can = (feature: AdminFeatureKey) => allowedFeatures.has(feature);
     border-radius: 14px;
     box-shadow: 0 22px 48px rgba(0,0,0,0.55);
     backdrop-filter: blur(8px);
-    z-index: 200;
+    z-index: 1300;
     display: none;
     flex-direction: column;
     overflow: hidden;
+  }
+  @media (min-width: 1025px) {
+    .notif-dropdown {
+      top: 84px;
+      right: 28px;
+    }
   }
   .notif-dropdown.open { display: flex; }
   .notif-drop-header {
@@ -577,8 +550,32 @@ const can = (feature: AdminFeatureKey) => allowedFeatures.has(feature);
     border-bottom: 1px solid rgba(244,140,37,0.16);
     background: rgba(255,255,255,0.01);
   }
+  .notif-drop-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .notif-close-btn {
+    display: none;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    border: 1px solid rgba(244,140,37,0.16);
+    background: rgba(255,255,255,0.03);
+    color: #f1f5f9;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+  }
+  .notif-close-btn .material-symbols-outlined { font-size: 18px; }
   .notif-drop-title { font-size: 14px; font-weight: 800; color: #f1f5f9; }
   .notif-drop-link { font-size: 13px; font-weight: 700; color: #f48c25; text-decoration: none; }
+  .notif-drop-link-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+  }
   .notif-drop-link:hover { text-decoration: underline; }
 
   .notif-list {
@@ -663,9 +660,43 @@ const can = (feature: AdminFeatureKey) => allowedFeatures.has(feature);
     color: #94a3b8;
     font-size: 13px;
   }
+  .notif-spin-icon {
+    animation: spin 1s linear infinite;
+    font-size: 18px;
+  }
 
+  @media (max-width: 1024px) {
+    body.notif-open-mobile { overflow: hidden; }
+    .notif-dropdown {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      max-height: 100vh;
+      border-radius: 0;
+      border: none;
+      box-shadow: none;
+      background: rgba(31,22,14,0.985);
+      z-index: 1300;
+    }
+    .notif-drop-header {
+      padding: calc(env(safe-area-inset-top, 0px) + 14px) 14px 12px;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: rgba(31,22,14,0.985);
+    }
+    .notif-close-btn { display: inline-flex; }
+    .notif-list { padding: 10px 12px calc(env(safe-area-inset-bottom, 0px) + 18px); }
+    .notif-backdrop {
+      background: rgba(0,0,0,0.58);
+      backdrop-filter: blur(4px);
+    }
+  }
+  @media (max-width: 900px) {
+    .page-media .topbar-title { display: none; }
+    .page-media .topbar-left { gap: 10px; }
+  }
   @media (max-width: 640px) {
-    .notif-dropdown { right: -42px; max-height: 62vh; }
     .notif-drop-title { font-size: 15px; }
     .notif-item { grid-template-columns: 30px 1fr; padding: 9px; gap: 8px; }
     .notif-icon-wrap { width: 30px; height: 30px; }
@@ -695,7 +726,29 @@ const can = (feature: AdminFeatureKey) => allowedFeatures.has(feature);
     const notifList = document.getElementById('notif-list');
     const notifBadge = document.getElementById('notif-badge');
     const notifReadAllBtn = document.getElementById('notif-read-all-btn') as HTMLButtonElement | null;
-    let notifLoaded = false;
+    const notifCloseBtn = document.getElementById('notif-close-btn') as HTMLButtonElement | null;
+    const notifBackdrop = document.getElementById('notif-backdrop');
+
+    if (notifBackdrop && notifBackdrop.parentElement !== document.body) {
+      document.body.appendChild(notifBackdrop);
+    }
+    if (notifDropdown && notifDropdown.parentElement !== document.body) {
+      document.body.appendChild(notifDropdown);
+    }
+
+    function setNotifOpen(open: boolean) {
+      if (!notifDropdown || !notifBtn) return;
+      notifDropdown.classList.toggle('open', open);
+      notifDropdown.style.display = open ? 'flex' : 'none';
+      notifDropdown.style.opacity = open ? '1' : '0';
+      notifDropdown.style.pointerEvents = open ? 'auto' : 'none';
+      notifBackdrop?.classList.toggle('open', open);
+      notifBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      document.body.classList.toggle('notif-open', open);
+      if (window.innerWidth <= 1024) {
+        document.body.classList.toggle('notif-open-mobile', open);
+      }
+    }
 
     const ACTION_ICONS: Record<string, { icon: string; bg: string; color: string }> = {
       'Thêm mới': { icon: 'add_circle', bg: 'rgba(34,197,94,0.15)', color: '#22c55e' },
@@ -723,28 +776,47 @@ const can = (feature: AdminFeatureKey) => allowedFeatures.has(feature);
       return `${Math.floor(h / 24)} ngày trước`;
     }
 
+    function renderNotifLoading() {
+      if (!notifList) return;
+      notifList.innerHTML = '<div class="notif-loading"><span class="material-symbols-outlined notif-spin-icon">autorenew</span>Đang tải...</div>';
+    }
+
+    function renderNotifMessage(message: string, icon = 'notifications_off', accent = '#4a3a2a') {
+      if (!notifList) return;
+      notifList.innerHTML = `<div class="notif-drop-empty"><span class="material-symbols-outlined" style="font-size:32px;display:block;margin:0 auto 8px;color:${accent};">${icon}</span>${message}</div>`;
+    }
+
+    function updateNotifBadge(count: number) {
+      if (!notifBadge) return;
+      if (count > 0) {
+        notifBadge.textContent = count > 99 ? '99+' : String(count);
+        notifBadge.classList.remove('notif-dot-hidden');
+      } else {
+        notifBadge.textContent = '';
+        notifBadge.classList.add('notif-dot-hidden');
+      }
+    }
+
     async function loadNotifications() {
       if (!notifList) return;
       const since = localStorage.getItem(NOTIF_SEEN_KEY) || '';
       const sinceMs = since ? new Date(since).getTime() : 0;
+      renderNotifLoading();
       try {
         const res = await fetch(`/api/admin/notifications${since ? `?since=${encodeURIComponent(since)}` : ''}`);
         const data = await res.json();
-        if (!data.success) return;
+        if (!res.ok || !data.success) {
+          const msg = data?.error ? escapeHtml(data.error) : 'Không thể tải thông báo';
+          renderNotifMessage(msg, 'error', '#f48c25');
+          return;
+        }
 
         // Update badge
-        if (notifBadge) {
-          if (data.unseenCount > 0) {
-            notifBadge.textContent = data.unseenCount > 99 ? '99+' : String(data.unseenCount);
-            notifBadge.style.display = 'flex';
-          } else {
-            notifBadge.style.display = 'none';
-          }
-        }
+        updateNotifBadge(data.unseenCount || 0);
 
         // Render list
         if (!data.logs || data.logs.length === 0) {
-          notifList.innerHTML = '<div class="notif-drop-empty"><span class="material-symbols-outlined" style="font-size:32px;display:block;margin:0 auto 8px;color:#4a3a2a;">notifications_off</span>Chưa có hoạt động nào</div>';
+          renderNotifMessage('Chưa có hoạt động nào');
           return;
         }
 
@@ -783,7 +855,7 @@ const can = (feature: AdminFeatureKey) => allowedFeatures.has(feature);
         });
 
       } catch (e) {
-        if (notifList) notifList.innerHTML = '<div class="notif-drop-empty">Không thể tải thông báo</div>';
+        renderNotifMessage('Không thể tải thông báo', 'error', '#f48c25');
       }
     }
 
@@ -795,10 +867,7 @@ const can = (feature: AdminFeatureKey) => allowedFeatures.has(feature);
         localStorage.setItem(NOTIF_SEEN_KEY, nextSeen);
       }
 
-      if (notifBadge) {
-        notifBadge.style.display = 'none';
-        notifBadge.textContent = '';
-      }
+      updateNotifBadge(0);
 
       notifList?.querySelectorAll('.notif-item.unread').forEach((node) => {
         node.classList.remove('unread');
@@ -832,15 +901,10 @@ const can = (feature: AdminFeatureKey) => allowedFeatures.has(feature);
       e.stopPropagation();
       const isOpen = notifDropdown?.classList.contains('open');
       if (isOpen) {
-        notifDropdown?.classList.remove('open');
-        notifBtn.setAttribute('aria-expanded', 'false');
+        setNotifOpen(false);
       } else {
-        notifDropdown?.classList.add('open');
-        notifBtn.setAttribute('aria-expanded', 'true');
-        if (!notifLoaded) {
-          notifLoaded = true;
-          loadNotifications();
-        }
+        setNotifOpen(true);
+        loadNotifications();
 
         // Mark as read when user actually interacts with dropdown
         notifDropdown?.addEventListener('mouseenter', () => {
@@ -852,11 +916,20 @@ const can = (feature: AdminFeatureKey) => allowedFeatures.has(feature);
     document.addEventListener('click', (e) => {
       if (notifDropdown?.classList.contains('open')) {
         const wrap = document.querySelector('.notif-wrap');
-        if (wrap && !wrap.contains(e.target as Node)) {
-          notifDropdown.classList.remove('open');
-          notifBtn?.setAttribute('aria-expanded', 'false');
+        const clickedInsideWrap = wrap ? wrap.contains(e.target as Node) : false;
+        const clickedInsideDropdown = notifDropdown.contains(e.target as Node);
+        if (!clickedInsideWrap && !clickedInsideDropdown) {
+          setNotifOpen(false);
         }
       }
+    });
+
+    notifCloseBtn?.addEventListener('click', () => {
+      setNotifOpen(false);
+    });
+
+    notifBackdrop?.addEventListener('click', () => {
+      setNotifOpen(false);
     });
 
     notifReadAllBtn?.addEventListener('click', () => {

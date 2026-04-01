@@ -17,7 +17,60 @@ export interface UserSession {
   expires_at: string;
 }
 
+const MAX_SESSIONS_PER_USER = 20;
+const INACTIVE_RETENTION_DAYS = 14;
+
 export class SessionManager {
+  private static async pruneUserSessions(userId: string): Promise<void> {
+    const nowIso = new Date().toISOString();
+    const inactiveCutoffIso = new Date(Date.now() - INACTIVE_RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
+
+    const { error: staleDeleteError } = await supabase
+      .from('user_sessions')
+      .delete()
+      .eq('user_id', userId)
+      .or(`expires_at.lt.${nowIso},and(is_active.eq.false,last_activity.lt.${inactiveCutoffIso})`);
+
+    if (staleDeleteError) {
+      console.error('Error pruning stale sessions:', staleDeleteError);
+    }
+
+    const { data: userSessions, error: listError } = await supabase
+      .from('user_sessions')
+      .select('id, is_active, last_activity')
+      .eq('user_id', userId)
+      .order('is_active', { ascending: false })
+      .order('last_activity', { ascending: false });
+
+    if (listError) {
+      console.error('Error listing sessions for cap enforcement:', listError);
+      return;
+    }
+
+    if (!userSessions || userSessions.length <= MAX_SESSIONS_PER_USER) {
+      return;
+    }
+
+    const removableIds = userSessions
+      .slice(MAX_SESSIONS_PER_USER)
+      .map((session) => session.id)
+      .filter(Boolean);
+
+    if (removableIds.length === 0) {
+      return;
+    }
+
+    const { error: capDeleteError } = await supabase
+      .from('user_sessions')
+      .delete()
+      .eq('user_id', userId)
+      .in('id', removableIds);
+
+    if (capDeleteError) {
+      console.error('Error enforcing session cap:', capDeleteError);
+    }
+  }
+
   static async createSession(userId: string, sessionData: Partial<UserSession>): Promise<UserSession | null> {
     try {
       const session: Partial<UserSession> = {
@@ -48,6 +101,8 @@ export class SessionManager {
         return null;
       }
 
+      await this.pruneUserSessions(userId);
+
       return data;
     } catch (error: any) {
       console.error('SessionManager.createSession error:', error);
@@ -57,6 +112,8 @@ export class SessionManager {
 
   static async getUserSessions(userId: string): Promise<UserSession[]> {
     try {
+      await this.pruneUserSessions(userId);
+
       const { data, error } = await supabase
         .from('user_sessions')
         .select('*')
@@ -125,7 +182,7 @@ export class SessionManager {
     try {
       const { error } = await supabase
         .from('user_sessions')
-        .update({ is_active: false })
+        .delete()
         .lt('expires_at', new Date().toISOString());
 
       if (error) {

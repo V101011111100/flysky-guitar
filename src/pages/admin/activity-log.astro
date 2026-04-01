@@ -1,6 +1,16 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import { supabase } from '../../lib/supabase';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = import.meta.env.SUPABASE_URL || '';
+const supabaseServiceRoleKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY || '';
+
+// Admin pages run server-side, so using service role here keeps RLS strict for public clients
+// while still allowing the dashboard to read internal audit logs.
+const adminSupabase = (supabaseUrl && supabaseServiceRoleKey)
+  ? createClient(supabaseUrl, supabaseServiceRoleKey, { auth: { persistSession: false } })
+  : supabase;
 
 // URL Params for filtering and pagination
 const url = new URL(Astro.request.url);
@@ -10,11 +20,11 @@ const page = parseInt(searchParams.get('page') || '1');
 const limit = 10;
 const roleFilter = searchParams.get('role') || '';
 const actionFilter = searchParams.get('action') || '';
-const periodFilter = searchParams.get('period') || 'Tháng này';
+const periodFilter = searchParams.get('period') || '30 ngày qua';
 const startParam = searchParams.get('start');
 const endParam = searchParams.get('end');
 
-let query = supabase.from('activity_logs').select('*', { count: 'exact' });
+let query = adminSupabase.from('activity_logs').select('*', { count: 'exact' });
 
 if (roleFilter) query = query.eq('user_role', roleFilter);
 if (actionFilter) query = query.eq('action_type', actionFilter);
@@ -54,9 +64,9 @@ const todayStart = new Date();
 todayStart.setHours(0,0,0,0);
 
 const [{ count: todayUpdates }, { count: securityAlerts }, { data: activeUsersData }] = await Promise.all([
-  supabase.from('activity_logs').select('*', { count: 'exact', head: true }).in('action_type', ['Thêm mới', 'Cập nhật']).gte('created_at', todayStart.toISOString()),
-  supabase.from('activity_logs').select('*', { count: 'exact', head: true }).eq('action_type', 'Bảo mật / Hệ thống').gte('created_at', todayStart.toISOString()),
-  supabase.from('activity_logs').select('user_name').gte('created_at', todayStart.toISOString())
+  adminSupabase.from('activity_logs').select('*', { count: 'exact', head: true }).in('action_type', ['Thêm mới', 'Cập nhật']).gte('created_at', todayStart.toISOString()),
+  adminSupabase.from('activity_logs').select('*', { count: 'exact', head: true }).eq('action_type', 'Bảo mật / Hệ thống').gte('created_at', todayStart.toISOString()),
+  adminSupabase.from('activity_logs').select('user_name').gte('created_at', todayStart.toISOString())
 ]);
 
 const distinctUsersCount = new Set((activeUsersData || []).map(r => r.user_name)).size;
@@ -171,7 +181,8 @@ function formatDate(ds: string) {
             {!logs || logs.length === 0 ? (
               <tr>
                 <td colspan="6" style="text-align:center; padding: 32px; color: #64748b;">
-                  Không tìm thấy nhật ký hoạt động nào phù hợp.
+                  Không tìm thấy nhật ký phù hợp với bộ lọc hiện tại
+                  (thời gian: {periodFilter}{roleFilter ? `, vai trò: ${roleFilter}` : ''}{actionFilter ? `, hành động: ${actionFilter}` : ''}).
                 </td>
               </tr>
             ) : logs.map((log: any) => {
@@ -673,7 +684,7 @@ function formatDate(ds: string) {
     top: 100%;
     margin-top: 8px;
     width: 192px;
-    background: #221910;
+    background: rgba(244,140,37,.05);
     border: 1px solid rgba(244, 140, 37, 0.2);
     border-radius: 12px;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
@@ -717,7 +728,7 @@ function formatDate(ds: string) {
     cursor: pointer;
     transition: all 0.2s;
     border: 1px solid rgba(244, 140, 37, 0.1);
-    background: #221910;
+    background: rgba(244,140,37,.05);
     color: #94a3b8;
   }
   .dp-btn:hover {
@@ -795,17 +806,18 @@ function formatDate(ds: string) {
   }
   .filter-select {
     width: 100%;
-    background: #221910;
-    border: 1px solid rgba(244, 140, 37, 0.2);
+    background: rgba(45,34,24,.92);
+    border: 1px solid rgba(244, 140, 37, 0.28);
     border-radius: 8px;
     padding: 8px 12px;
     font-size: 14px;
-    color: #f1f5f9;
+    color: #f4c99e;
     outline: none;
     appearance: none;
   }
   .filter-select:focus {
     box-shadow: 0 0 0 1px #f48c25;
+    background: rgba(52,38,24,.96);
   }
   .filter-action {
     display: flex;
@@ -815,7 +827,7 @@ function formatDate(ds: string) {
     width: 100%;
     padding: 8px 0;
     background: #f48c25;
-    color: #221910;
+    color: white;
     font-weight: 700;
     border-radius: 8px;
     border: none;
@@ -926,7 +938,7 @@ function formatDate(ds: string) {
   .page-controls { display: flex; gap: 8px; }
   .page-btn {
     padding: 4px 12px;
-    background: #221910;
+    background: rgba(244,140,37,.05);
     border: 1px solid rgba(244, 140, 37, 0.2);
     border-radius: 4px;
     color: #cbd5e1;
@@ -939,7 +951,7 @@ function formatDate(ds: string) {
     color: #f1f5f9;
   }
   .page-disabled { opacity: 0.5; cursor: not-allowed; }
-  .page-active { background: #f48c25; color: #221910; font-weight: 700; box-shadow: 0 4px 14px 0 rgba(244, 140, 37, 0.2); border-color: transparent; }
+  .page-active { background: #f48c25; color: white; font-weight: 700; box-shadow: 0 4px 14px 0 rgba(244, 140, 37, 0.2); border-color: transparent; }
 
   /* Stats */
   .stats-grid {
@@ -953,7 +965,7 @@ function formatDate(ds: string) {
   .stat-card {
     padding: 24px;
     border-radius: 12px;
-    background: #221910;
+    background: rgba(244,140,37,.05);
     border: 1px solid rgba(244, 140, 37, 0.1);
     display: flex;
     align-items: center;
@@ -1061,7 +1073,21 @@ function formatDate(ds: string) {
     background: #f48c25;
     animation: progressTrack 2s ease-in-out infinite;
   }
+  @media (max-width: 1100px) {
+    .log-filters { grid-template-columns: 1fr 1fr; }
+    .log-table th:nth-child(5),
+    .log-table td:nth-child(5) { display: none; }
+  }
+
   @media (max-width: 768px) {
+    .log-table-wrapper { overflow-x: auto; }
+    .log-table { min-width: 580px; }
+    .log-table th:nth-child(4),
+    .log-table td:nth-child(4) { display: none; }
+    .log-filters { grid-template-columns: 1fr; }
+    .pagination { flex-direction: column; gap: 12px; align-items: flex-start; }
+    .log-title { font-size: 22px; }
+    .log-table th, .log-table td { padding: 12px 14px; }
     .toast-notification {
       left: 12px;
       right: 12px;
@@ -1075,6 +1101,18 @@ function formatDate(ds: string) {
     .toast-title { font-size: 14px; }
     .toast-desc { font-size: 12px; }
     .toast-progress-wrap { display: none; }
+  }
+
+  @media (max-width: 480px) {
+    .log-title { font-size: 18px; }
+    .log-subtitle { font-size: 13px; }
+    .log-table { min-width: 480px; }
+    .stat-card { padding: 16px; gap: 12px; }
+    .stat-val { font-size: 20px; }
+    .export-btn { padding: 6px 12px; font-size: 12px; }
+    .log-table th, .log-table td { padding: 10px 10px; font-size: 12px; }
+    .user-name { font-size: 12px; }
+    .action-text { font-size: 12px; }
   }
 </style>
 
@@ -1160,4 +1198,30 @@ function formatDate(ds: string) {
   }
   .dp-btn-apply:active { transform: scale(0.95); }
 
+  @media (max-width: 768px) {
+    .dp-modal-overlay { padding: 12px; }
+    .dp-modal-content {
+      flex-direction: column;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .dp-sidebar {
+      width: 100%;
+      border-right: none;
+      border-bottom: 1px solid #493622;
+      padding: 16px;
+    }
+    .dp-sidebar-bottom { padding-top: 16px; }
+    .dp-main { padding: 16px; }
+    .dp-calendars { grid-template-columns: 1fr; gap: 24px; }
+    .dp-actions-wrap { margin-top: 24px; padding-top: 16px; }
+    .dp-month-title { font-size: 15px; min-width: 100px; }
+  }
+
+  @media (max-width: 480px) {
+    .dp-modal-content { border-radius: 12px; }
+    .dp-day { height: 34px; font-size: 12px; }
+    .dp-main { padding: 12px; }
+    .dp-calendars { gap: 16px; }
+  }
 </style>

@@ -28,8 +28,22 @@ const { data: orders } = await supabase
       .font-pos-serif { font-family: 'Playfair Display', serif; }
       ::-webkit-scrollbar { width: 6px; height: 6px; }
       ::-webkit-scrollbar-track { background: transparent; }
-      ::-webkit-scrollbar-thumb { background: var(--color-border-dark, #4a3a2a); border-radius: 10px; }
+      ::-webkit-scrollbar-thumb { background: var(--color-border-dark, rgba(244,140,37,.1)); border-radius: 10px; }
       .btn-orange-gradient { background: linear-gradient(135deg, var(--color-accent-orange, #e67e22) 0%, #d35400 100%); }
+      /* POS product card states */
+      .pos-card-in-cart {
+        border-color: rgba(244, 140, 37, 0.6) !important;
+        background: #372a1a !important;
+        box-shadow: 0 0 0 1px rgba(244,140,37,0.3), inset 0 0 20px rgba(244,140,37,0.05);
+      }
+      @keyframes pos-flash {
+        0%   { box-shadow: 0 0 0 3px rgba(244,140,37,0.9), inset 0 0 30px rgba(244,140,37,0.25); transform: scale(0.97); }
+        50%  { box-shadow: 0 0 0 5px rgba(244,140,37,0.5), inset 0 0 30px rgba(244,140,37,0.15); transform: scale(1.02); }
+        100% { box-shadow: none; transform: scale(1); }
+      }
+      .pos-card-flash {
+        animation: pos-flash 0.55s ease-out forwards;
+      }
     </style>
   </Fragment>
 
@@ -289,6 +303,18 @@ const { data: orders } = await supabase
           return Math.max(0, this.subtotal - this.discountAmount + this.shippingFee);
         },
 
+        lastAdded: null,
+        flashId: null,
+
+        isInCart(id) {
+          return this.cart.some(i => i.id === id);
+        },
+
+        cartQty(id) {
+          const item = this.cart.find(i => i.id === id);
+          return item ? item.qty : 0;
+        },
+
         addToCart(product) {
           if (product.stock_quantity <= 0) return alert('Sản phẩm đã hết hàng!');
           const existing = this.cart.find(i => i.id === product.id);
@@ -299,6 +325,10 @@ const { data: orders } = await supabase
             const imgUrl = product.gallery_images && product.gallery_images.length > 0 ? product.gallery_images[0] : null;
             this.cart.push({ ...product, qty: 1, imgUrl });
           }
+          // Flash animation
+          this.flashId = product.id;
+          clearTimeout(this._flashTimer);
+          this._flashTimer = setTimeout(() => { this.flashId = null; }, 600);
         },
 
         updateQty(id, delta) {
@@ -539,8 +569,8 @@ const { data: orders } = await supabase
             TỔNG DOANH THU: ${this.formatCurrency(this.periodRevenue)}
             SỐ ĐƠN HÀNG: ${this.periodOrderCount}
             
-            CHI TIẾT THEO PHƯƠNG THÁNH TOÁN:
-            ${this.paymentMethods().map(m => `- ${m.label}: ${m.count} đơn`).join('\n')}
+            CHI TIẾT THEO PHƯƠNG THỨC THANH TOÁN:
+            ${this.paymentMethods.map(m => `- ${m.label}: ${m.count} đơn`).join('\n')}
           `;
           
           // For demo purposes, return as text. In production, use jsPDF or similar
@@ -550,11 +580,11 @@ const { data: orders } = await supabase
     });
   </script>
 
-  <div class="pos-shell bg-[#221910] text-[#f1f5f9] h-full overflow-hidden font-pos-sans" x-data="posApp()">
+  <div class="pos-shell bg-[rgba(244,140,37,.08)] text-[#f1f5f9] h-full overflow-hidden font-pos-sans" x-data="posApp()">
 
     <!-- PRINT TYPE MODAL -->
     <div x-show="showPrintModal" x-transition.opacity class="fixed inset-0 z-[9999] flex items-center justify-center" style="background:rgba(0,0,0,0.7); display:none;">
-      <div class="bg-[#2d241e] border border-[#4a3a2a] rounded-2xl p-8 w-[380px] shadow-2xl">
+      <div class="bg-[rgba(244,140,37,.05)] border border-[rgba(244,140,37,.1)] rounded-2xl p-8 w-[380px] shadow-2xl">
         <h3 class="text-lg font-bold text-white mb-2 flex items-center gap-2">
           <span class="material-symbols-outlined text-[#e67e22]">print</span>
           Chọn loại in hóa đơn
@@ -683,8 +713,16 @@ const { data: orders } = await supabase
           </div>
           <div class="flex-1 overflow-y-auto p-3 lg:p-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3 lg:gap-4 content-start auto-rows-max">
              <template x-for="product in filteredProducts" :key="product.id">
-                <div @click="addToCart(product)" class="bg-[#2d2218] p-3 rounded-lg border border-[#4a3a2a] hover:border-[#f48c25] hover:shadow-lg transition-all cursor-pointer group flex flex-col min-h-[200px]">
-                   <div class="w-full aspect-square shadow-inner rounded-md mb-3 bg-[#221910] overflow-hidden relative border border-[#4a3a2a]/50">
+                <div @click="addToCart(product)"
+                     :class="{ 'pos-card-flash': flashId === product.id, 'pos-card-in-cart': isInCart(product.id) }"
+                     class="bg-[rgba(244,140,37,.05)] p-3 rounded-lg border border-[rgba(244,140,37,.1)] hover:border-[#f48c25] hover:shadow-lg transition-all cursor-pointer group flex flex-col min-h-[200px] relative">
+                   <!-- Qty badge -->
+                   <template x-if="isInCart(product.id)">
+                     <div class="absolute top-2 right-2 z-10 w-5 h-5 rounded-full bg-[#f48c25] flex items-center justify-center">
+                       <span class="text-[10px] font-black text-[#1a1412]" x-text="cartQty(product.id)"></span>
+                     </div>
+                   </template>
+                   <div class="w-full aspect-square shadow-inner rounded-md mb-3 bg-[rgba(244,140,37,.08)] overflow-hidden relative border border-[rgba(244,140,37,.15)]/50">
                       <template x-if="product.gallery_images && product.gallery_images.length > 0">
                         <img :src="product.gallery_images[0]" :alt="product.name" class="w-full h-full object-cover" />
                       </template>

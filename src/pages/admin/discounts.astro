@@ -386,16 +386,16 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
   .btn-full { width: 100%; flex: 1; min-height: 48px; }
 
   .btn-outline {
-    background: transparent; border: 1px solid #4a3a2a;
+    background: transparent; border: 1px solid rgba(244,140,37,.1);
     color: #94a3b8; font-weight: 700; font-size: 14px;
     padding: 12px 20px; border-radius: 12px; cursor: pointer;
     transition: all .15s;
   }
-  .btn-outline:hover { background: #2d2218; color: #f1f5f9; }
+  .btn-outline:hover { background: rgba(244,140,37,.05); color: #f1f5f9; }
 
   .card {
-    background: #2d2218;
-    border: 1px solid #4a3a2a;
+    background: rgba(244,140,37,.05);
+    border: 1px solid rgba(244,140,37,.1);
     border-radius: 16px;
   }
 
@@ -418,7 +418,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
   @media (min-width: 1024px) { .dc-stats-grid { grid-template-columns: repeat(3, 1fr); } }
 
   .dc-stat-card {
-    background: #2d2218; border: 1px solid #4a3a2a;
+    background: rgba(244,140,37,.05); border: 1px solid rgba(244,140,37,.1);
     border-radius: 16px; padding: 24px;
   }
   .dc-stat-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
@@ -444,7 +444,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
   
   .form-label { font-size: 14px; font-weight: 600; color: #cbd5e1; }
   .form-input, .form-select {
-    width: 100%; background: #221910; border: 1px solid #4a3a2a;
+    width: 100%; background: rgba(244,140,37,.08); border: 1px solid rgba(244,140,37,.1);
     border-radius: 8px; padding: 10px 16px;
     font-size: 14px; color: #fff;
     outline: none; transition: border .2s, box-shadow .2s; box-sizing: border-box;
@@ -465,7 +465,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
   
   .dc-toolbar {
     display: flex; flex-direction: column; gap: 16px;
-    padding: 24px; border-bottom: 1px solid #4a3a2a;
+    padding: 24px; border-bottom: 1px solid rgba(244,140,37,.1);
   }
   @media (min-width: 640px) {
     .dc-toolbar { flex-direction: row; align-items: center; justify-content: space-between; }
@@ -482,8 +482,8 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
   /* Table */
   .table-responsive { overflow-x: auto; flex: 1; }
   .custom-scroll::-webkit-scrollbar { height: 6px; width: 6px; }
-  .custom-scroll::-webkit-scrollbar-track { background: #221910; }
-  .custom-scroll::-webkit-scrollbar-thumb { background: #4a3a2a; border-radius: 10px; }
+  .custom-scroll::-webkit-scrollbar-track { background: rgba(244,140,37,.08); }
+  .custom-scroll::-webkit-scrollbar-thumb { background: rgba(244,140,37,.1); border-radius: 10px; }
 
   .dc-table { width: 100%; border-collapse: collapse; min-width: 700px; text-align: left; }
   .dc-table th {
@@ -492,7 +492,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
     background: #2a1f16;
   }
   .dc-table td {
-    padding: 16px 24px; border-top: 1px solid rgba(74,58,42,.5);
+    padding: 16px 24px; border-top: 1px solid rgba(244,140,37,.2);
     transition: background .15s;
   }
   .dc-table tbody tr:hover td { background: rgba(34,25,16,.3); }
@@ -510,7 +510,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 
   .progress-wrap { display: flex; flex-direction: column; gap: 4px; margin-bottom: 4px; }
   .progress-info { display: flex; justify-content: space-between; font-size: 12px; color: #94a3b8; }
-  .progress-track { width: 128px; height: 6px; background: #221910; border-radius: 99px; overflow: hidden; }
+  .progress-track { width: 128px; height: 6px; background: rgba(244,140,37,.08); border-radius: 99px; overflow: hidden; }
   .progress-fill { height: 100%; background: #f48c25; border-radius: 99px; }
 
   .dc-dates { display: flex; flex-direction: column; gap: 4px; font-size: 12px; }

@@ -221,8 +221,13 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       }
     );
 
-  } catch {
-    return new Response(JSON.stringify({ success: false, error: 'Không thể nhập file Excel lúc này.' }), {
+  } catch (err: any) {
+    console.error('Import Error:', err.message || err);
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: err.message || 'Không thể nhập file Excel lúc này.',
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined
+    }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });

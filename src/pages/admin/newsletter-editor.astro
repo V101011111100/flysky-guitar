@@ -14,10 +14,53 @@ const globalStoreName = siteConfig['flysky_storeName'] || 'FlySky Guitar';
     <style>
       ::-webkit-scrollbar { width: 6px; height: 6px; }
       ::-webkit-scrollbar-track { background: transparent; }
-      ::-webkit-scrollbar-thumb { background: #4a3a2a; border-radius: 10px; }
+      ::-webkit-scrollbar-thumb { background: rgba(244,140,37,.1); border-radius: 10px; }
       .btn-orange-gradient { background: linear-gradient(135deg, #e67e22 0%, #d35400 100%); }
-      .variable-chip { cursor: pointer; display: inline-block; background: #2d241e; border: 1px solid #e67e22; color: #e67e22; border-radius: 4px; padding: 2px 7px; font-size: 11px; font-family: monospace; margin: 2px; transition: all .15s; }
-      .variable-chip:hover { background: #e67e22; color: white; }
+      .variable-chip { cursor: pointer; display: inline-block; background: rgba(244,140,37,.05); border: 1px solid rgba(244,140,37,.2); color: #f48c25; border-radius: 4px; padding: 2px 7px; font-size: 11px; font-family: monospace; margin: 2px; transition: all .15s; }
+      .variable-chip:hover { background: #f48c25; color: white; }
+
+      /* ── RESPONSIVE ── */
+      @media (max-width: 1024px) {
+        .newsletter-shell {
+          flex-direction: column;
+          overflow-y: auto !important;
+          overflow-x: hidden !important;
+          height: auto !important;
+          min-height: 100%;
+        }
+        .newsletter-shell > aside {
+          width: 100% !important;
+          max-width: 100%;
+          border-right: none !important;
+          border-bottom: 1px solid rgba(244,140,37,.08);
+          overflow: visible !important;
+        }
+        .newsletter-shell > aside .flex-1 {
+          max-height: 280px;
+          overflow-y: auto;
+        }
+        .newsletter-shell > main {
+          min-height: 70vh;
+          overflow-y: auto;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .newsletter-shell > aside .flex-1 {
+          max-height: 220px;
+        }
+        .newsletter-shell > main .sticky {
+          position: sticky;
+          top: 0;
+          z-index: 50;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .newsletter-shell > aside .p-5 { padding: 12px; }
+        .newsletter-shell > main .pt-10 { padding-top: 16px; }
+        .newsletter-shell > main .px-6 { padding-left: 12px; padding-right: 12px; }
+      }
     </style>
   </Fragment>
 
@@ -293,18 +336,18 @@ const globalStoreName = siteConfig['flysky_storeName'] || 'FlySky Guitar';
     });
   </script>
 
-  <div class="h-full flex text-slate-100 bg-[#221910] overflow-hidden" x-data="templateEditor()">
+  <div class="h-full flex text-slate-100 bg-[rgba(244,140,37,.08)] overflow-hidden newsletter-shell" x-data="templateEditor()">
 
     <!-- LEFT SIDEBAR -->
-    <aside class="w-80 bg-[#1a1412] border-r border-[#3a2a1c] flex flex-col overflow-hidden shrink-0">
+    <aside class="w-80 bg-[rgba(244,140,37,.03)] border-r border-[rgba(244,140,37,.08)] flex flex-col overflow-hidden shrink-0">
 
       <!-- Template Type Tabs -->
-      <div class="p-5 border-b border-[#3a2a1c] bg-[#2d2218] shrink-0">
+      <div class="p-5 border-b border-[rgba(244,140,37,.1)] bg-[rgba(244,140,37,.05)] shrink-0">
         <p class="text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-3">Loại mẫu thiết kế</p>
         <div class="flex flex-col gap-1.5">
           <template x-for="tab in tabs" :key="tab.id">
             <button @click="activeTab = tab.id"
-              :class="activeTab === tab.id ? 'bg-[#e67e22]/20 text-[#e67e22] border-[#e67e22]' : 'border-transparent text-slate-400 hover:bg-[#3a2a1c] hover:text-white'"
+              :class="activeTab === tab.id ? 'bg-[#e67e22]/20 text-[#e67e22] border-[#e67e22]' : 'border-transparent text-slate-400 hover:bg-[rgba(244,140,37,.1)] hover:text-white'"
               class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold border transition-all text-left">
               <span class="material-symbols-outlined text-lg" x-text="tab.icon"></span>
               <span x-text="tab.label"></span>
@@ -314,7 +357,7 @@ const globalStoreName = siteConfig['flysky_storeName'] || 'FlySky Guitar';
       </div>
 
       <!-- Saved Templates List -->
-      <div class="p-4 border-b border-[#3a2a1c] shrink-0">
+      <div class="p-5 border-b border-[rgba(244,140,37,.08)] bg-[rgba(244,140,37,.05)] shrink-0">
         <div class="flex justify-between items-center mb-2">
           <span class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Danh sách mẫu lưu</span>
           <button @click="createNewTemplate()" class="text-[#e67e22] text-xs font-bold hover:underline flex items-center gap-1">
@@ -355,30 +398,30 @@ const globalStoreName = siteConfig['flysky_storeName'] || 'FlySky Guitar';
             <p class="text-[10px] text-slate-500 uppercase tracking-widest">Thông tin cửa hàng</p>
             <div>
               <label class="block text-xs text-slate-400 mb-1">Câu slogan</label>
-              <input type="text" x-model="settings.invoice_slogan" class="w-full bg-[#2d241e] border border-[#3a2a1c] rounded px-2.5 py-1.5 text-sm text-white focus:border-[#e67e22] outline-none">
+              <input type="text" x-model="settings.invoice_slogan" class="w-full bg-[rgba(244,140,37,.05)] border border-[rgba(244,140,37,.1)] rounded px-2.5 py-1.5 text-sm text-white focus:border-[#e67e22] outline-none">
             </div>
             <div>
               <label class="block text-xs text-slate-400 mb-1">Địa chỉ</label>
-              <textarea rows="2" x-model="settings.invoice_address" class="w-full bg-[#2d241e] border border-[#3a2a1c] rounded px-2.5 py-1.5 text-sm text-white focus:border-[#e67e22] outline-none resize-none"></textarea>
+              <textarea rows="2" x-model="settings.invoice_address" class="w-full bg-[rgba(244,140,37,.05)] border border-[rgba(244,140,37,.1)] rounded px-2.5 py-1.5 text-sm text-white focus:border-[#e67e22] outline-none resize-none"></textarea>
             </div>
             <div>
               <label class="block text-xs text-slate-400 mb-1">Hotline</label>
-              <input type="text" x-model="settings.invoice_phone" class="w-full bg-[#2d241e] border border-[#3a2a1c] rounded px-2.5 py-1.5 text-sm text-white focus:border-[#e67e22] outline-none">
+              <input type="text" x-model="settings.invoice_phone" class="w-full bg-[rgba(244,140,37,.05)] border border-[rgba(244,140,37,.1)] rounded px-2.5 py-1.5 text-sm text-white focus:border-[#e67e22] outline-none">
             </div>
             <div>
               <label class="block text-xs text-slate-400 mb-1">Website</label>
-              <input type="text" x-model="settings.invoice_website" class="w-full bg-[#2d241e] border border-[#3a2a1c] rounded px-2.5 py-1.5 text-sm text-white focus:border-[#e67e22] outline-none">
+              <input type="text" x-model="settings.invoice_website" class="w-full bg-[rgba(244,140,37,.05)] border border-[rgba(244,140,37,.1)] rounded px-2.5 py-1.5 text-sm text-white focus:border-[#e67e22] outline-none">
             </div>
             <template x-if="activeTab === 'invoice_a4'">
               <div>
                 <label class="block text-xs text-slate-400 mb-1">Chính sách đổi trả</label>
-                <textarea rows="3" x-model="settings.invoice_policy" class="w-full bg-[#2d241e] border border-[#3a2a1c] rounded px-2.5 py-1.5 text-sm text-white focus:border-[#e67e22] outline-none resize-none"></textarea>
+                <textarea rows="3" x-model="settings.invoice_policy" class="w-full bg-[rgba(244,140,37,.05)] border border-[rgba(244,140,37,.1)] rounded px-2.5 py-1.5 text-sm text-white focus:border-[#e67e22] outline-none resize-none"></textarea>
                 <p class="text-[10px] text-slate-600 mt-0.5">Xuống dòng để tách mục.</p>
               </div>
             </template>
             <div>
               <label class="block text-xs text-slate-400 mb-1">Lời cảm ơn cuối phiếu</label>
-              <input type="text" x-model="settings.invoice_footer_msg" class="w-full bg-[#2d241e] border border-[#3a2a1c] rounded px-2.5 py-1.5 text-sm text-white focus:border-[#e67e22] outline-none">
+              <input type="text" x-model="settings.invoice_footer_msg" class="w-full bg-[rgba(244,140,37,.05)] border border-[rgba(244,140,37,.1)] rounded px-2.5 py-1.5 text-sm text-white focus:border-[#e67e22] outline-none">
             </div>
           </div>
         </template>
@@ -405,19 +448,19 @@ const globalStoreName = siteConfig['flysky_storeName'] || 'FlySky Guitar';
 
             <div>
               <label class="block text-xs text-slate-400 mb-1">Tiêu đề Email (Subject)</label>
-              <input type="text" id="field_subject" x-model="settings.email_subject" class="w-full bg-[#2d241e] border border-[#3a2a1c] rounded px-2.5 py-1.5 text-sm text-white focus:border-[#e67e22] outline-none">
+              <input type="text" id="field_subject" x-model="settings.email_subject" class="w-full bg-[rgba(244,140,37,.05)] border border-[rgba(244,140,37,.1)] rounded px-2.5 py-1.5 text-sm text-white focus:border-[#e67e22] outline-none">
             </div>
             <div>
               <label class="block text-xs text-slate-400 mb-1">Tiêu đề ảnh banner</label>
-              <input type="text" id="field_hero_title" x-model="settings.email_hero_title" class="w-full bg-[#2d241e] border border-[#3a2a1c] rounded px-2.5 py-1.5 text-sm text-white focus:border-[#e67e22] outline-none">
+              <input type="text" id="field_hero_title" x-model="settings.email_hero_title" class="w-full bg-[rgba(244,140,37,.05)] border border-[rgba(244,140,37,.1)] rounded px-2.5 py-1.5 text-sm text-white focus:border-[#e67e22] outline-none">
             </div>
             <div>
               <label class="block text-xs text-slate-400 mb-1">Lời chào</label>
-              <input type="text" id="field_greeting" x-model="settings.email_greeting" class="w-full bg-[#2d241e] border border-[#3a2a1c] rounded px-2.5 py-1.5 text-sm text-white focus:border-[#e67e22] outline-none">
+              <input type="text" id="field_greeting" x-model="settings.email_greeting" class="w-full bg-[rgba(244,140,37,.05)] border border-[rgba(244,140,37,.1)] rounded px-2.5 py-1.5 text-sm text-white focus:border-[#e67e22] outline-none">
             </div>
             <div>
               <label class="block text-xs text-slate-400 mb-1">Đoạn văn chính</label>
-              <textarea rows="3" id="field_body" x-model="settings.email_body" class="w-full bg-[#2d241e] border border-[#3a2a1c] rounded px-2.5 py-1.5 text-sm text-white focus:border-[#e67e22] outline-none resize-none"></textarea>
+              <textarea rows="3" id="field_body" x-model="settings.email_body" class="w-full bg-[rgba(244,140,37,.05)] border border-[rgba(244,140,37,.1)] rounded px-2.5 py-1.5 text-sm text-white focus:border-[#e67e22] outline-none resize-none"></textarea>
             </div>
             <div>
               <label class="block text-xs text-slate-400 mb-1">Nút hành động chính</label>
@@ -425,19 +468,19 @@ const globalStoreName = siteConfig['flysky_storeName'] || 'FlySky Guitar';
             </div>
             <div>
               <label class="block text-xs text-slate-400 mb-1">Nút hành động phụ</label>
-              <input type="text" x-model="settings.email_cta_secondary" class="w-full bg-[#2d241e] border border-[#3a2a1c] rounded px-2.5 py-1.5 text-sm text-white focus:border-[#e67e22] outline-none">
+              <input type="text" x-model="settings.email_cta_secondary" class="w-full bg-[rgba(244,140,37,.05)] border border-[rgba(244,140,37,.1)] rounded px-2.5 py-1.5 text-sm text-white focus:border-[#e67e22] outline-none">
             </div>
             <div>
               <label class="block text-xs text-slate-400 mb-1">Địa chỉ</label>
-              <input type="text" x-model="settings.email_store_address" class="w-full bg-[#2d241e] border border-[#3a2a1c] rounded px-2.5 py-1.5 text-sm text-white focus:border-[#e67e22] outline-none">
+              <input type="text" x-model="settings.email_store_address" class="w-full bg-[rgba(244,140,37,.05)] border border-[rgba(244,140,37,.1)] rounded px-2.5 py-1.5 text-sm text-white focus:border-[#e67e22] outline-none">
             </div>
             <div>
               <label class="block text-xs text-slate-400 mb-1">Hotline hỗ trợ</label>
-              <input type="text" x-model="settings.email_support_phone" class="w-full bg-[#2d241e] border border-[#3a2a1c] rounded px-2.5 py-1.5 text-sm text-white focus:border-[#e67e22] outline-none">
+              <input type="text" x-model="settings.email_support_phone" class="w-full bg-[rgba(244,140,37,.05)] border border-[rgba(244,140,37,.1)] rounded px-2.5 py-1.5 text-sm text-white focus:border-[#e67e22] outline-none">
             </div>
             <div>
               <label class="block text-xs text-slate-400 mb-1">Giờ mở cửa</label>
-              <input type="text" x-model="settings.email_store_hours" class="w-full bg-[#2d241e] border border-[#3a2a1c] rounded px-2.5 py-1.5 text-sm text-white focus:border-[#e67e22] outline-none">
+              <input type="text" x-model="settings.email_store_hours" class="w-full bg-[rgba(244,140,37,.05)] border border-[rgba(244,140,37,.1)] rounded px-2.5 py-1.5 text-sm text-white focus:border-[#e67e22] outline-none">
             </div>
           </div>
         </template>
@@ -561,7 +604,7 @@ const globalStoreName = siteConfig['flysky_storeName'] || 'FlySky Guitar';
     <main class="flex-1 overflow-y-auto bg-stone-900 relative"
       style="background-image: radial-gradient(#3a2a1c 1px, transparent 1px); background-size: 20px 20px; background-color: #1a1412;">
 
-      <div class="sticky top-0 z-50 bg-[#2d2218]/90 backdrop-blur border-b border-black py-2.5 px-6 flex justify-between items-center">
+      <div class="sticky top-0 z-50 bg-[rgba(244,140,37,.05)]/90 backdrop-blur border-b border-black py-2.5 px-6 flex justify-between items-center">
         <h2 class="text-sm font-bold text-white flex items-center gap-2">
           <span class="material-symbols-outlined text-[16px] text-[#e67e22]">visibility</span>
           Xem trước (Live Preview - dữ liệu mẫu)

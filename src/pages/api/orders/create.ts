@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { sendEmail, buildOrderConfirmationFromTemplate } from '../../../lib/email';
 import { sendPushToAll } from '../../../lib/push';
+import { triggerCustomWorkflowEvent } from '../../../lib/marketing';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -121,6 +122,13 @@ export const POST: APIRoute = async ({ request }) => {
               subject: emailSubject,
               html: emailHtml,
               templateKey: 'order_confirmation_customer',
+            });
+
+            await triggerCustomWorkflowEvent(supabase, 'order_created', customer_email, {
+              email: customer_email,
+              customer_name,
+              order_number: data.order_number,
+              total_amount: (total_amount || 0).toLocaleString('vi-VN') + 'đ',
             });
           }
 

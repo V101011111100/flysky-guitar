@@ -477,7 +477,7 @@ const { data: categoriesArray } = await supabase
     };
 
     // === UNIFIED GRID RENDERER ===
-    function updateThumbGrid() {
+    function updateThumbGridLegacy() {
       const grid = document.getElementById('thumb-grid');
       const prodImageInput = document.getElementById('prod-image') as HTMLInputElement;
       const galleryInput = document.getElementById('gallery-images-json') as HTMLInputElement;
@@ -622,6 +622,11 @@ const { data: categoriesArray } = await supabase
         }
         grid.appendChild(div);
       });
+    }
+
+    function renderGalleryThumbnails(_gallery: string[]) {
+      initGalleryData();
+      updateThumbGrid();
     }
 
     // === ACTION HANDLERS ===

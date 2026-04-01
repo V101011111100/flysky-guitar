@@ -16,7 +16,6 @@ const getSetting = (key: string, _default: string) => {
 const zaloUrl = getSetting('flysky_zaloUrl', 'https://zalo.me/0987654321');
 const facebookUrl = getSetting('flysky_facebookUrl', 'https://facebook.com/flyskyguitar');
 const whatsappUrl = getSetting('flysky_whatsappUrl', 'https://wa.me/84987654321');
-const instagramUrl = getSetting('flysky_instagramUrl', 'https://instagram.com/flyskyguitar');
 ---
 
 <!-- ============================
@@ -26,7 +25,7 @@ const instagramUrl = getSetting('flysky_instagramUrl', 'https://instagram.com/fl
 ============================= -->
 
 <!-- Social Links Stack + Chat Button — fixed bottom right -->
-<div class="fixed bottom-6 right-5 z-50 flex flex-col items-end gap-3" id="floating-root">
+<div class="fixed bottom-36 md:bottom-6 right-5 z-50 flex flex-col items-end gap-3" id="floating-root">
 
   <!-- Chat form panel (hidden by default) -->
   <div
@@ -168,13 +167,6 @@ const instagramUrl = getSetting('flysky_instagramUrl', 'https://instagram.com/fl
         iconType: 'lottie',
         lottieSrc: '/images/icons8-whatsapp.json'
       },
-      {
-        label: 'Instagram',
-        href: instagramUrl,
-        color: 'hover:bg-gradient-to-br hover:from-[#833ab4] hover:to-[#fd1d1d]',
-        iconType: 'material',
-        icon: 'photo_camera'
-      },
     ].map((s, i) => (
       <a
         href={s.href}
@@ -191,9 +183,6 @@ const instagramUrl = getSetting('flysky_instagramUrl', 'https://instagram.com/fl
         )}
         {s.iconType === 'image' && (
           <img src={s.iconSrc} alt={s.label} class="social-img-icon" loading="lazy" />
-        )}
-        {s.iconType === 'material' && (
-          <span class="material-symbols-outlined text-[30px]">{s.icon}</span>
         )}
       </a>
     ))}

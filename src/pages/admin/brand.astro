@@ -563,8 +563,27 @@ textarea.field-input { resize: vertical; }
 .toast-ok  { background: #166534; color: #4ade80; border: 1px solid rgba(74,222,128,.3); }
 .toast-err { background: #7f1d1d; color: #f87171; border: 1px solid rgba(248,113,113,.3); }
 
-@media (max-width: 640px) {
-  .fields-grid, .feat-fields { grid-template-columns: 1fr; }
-  .panel-header { flex-direction: column; }
+@media (max-width: 1100px) {
+  .brand-tabs { gap: 2px; padding: 4px; }
+  .btab { padding: 8px 14px; font-size: 13px; }
+}
+
+@media (max-width: 768px) {
+  .brand-tabs { flex-wrap: wrap; gap: 2px; }
+  .btab { padding: 7px 12px; font-size: 12.5px; }
+  .panel-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .btn-save { width: 100%; justify-content: center; }
+  .fields-grid { grid-template-columns: 1fr; gap: 12px; padding: 16px; }
+  .feat-fields { grid-template-columns: 1fr; }
+  .features-block { padding: 16px; }
+  .feat-card { flex-direction: column; gap: 10px; }
+  .val-card { padding: 12px; }
+}
+
+@media (max-width: 480px) {
+  .btab { padding: 6px 10px; font-size: 12px; }
+  .fields-grid { gap: 10px; }
+  .panel-header { padding: 14px; }
+  .img-row { flex-wrap: wrap; gap: 8px; }
 }
 </style>

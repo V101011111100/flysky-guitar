@@ -19,13 +19,21 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
     const body = await request.json().catch(() => ({}));
+    const id = typeof body?.id === 'string' ? body.id.trim() : '';
     const title = typeof body?.title === 'string' ? body.title.trim() : '';
     const description = typeof body?.description === 'string' ? body.description.trim() : '';
     const icon = typeof body?.icon === 'string' ? body.icon.trim() : 'settings_suggest';
-    const workflowKey = inferMarketingWorkflowKey({ workflowKey: body?.workflowKey, title });
     const triggerEvent = typeof body?.triggerEvent === 'string' ? body.triggerEvent.trim() : null;
     const emailSubject = typeof body?.emailSubject === 'string' ? body.emailSubject.trim() : null;
     const emailBody = typeof body?.emailBody === 'string' ? body.emailBody.trim() : null;
+    const workflowKey = inferMarketingWorkflowKey({ workflowKey: body?.workflowKey, title });
+
+    if (!id) {
+      return new Response(JSON.stringify({ success: false, error: 'Thiếu ID workflow' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
     if (!title) {
       return new Response(JSON.stringify({ success: false, error: 'Thiếu tên workflow' }), {
@@ -34,45 +42,35 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
     }
 
-    if (workflowKey !== 'custom_manual') {
-      const { data: existingKnown } = await supabase
-        .from('marketing_workflows')
-        .select('*')
-        .limit(50);
-
-      const duplicate = (existingKnown || []).find((item: any) =>
-        inferMarketingWorkflowKey({ workflowKey: item.workflow_key, title: item.title }) === workflowKey
-      );
-
-      if (duplicate) {
-        return new Response(JSON.stringify({ success: false, error: 'Workflow hệ thống này đã tồn tại' }), {
-          status: 409,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
+    if (workflowKey === 'custom_manual' && (!triggerEvent || !emailSubject || !emailBody)) {
+      return new Response(JSON.stringify({ success: false, error: 'Workflow custom cần trigger event, subject và body' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
-    let { error } = await supabase.from('marketing_workflows').insert({
-      title,
-      description,
-      icon,
-      is_active: false,
-      workflow_key: workflowKey,
-      trigger_event: triggerEvent,
-      email_subject: emailSubject,
-      email_body: emailBody,
-      trigger_count: 0,
-      last_status: 'never',
-      last_triggered_at: null,
-    });
-
-    if (error && /workflow_key|trigger_event|email_subject|email_body|trigger_count|last_status|last_triggered_at/i.test(error.message || '')) {
-      const fallback = await supabase.from('marketing_workflows').insert({
+    let { error } = await supabase
+      .from('marketing_workflows')
+      .update({
         title,
         description,
         icon,
-        is_active: false,
-      });
+        workflow_key: workflowKey,
+        trigger_event: triggerEvent,
+        email_subject: emailSubject,
+        email_body: emailBody,
+      })
+      .eq('id', id);
+
+    if (error && /workflow_key|trigger_event|email_subject|email_body/i.test(error.message || '')) {
+      const fallback = await supabase
+        .from('marketing_workflows')
+        .update({
+          title,
+          description,
+          icon,
+        })
+        .eq('id', id);
       error = fallback.error;
     }
 

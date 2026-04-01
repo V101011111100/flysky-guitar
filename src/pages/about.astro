@@ -3,46 +3,74 @@ import Layout from '../layouts/Layout.astro';
 import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
 import { supabase } from '../lib/supabase';
+import { getAdminMfaState } from '../lib/security';
+
+let isAdmin = false;
+const accessToken = Astro.cookies.get('sb-access-token');
+const refreshToken = Astro.cookies.get('sb-refresh-token');
+
+if (accessToken && refreshToken) {
+  const authState = await getAdminMfaState(accessToken.value, refreshToken.value);
+  isAdmin = authState.authenticated && authState.isAdmin && !authState.requiresMfa;
+}
 
 const { data: rows } = await supabase.from('site_settings').select('key, value');
 const s: Record<string,string> = {};
 (rows || []).forEach((r: any) => { s[r.key] = r.value ?? ''; });
 const g = (k: string, d: string) => s[k] || d;
 
-const heroTag      = g('flysky_about_hero_tag',       'Ve chung toi');
-const heroH1       = g('flysky_about_hero_h1',        'Mang am nhac dich thuc');
-const heroH1hi     = g('flysky_about_hero_h1hi',      'cham den tam hon ban');
-const heroDesc     = g('flysky_about_hero_desc',      "Hanh trinh cua FlySky Guitar khong chi la mua ban nhac cu. Chung toi duoc sinh ra tu niem dam me che tac va khao khat ket noi nhung nguoi yeu nhac voi nhung cay dan co 'linh hon' thuc su.");
+const heroTag      = g('flysky_about_hero_tag',       'Về chúng tôi');
+const heroH1       = g('flysky_about_hero_h1',        'Mang âm nhạc đích thực');
+const heroH1hi     = g('flysky_about_hero_h1hi',      'chạm đến tâm hồn bạn');
+const heroDesc     = g('flysky_about_hero_desc',      "Hành trình của FlySky Guitar không chỉ là mua bán nhạc cụ. Chúng tôi được sinh ra từ niềm đam mê chế tác và khao khát kết nối những người yêu nhạc với những cây đàn có 'linh hồn' thực sự.");
 const heroImage    = g('flysky_about_hero_image',     'https://images.unsplash.com/photo-1550985543-f47f38aeeaec?q=80&w=2070&auto=format&fit=crop');
-const heroYears    = g('flysky_about_hero_years',     '10 Nam');
-const heroYearsSub = g('flysky_about_hero_years_sub', 'Kinh nghiem phan phoi & che tac');
+const heroYears    = g('flysky_about_hero_years',     '10 Năm');
+const heroYearsSub = g('flysky_about_hero_years_sub', 'Kinh nghiệm phân phối & chế tác');
 
-const valTitle = g('flysky_about_values_title', 'Gia tri cot loi');
-const valDesc  = g('flysky_about_values_desc',  'Chung toi cam ket duy tri 3 nguyen tac vang trong moi san pham va dich vu ma FlySky Guitar cung cap den tay khach hang.');
+const valTitle = g('flysky_about_values_title', 'Giá trị cốt lõi');
+const valDesc  = g('flysky_about_values_desc',  'Chúng tôi cam kết duy trì 3 nguyên tắc vàng trong mọi sản phẩm và dịch vụ mà FlySky Guitar cung cấp đến tay khách hàng.');
 const values = [
-  { icon: 'verified',   title: g('flysky_about_val1_title','Chat luong nguyen ban'), desc: g('flysky_about_val1_desc','Moi cay dan deu duoc trai qua quy trinh danh gia khat khe truoc khi len ke, dam bao am thanh va cau tao hoan hao nhat.') },
-  { icon: 'handshake',  title: g('flysky_about_val2_title','Dong hanh tan tam'),     desc: g('flysky_about_val2_desc','Khong chi ban hang, chung toi o day de ho tro, tu van ky thuat va bao hanh bao duong tron doi cho ban.') },
-  { icon: 'music_note', title: g('flysky_about_val3_title','Tinh than nghe sy'),     desc: g('flysky_about_val3_desc','Ton trong su da dang trong phong cach choi. Moi cay dan mang mot cau chuyen phu hop voi ca tinh cua tung nguoi tho.') },
+  { icon: 'verified',   title: g('flysky_about_val1_title','Chất lượng nguyên bản'), desc: g('flysky_about_val1_desc','Mọi cây đàn đều được trải qua quy trình đánh giá khắt khe trước khi lên kệ, đảm bảo âm thanh và cấu tạo hoàn hảo nhất.') },
+  { icon: 'handshake',  title: g('flysky_about_val2_title','Đồng hành tận tâm'),     desc: g('flysky_about_val2_desc','Không chỉ bán hàng, chúng tôi ở đây để hỗ trợ, tư vấn kỹ thuật và bảo hành bảo dưỡng trọn đời cho bạn.') },
+  { icon: 'music_note', title: g('flysky_about_val3_title','Tinh thần nghệ sĩ'),     desc: g('flysky_about_val3_desc','Tôn trọng sự đa dạng trong phong cách chơi. Mỗi cây đàn mang một câu chuyện phù hợp với cá tính của từng người thợ.') },
 ];
 
-const tlTitle = g('flysky_about_timeline_title', 'Cot moc dang nho');
-const tlDesc  = g('flysky_about_timeline_desc',  'Nhung dau an hinh thanh nen thuong hieu ngay hom nay.');
-const milestones = [
-  { year: g('flysky_about_mile1_year','2016'),       title: g('flysky_about_mile1_title','Loi chao san'),         desc: g('flysky_about_mile1_desc','FlySky Guitar duoc hinh thanh nhu mot xuong sua chua va chinh am nho tai Da Nang, phuc vu anh em choi nhac indie dia phuong.'), active: true },
-  { year: g('flysky_about_mile2_year','2019'),       title: g('flysky_about_mile2_title','Showroom dau tien'),    desc: g('flysky_about_mile2_desc','Sau 3 nam tich luy, chung toi chinh thuc khai truong showroom offline dau tien tren duong Le Thien Tri va ky ket hop dong phan phoi chinh thuc voi cac thuong hieu lon.'), active: false },
-  { year: g('flysky_about_mile3_year','2023 - NAY'), title: g('flysky_about_mile3_title','Vuon xa manh me'),      desc: g('flysky_about_mile3_desc','Tro thanh doi tac lon, nang cap trai nghiem mua ban truc tuyen toan quoc va mang den nhung dac quyen bao hanh chua tung co.'), active: false },
+const tlTitle = g('flysky_about_timeline_title', 'Cột mốc đáng nhớ');
+const tlDesc  = g('flysky_about_timeline_desc',  'Những dấu ấn hình thành nên thương hiệu ngày hôm nay.');
+const defaultMilestones = [
+  { year: g('flysky_about_mile1_year','2016'),       title: g('flysky_about_mile1_title','Lời chào sân'),         desc: g('flysky_about_mile1_desc','FlySky Guitar được hình thành như một xưởng sửa chữa và chỉnh âm nhỏ tại Đà Nẵng, phục vụ anh em chơi nhạc indie địa phương.') },
+  { year: g('flysky_about_mile2_year','2019'),       title: g('flysky_about_mile2_title','Showroom đầu tiên'),    desc: g('flysky_about_mile2_desc','Sau 3 năm tích lũy, chúng tôi chính thức khai trương showroom offline đầu tiên trên đường Lê Thiện Trị và ký kết hợp đồng phân phối chính thức với các thương hiệu lớn.') },
+  { year: g('flysky_about_mile3_year','2023 - NAY'), title: g('flysky_about_mile3_title','Vươn xa mạnh mẽ'),      desc: g('flysky_about_mile3_desc','Trở thành đối tác lớn, nâng cấp trải nghiệm mua bán trực tuyến toàn quốc và mang đến những đặc quyền bảo hành chưa từng có.') },
 ];
+
+let milestones = defaultMilestones.map((item, idx) => ({ ...item, active: idx === 0 }));
+const timelineItemsRaw = g('flysky_about_timeline_items', '');
+if (timelineItemsRaw) {
+  try {
+    const parsed = JSON.parse(timelineItemsRaw);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      milestones = parsed.map((item: any, idx: number) => ({
+        year: typeof item?.year === 'string' && item.year.trim() ? item.year.trim() : `Mốc ${idx + 1}`,
+        title: typeof item?.title === 'string' && item.title.trim() ? item.title.trim() : 'Tiêu đề mốc',
+        desc: typeof item?.desc === 'string' && item.desc.trim() ? item.desc.trim() : 'Mô tả mốc thời gian',
+        active: idx === 0,
+      }));
+    }
+  } catch {
+    // Keep fallback milestones when saved JSON is invalid.
+  }
+}
 ---
 
-<Layout title="Cau chuyen thuong hieu | FlySky Guitar" description="Tim hieu ve hanh trinh, su menh va dam me danh cho am nhac cua FlySky Guitar.">
+<Layout title="Câu chuyện thương hiệu | FlySky Guitar" description="Tìm hiểu về hành trình, sứ mệnh và đam mê dành cho âm nhạc của FlySky Guitar.">
   <Navbar />
 
   <!-- Breadcrumb -->
   <div class="bg-background-dark border-b border-border-dark/50">
     <div class="mx-auto max-w-7xl px-4 lg:px-10 py-3 flex items-center gap-2 text-sm text-text-muted">
-      <a href="/" class="hover:text-primary transition-colors">Trang chu</a>
+      <a href="/" class="hover:text-primary transition-colors">Trang chủ</a>
       <span class="material-symbols-outlined text-[14px]">chevron_right</span>
-      <span class="text-white/60">Cau chuyen thuong hieu</span>
+      <span class="text-white/60">Câu chuyện thương hiệu</span>
     </div>
   </div>
 
@@ -55,34 +83,40 @@ const milestones = [
         <div>
           <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold mb-6 tracking-wider uppercase">
             <span class="material-symbols-outlined text-[16px]">history_edu</span>
-            {heroTag}
+            <span class={isAdmin ? 'quick-editable' : ''} data-setting-key={isAdmin ? 'flysky_about_hero_tag' : undefined}>{heroTag}</span>
           </div>
           <h1 class="text-white text-4xl lg:text-5xl font-extrabold mb-6 leading-tight">
-            {heroH1} <br/><span class="text-primary italic">{heroH1hi}</span>
+            <span class={isAdmin ? 'quick-editable' : ''} data-setting-key={isAdmin ? 'flysky_about_hero_h1' : undefined}>{heroH1}</span> <br/><span class={`text-primary italic ${isAdmin ? 'quick-editable' : ''}`} data-setting-key={isAdmin ? 'flysky_about_hero_h1hi' : undefined}>{heroH1hi}</span>
           </h1>
-          <p class="text-text-muted text-base lg:text-lg mb-8 leading-relaxed">{heroDesc}</p>
+          <p class={`text-text-muted text-base lg:text-lg mb-8 leading-relaxed ${isAdmin ? 'quick-editable' : ''}`} data-setting-key={isAdmin ? 'flysky_about_hero_desc' : undefined}>{heroDesc}</p>
           <div class="flex flex-col sm:flex-row gap-4">
             <a href="/shop" class="bg-primary hover:bg-primary/90 text-background-dark font-extrabold py-3 px-8 rounded-xl transition-all hover:shadow-[0_0_15px_rgba(244,140,37,0.4)] text-center flex items-center justify-center gap-2">
-              Xem san pham
+              Xem sản phẩm
               <span class="material-symbols-outlined text-sm">arrow_forward</span>
             </a>
             <a href="/contact" class="bg-card-dark hover:bg-border-dark text-white font-semibold py-3 px-8 rounded-xl border border-border-dark transition-all text-center">
-              Lien he hop tac
+              Liên hệ hợp tác
             </a>
           </div>
         </div>
         <div class="relative">
-          <div class="aspect-[4/3] rounded-3xl overflow-hidden border border-border-dark/50 relative shadow-2xl z-10 group">
+          <div class={`aspect-[4/3] rounded-3xl overflow-hidden border border-border-dark/50 relative shadow-2xl z-10 group ${isAdmin ? 'quick-image-editable' : ''}`} data-image-setting={isAdmin ? 'flysky_about_hero_image' : undefined}>
             <div class="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors z-10"></div>
             <img src={heroImage} alt="Guitar workshop" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+            {isAdmin && (
+              <div class="quick-image-overlay">
+                <span class="material-symbols-outlined text-[18px]">upload</span>
+                Kéo ảnh vào hoặc bấm để đổi
+              </div>
+            )}
             <div class="absolute bottom-6 left-6 z-20">
               <div class="bg-background-dark/80 backdrop-blur-md rounded-2xl p-4 border border-white/10 flex items-center gap-4">
                 <div class="p-3 bg-primary rounded-xl flex items-center justify-center text-background-dark">
                   <span class="material-symbols-outlined text-2xl">workspace_premium</span>
                 </div>
                 <div>
-                  <p class="text-white font-bold text-lg">{heroYears}</p>
-                  <p class="text-text-muted text-xs">{heroYearsSub}</p>
+                  <p class={`text-white font-bold text-lg ${isAdmin ? 'quick-editable' : ''}`} data-setting-key={isAdmin ? 'flysky_about_hero_years' : undefined}>{heroYears}</p>
+                  <p class={`text-text-muted text-xs ${isAdmin ? 'quick-editable' : ''}`} data-setting-key={isAdmin ? 'flysky_about_hero_years_sub' : undefined}>{heroYearsSub}</p>
                 </div>
               </div>
             </div>
@@ -97,17 +131,17 @@ const milestones = [
   <section class="py-20 bg-card-dark border-t border-border-dark/50 border-b">
     <div class="mx-auto max-w-7xl px-4 lg:px-10">
       <div class="text-center max-w-2xl mx-auto mb-16">
-        <h2 class="text-white text-3xl font-bold mb-4">{valTitle}</h2>
-        <p class="text-text-muted">{valDesc}</p>
+        <h2 class={`text-white text-3xl font-bold mb-4 ${isAdmin ? 'quick-editable' : ''}`} data-setting-key={isAdmin ? 'flysky_about_values_title' : undefined}>{valTitle}</h2>
+        <p class={`text-text-muted ${isAdmin ? 'quick-editable' : ''}`} data-setting-key={isAdmin ? 'flysky_about_values_desc' : undefined}>{valDesc}</p>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-        {values.map(item => (
+        {values.map((item, index) => (
           <div class="bg-background-dark p-8 rounded-3xl border border-border-dark flex flex-col items-center group hover:border-primary/50 transition-colors">
             <div class="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-6 group-hover:bg-primary/20 transition-colors group-hover:scale-110 duration-300">
               <span class="material-symbols-outlined text-primary text-3xl">{item.icon}</span>
             </div>
-            <h3 class="text-white text-xl font-bold mb-3">{item.title}</h3>
-            <p class="text-text-muted text-sm leading-relaxed">{item.desc}</p>
+            <h3 class={`text-white text-xl font-bold mb-3 ${isAdmin ? 'quick-editable' : ''}`} data-setting-key={isAdmin ? `flysky_about_val${index + 1}_title` : undefined}>{item.title}</h3>
+            <p class={`text-text-muted text-sm leading-relaxed ${isAdmin ? 'quick-editable' : ''}`} data-setting-key={isAdmin ? `flysky_about_val${index + 1}_desc` : undefined}>{item.desc}</p>
           </div>
         ))}
       </div>
@@ -118,21 +152,383 @@ const milestones = [
   <section class="py-24 bg-background-dark">
     <div class="mx-auto max-w-3xl px-4 lg:px-10">
       <div class="text-left mb-16">
-        <h2 class="text-white text-3xl font-bold mb-4">{tlTitle}</h2>
-        <p class="text-text-muted">{tlDesc}</p>
+        <h2 class={`text-white text-3xl font-bold mb-4 ${isAdmin ? 'quick-editable' : ''}`} data-setting-key={isAdmin ? 'flysky_about_timeline_title' : undefined}>{tlTitle}</h2>
+        <p class={`text-text-muted ${isAdmin ? 'quick-editable' : ''}`} data-setting-key={isAdmin ? 'flysky_about_timeline_desc' : undefined}>{tlDesc}</p>
       </div>
-      <div class="relative border-l-2 border-border-dark pl-8 ml-4 lg:ml-0 space-y-12">
-        {milestones.map(m => (
-          <div class="relative">
+      <div id="about-timeline-list" class="relative border-l-2 border-border-dark pl-8 ml-4 lg:ml-0 space-y-12">
+        {milestones.map((m) => (
+          <div class="relative" data-timeline-item>
             <div class={`absolute -left-[41px] top-1 w-5 h-5 rounded-full border-4 border-background-dark ${m.active ? 'bg-primary' : 'bg-border-dark'}`}></div>
-            <p class={`font-bold text-sm mb-1 tracking-widest ${m.active ? 'text-primary' : 'text-text-muted'}`}>{m.year}</p>
-            <h4 class="text-white text-lg font-bold mb-2">{m.title}</h4>
-            <p class="text-text-muted text-sm leading-relaxed">{m.desc}</p>
+            <p class={`font-bold text-sm mb-1 tracking-widest ${m.active ? 'text-primary' : 'text-text-muted'} ${isAdmin ? 'quick-editable' : ''}`} data-timeline-field={isAdmin ? 'year' : undefined}>{m.year}</p>
+            <h4 class={`text-white text-lg font-bold mb-2 ${isAdmin ? 'quick-editable' : ''}`} data-timeline-field={isAdmin ? 'title' : undefined}>{m.title}</h4>
+            <p class={`text-text-muted text-sm leading-relaxed ${isAdmin ? 'quick-editable' : ''}`} data-timeline-field={isAdmin ? 'desc' : undefined}>{m.desc}</p>
           </div>
         ))}
       </div>
+      {isAdmin && (
+        <div class="mt-8">
+          <button id="add-about-milestone" type="button" class="about-add-milestone-btn">
+            <span class="material-symbols-outlined text-[18px]">add</span>
+            Thêm mốc thời gian
+          </button>
+        </div>
+      )}
     </div>
   </section>
 
   <Footer />
+
+  {isAdmin && (
+    <>
+      <div id="about-quick-edit-toolbar" class="public-quick-toolbar">
+        <button id="toggle-about-edit" type="button" class="public-quick-btn">
+          <span class="material-symbols-outlined">edit_square</span>
+          <span id="about-edit-label">Chỉnh sửa nhanh trang About</span>
+        </button>
+        <span id="about-edit-status" class="public-quick-status hidden">Đã lưu</span>
+      </div>
+
+      <script is:inline>
+        const aboutToggleBtn = document.getElementById('toggle-about-edit');
+        const aboutEditLabel = document.getElementById('about-edit-label');
+        const aboutEditStatus = document.getElementById('about-edit-status');
+        const addMilestoneBtn = document.getElementById('add-about-milestone');
+        let aboutEditMode = false;
+
+        function flashAboutSaved(message = 'Đã lưu') {
+          if (!aboutEditStatus) return;
+          aboutEditStatus.textContent = message;
+          aboutEditStatus.classList.remove('hidden');
+          setTimeout(() => aboutEditStatus.classList.add('hidden'), 1800);
+        }
+
+        async function saveAboutSetting(key, value) {
+          let res = await fetch('/api/settings/quick-update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify({ key, value }),
+          });
+
+          // Fallback for environments still running an older build without the quick-update route.
+          if (res.status === 404) {
+            res = await fetch('/api/settings/update', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+              body: JSON.stringify({ settings: [{ key, value }] }),
+            });
+          }
+
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data.success) {
+            throw new Error(data.error || 'Không thể lưu thay đổi');
+          }
+        }
+
+        async function uploadAboutImage(file, key, el) {
+          const form = new FormData();
+          form.append('file', file);
+          const uploadRes = await fetch('/api/site-media/upload', { method: 'POST', body: form });
+          const uploadData = await uploadRes.json().catch(() => ({}));
+          if (!uploadRes.ok || !uploadData.url) {
+            throw new Error(uploadData.error || 'Upload thất bại');
+          }
+          await saveAboutSetting(key, uploadData.url);
+          const img = el.querySelector('img');
+          if (img) img.src = uploadData.url;
+          flashAboutSaved('Đã cập nhật ảnh');
+        }
+
+        async function handleAboutTextSave(event) {
+          const el = event.target;
+          const key = el.dataset.settingKey;
+          const nextValue = (el.textContent || '').trim();
+          const prevValue = el.dataset.originalValue || '';
+          if (!key || !nextValue || nextValue === prevValue) return;
+          el.classList.add('quick-saving');
+          try {
+            await saveAboutSetting(key, nextValue);
+            el.dataset.originalValue = nextValue;
+            flashAboutSaved();
+          } catch (error) {
+            el.textContent = prevValue;
+            alert(error.message || 'Không thể lưu thay đổi');
+          } finally {
+            el.classList.remove('quick-saving');
+          }
+        }
+
+        function collectTimelineItems() {
+          const items = [];
+          document.querySelectorAll('[data-timeline-item]').forEach((node) => {
+            const yearEl = node.querySelector('[data-timeline-field="year"]');
+            const titleEl = node.querySelector('[data-timeline-field="title"]');
+            const descEl = node.querySelector('[data-timeline-field="desc"]');
+            items.push({
+              year: (yearEl?.textContent || '').trim() || 'Mốc mới',
+              title: (titleEl?.textContent || '').trim() || 'Tiêu đề mốc',
+              desc: (descEl?.textContent || '').trim() || 'Mô tả mốc thời gian',
+            });
+          });
+          return items;
+        }
+
+        async function saveTimelineItems() {
+          const payload = JSON.stringify(collectTimelineItems());
+          await saveAboutSetting('flysky_about_timeline_items', payload);
+          flashAboutSaved('Đã lưu mốc thời gian');
+        }
+
+        async function handleTimelineFieldSave(event) {
+          const el = event.target;
+          const nextValue = (el.textContent || '').trim();
+          const prevValue = el.dataset.originalValue || '';
+          if (!nextValue || nextValue === prevValue) return;
+          el.classList.add('quick-saving');
+          try {
+            el.dataset.originalValue = nextValue;
+            await saveTimelineItems();
+          } catch (error) {
+            el.textContent = prevValue;
+            alert(error.message || 'Không thể lưu mốc thời gian');
+          } finally {
+            el.classList.remove('quick-saving');
+          }
+        }
+
+        function wireTimelineField(el) {
+          el.contentEditable = aboutEditMode ? 'true' : 'false';
+          el.dataset.originalValue = el.textContent || '';
+          if (aboutEditMode) {
+            el.classList.add('quick-edit-active');
+            el.addEventListener('blur', handleTimelineFieldSave);
+          } else {
+            el.classList.remove('quick-edit-active');
+            el.removeEventListener('blur', handleTimelineFieldSave);
+          }
+        }
+
+        function enableAboutTextEditing() {
+          document.querySelectorAll('[data-setting-key]').forEach((node) => {
+            const el = node;
+            el.contentEditable = 'true';
+            el.dataset.originalValue = el.textContent || '';
+            el.classList.add('quick-edit-active');
+            el.addEventListener('blur', handleAboutTextSave);
+          });
+
+          document.querySelectorAll('[data-timeline-field]').forEach((node) => {
+            wireTimelineField(node);
+          });
+        }
+
+        function disableAboutTextEditing() {
+          document.querySelectorAll('[data-setting-key]').forEach((node) => {
+            const el = node;
+            el.contentEditable = 'false';
+            el.classList.remove('quick-edit-active');
+            el.removeEventListener('blur', handleAboutTextSave);
+          });
+
+          document.querySelectorAll('[data-timeline-field]').forEach((node) => {
+            wireTimelineField(node);
+          });
+        }
+
+        function bindAboutImageEditors() {
+          document.querySelectorAll('[data-image-setting]').forEach((node) => {
+            const el = node;
+            const pickFile = () => {
+              if (!aboutEditMode) return;
+              const input = document.createElement('input');
+              input.type = 'file';
+              input.accept = 'image/png,image/jpeg,image/jpg,image/webp,image/gif';
+              input.addEventListener('change', () => {
+                const file = input.files?.[0];
+                if (!file) return;
+                el.classList.add('quick-saving');
+                uploadAboutImage(file, el.dataset.imageSetting, el)
+                  .catch((error) => alert(error.message || 'Không thể cập nhật ảnh'))
+                  .finally(() => el.classList.remove('quick-saving'));
+              });
+              input.click();
+            };
+
+            el.addEventListener('click', (ev) => {
+              if (!aboutEditMode) return;
+              ev.preventDefault();
+              ev.stopPropagation();
+              pickFile();
+            });
+
+            el.addEventListener('dragover', (ev) => {
+              if (!aboutEditMode) return;
+              ev.preventDefault();
+              el.classList.add('quick-drag-over');
+            });
+
+            el.addEventListener('dragleave', () => el.classList.remove('quick-drag-over'));
+
+            el.addEventListener('drop', (ev) => {
+              if (!aboutEditMode) return;
+              ev.preventDefault();
+              ev.stopPropagation();
+              el.classList.remove('quick-drag-over');
+              const file = ev.dataTransfer?.files?.[0];
+              if (!file) return;
+              el.classList.add('quick-saving');
+              uploadAboutImage(file, el.dataset.imageSetting, el)
+                .catch((error) => alert(error.message || 'Không thể cập nhật ảnh'))
+                .finally(() => el.classList.remove('quick-saving'));
+            });
+          });
+        }
+
+        aboutToggleBtn?.addEventListener('click', () => {
+          aboutEditMode = !aboutEditMode;
+          document.body.classList.toggle('public-edit-mode', aboutEditMode);
+          if (aboutEditLabel) {
+            aboutEditLabel.textContent = aboutEditMode ? 'Thoát chỉnh sửa nhanh' : 'Chỉnh sửa nhanh trang About';
+          }
+          if (aboutEditMode) {
+            enableAboutTextEditing();
+          } else {
+            disableAboutTextEditing();
+          }
+        });
+
+        addMilestoneBtn?.addEventListener('click', async () => {
+          if (!aboutEditMode) {
+            alert('Hãy bật chỉnh sửa nhanh trước khi thêm mốc thời gian.');
+            return;
+          }
+
+          const timelineList = document.getElementById('about-timeline-list');
+          if (!timelineList) return;
+
+          const item = document.createElement('div');
+          item.className = 'relative';
+          item.setAttribute('data-timeline-item', 'true');
+          item.innerHTML = `
+            <div class="absolute -left-[41px] top-1 w-5 h-5 rounded-full border-4 border-background-dark bg-border-dark"></div>
+            <p class="font-bold text-sm mb-1 tracking-widest text-text-muted quick-editable" data-timeline-field="year">Mốc mới</p>
+            <h4 class="text-white text-lg font-bold mb-2 quick-editable" data-timeline-field="title">Tiêu đề mốc</h4>
+            <p class="text-text-muted text-sm leading-relaxed quick-editable" data-timeline-field="desc">Mô tả mốc thời gian</p>
+          `;
+
+          timelineList.appendChild(item);
+          item.querySelectorAll('[data-timeline-field]').forEach((node) => {
+            wireTimelineField(node);
+          });
+
+          try {
+            await saveTimelineItems();
+          } catch (error) {
+            item.remove();
+            alert(error.message || 'Không thể thêm mốc thời gian');
+          }
+        });
+
+        bindAboutImageEditors();
+      </script>
+
+      <style>
+        .public-quick-toolbar {
+          position: fixed;
+          right: 73px;
+          bottom: 20px;
+          z-index: 120;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        @media (min-width: 768px) {
+          .public-quick-toolbar {
+            right: 73px;
+          }
+        }
+        .public-quick-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          border: 1px solid rgba(244, 140, 37, 0.35);
+          background: rgba(16, 13, 8, 0.92);
+          color: #fff;
+          border-radius: 999px;
+          padding: 12px 16px;
+          font: inherit;
+          font-weight: 700;
+          cursor: pointer;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+        }
+        .public-quick-status {
+          border-radius: 999px;
+          padding: 10px 12px;
+          background: rgba(22, 101, 52, 0.92);
+          color: #86efac;
+          font-size: 12px;
+          font-weight: 700;
+        }
+        .public-quick-status.hidden {
+          display: none;
+        }
+        .about-add-milestone-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          border: 1px solid rgba(244, 140, 37, 0.35);
+          background: rgba(16, 13, 8, 0.92);
+          color: #fff;
+          border-radius: 999px;
+          padding: 10px 14px;
+          font: inherit;
+          font-weight: 700;
+          cursor: pointer;
+          transition: border-color 0.2s ease, background 0.2s ease;
+        }
+        .about-add-milestone-btn:hover {
+          border-color: rgba(244, 140, 37, 0.9);
+          background: rgba(26, 20, 13, 0.96);
+        }
+        .quick-edit-active {
+          outline: 2px dashed rgba(244, 140, 37, 0.95);
+          outline-offset: 6px;
+          border-radius: 8px;
+          cursor: text;
+        }
+        .quick-image-editable {
+          cursor: pointer;
+        }
+        .quick-image-overlay {
+          position: absolute;
+          inset: auto 12px 12px 12px;
+          display: none;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 10px 12px;
+          border-radius: 12px;
+          background: rgba(12, 10, 7, 0.88);
+          color: #fff;
+          font-size: 12px;
+          font-weight: 700;
+          z-index: 30;
+        }
+        .public-edit-mode .quick-image-editable {
+          outline: 2px dashed rgba(244, 140, 37, 0.95);
+          outline-offset: 4px;
+        }
+        .public-edit-mode .quick-image-editable .quick-image-overlay {
+          display: inline-flex;
+        }
+        .quick-drag-over {
+          outline: 2px solid #f48c25 !important;
+          box-shadow: 0 0 0 6px rgba(244, 140, 37, 0.15);
+        }
+        .quick-saving {
+          opacity: 0.6;
+          transition: opacity 0.15s ease;
+        }
+      </style>
+    </>
+  )}
 </Layout>

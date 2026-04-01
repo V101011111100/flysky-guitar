@@ -1,6 +1,12 @@
 ---
 import { supabase } from '../lib/supabase';
 
+interface Props {
+  isAdmin?: boolean;
+}
+
+const { isAdmin = false } = Astro.props;
+
 const { data: rows } = await supabase.from('site_settings').select('key, value')
   .in('key', [
     'flysky_brand_section_tag','flysky_brand_title1','flysky_brand_title2','flysky_brand_desc',
@@ -28,25 +34,31 @@ const brandImage  = g('flysky_brand_image', '/images/brand-story.jpg');
     <div class="flex flex-col lg:flex-row items-center gap-16">
       <div class="w-full lg:w-1/2 relative">
         <div class="absolute -top-4 -left-4 w-24 h-24 border-t-2 border-l-2 border-primary rounded-tl-3xl z-10"></div>
-        <div class="relative rounded-2xl overflow-hidden aspect-[4/3] shadow-2xl">
+        <div class={`relative rounded-2xl overflow-hidden aspect-[4/3] shadow-2xl ${isAdmin ? 'quick-image-editable' : ''}`} data-image-setting={isAdmin ? 'flysky_brand_image' : undefined}>
           <div
             class="absolute inset-0 bg-cover bg-center"
             style={`background-image: url('${brandImage}');`}
           ></div>
           <div class="absolute inset-0 bg-primary/10 mix-blend-overlay"></div>
+          {isAdmin && (
+            <div class="quick-image-overlay">
+              <span class="material-symbols-outlined text-[18px]">upload</span>
+              Kéo ảnh vào hoặc bấm để đổi
+            </div>
+          )}
         </div>
         <div class="absolute -bottom-4 -right-4 w-24 h-24 border-b-2 border-r-2 border-primary rounded-br-3xl z-10"></div>
       </div>
       <div class="w-full lg:w-1/2 flex flex-col gap-6">
         <div class="flex items-center gap-3 mb-2">
           <span class="h-px w-12 bg-primary"></span>
-          <span class="text-primary font-bold uppercase tracking-widest text-sm">{sectionTag}</span>
+          <span class={`text-primary font-bold uppercase tracking-widest text-sm ${isAdmin ? 'quick-editable' : ''}`} data-setting-key={isAdmin ? 'flysky_brand_section_tag' : undefined}>{sectionTag}</span>
         </div>
         <h2 class="text-white type-display-section">
-          {title1}<br />
-          {title2}
+          <span class={isAdmin ? 'quick-editable' : ''} data-setting-key={isAdmin ? 'flysky_brand_title1' : undefined}>{title1}</span><br />
+          <span class={isAdmin ? 'quick-editable' : ''} data-setting-key={isAdmin ? 'flysky_brand_title2' : undefined}>{title2}</span>
         </h2>
-        <p class="text-text-muted type-body-lead">
+        <p class={`text-text-muted type-body-lead ${isAdmin ? 'quick-editable' : ''}`} data-setting-key={isAdmin ? 'flysky_brand_desc' : undefined}>
           {desc}
         </p>
         <div class="flex flex-col gap-4 mt-4">
@@ -55,8 +67,8 @@ const brandImage  = g('flysky_brand_image', '/images/brand-story.jpg');
               <span class="material-symbols-outlined">carpenter</span>
             </div>
             <div>
-              <h4 class="text-white type-title-card">{feat1Title}</h4>
-              <p class="text-text-muted text-sm">{feat1Desc}</p>
+              <h4 class={`text-white type-title-card ${isAdmin ? 'quick-editable' : ''}`} data-setting-key={isAdmin ? 'flysky_brand_feat1_title' : undefined}>{feat1Title}</h4>
+              <p class={`text-text-muted text-sm ${isAdmin ? 'quick-editable' : ''}`} data-setting-key={isAdmin ? 'flysky_brand_feat1_desc' : undefined}>{feat1Desc}</p>
             </div>
           </div>
           <div class="flex items-start gap-4">
@@ -64,8 +76,8 @@ const brandImage  = g('flysky_brand_image', '/images/brand-story.jpg');
               <span class="material-symbols-outlined">graphic_eq</span>
             </div>
             <div>
-              <h4 class="text-white type-title-card">{feat2Title}</h4>
-              <p class="text-text-muted text-sm">{feat2Desc}</p>
+              <h4 class={`text-white type-title-card ${isAdmin ? 'quick-editable' : ''}`} data-setting-key={isAdmin ? 'flysky_brand_feat2_title' : undefined}>{feat2Title}</h4>
+              <p class={`text-text-muted text-sm ${isAdmin ? 'quick-editable' : ''}`} data-setting-key={isAdmin ? 'flysky_brand_feat2_desc' : undefined}>{feat2Desc}</p>
             </div>
           </div>
         </div>

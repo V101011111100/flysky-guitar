@@ -10,34 +10,33 @@ const currentMonth = now.getMonth();
 // Orders cho thống kê doanh thu
 const { data: ordersRaw } = await supabase
   .from('orders')
-  .select('total_amount, status, created_at')
+  .select('id, order_number, customer_name, customer_phone, customer_email, total_amount, status, created_at')
   .order('created_at', { ascending: true });
 
 const orders = ordersRaw || [];
 
 const monthlyRevenue = Array(12).fill(0);
+const yearlyRevenue: Record<number, number> = {};
 let totalRevenueYear = 0;
 let totalRevenueMonth = 0;
 let pendingRequests = 0;
 
 for (const o of orders as any[]) {
   const created = new Date(o.created_at);
-  if (created.getFullYear() !== currentYear) continue;
-
+  const yr = created.getFullYear();
   const amount = o.total_amount || 0;
 
   if (o.status !== 'cancelled') {
-    const m = created.getMonth();
-    monthlyRevenue[m] += amount;
-    totalRevenueYear += amount;
-    if (m === currentMonth) {
-      totalRevenueMonth += amount;
+    yearlyRevenue[yr] = (yearlyRevenue[yr] || 0) + amount;
+    if (yr === currentYear) {
+      const m = created.getMonth();
+      monthlyRevenue[m] += amount;
+      totalRevenueYear += amount;
+      if (m === currentMonth) totalRevenueMonth += amount;
     }
   }
 
-  if (o.status === 'pending') {
-    pendingRequests++;
-  }
+  if (o.status === 'pending') pendingRequests++;
 }
 
 // Thống kê sản phẩm / tồn kho
@@ -62,11 +61,17 @@ const displayYearRevenue = fmtCurrency(totalRevenueYear);
 const avgRevenueMonth =
   currentMonth >= 0 ? fmtCurrency(totalRevenueYear / (currentMonth + 1 || 1)) : fmtCurrency(totalRevenueYear);
 
-// Chart Data Calculation
+// Chart Data Calculation — Monthly (last 6 months)
 const chartDataRev = Array(6).fill(0);
+const monthLabelsArr: string[] = [];
 for (let i = 0; i < 6; i++) {
   const m = currentMonth - 5 + i;
-  if (m >= 0) chartDataRev[i] = monthlyRevenue[m];
+  if (m >= 0) {
+    chartDataRev[i] = monthlyRevenue[m];
+    monthLabelsArr.push(`Tháng ${m + 1}`);
+  } else {
+    monthLabelsArr.push(`Tháng ${12 + m + 1}`);
+  }
 }
 const maxChartRev = Math.max(...chartDataRev) || 1;
 const points = chartDataRev.map((rev, i) => {
@@ -77,63 +82,62 @@ const points = chartDataRev.map((rev, i) => {
 const pathD = `M${points[0]} ` + points.slice(1).map(p => `L${p}`).join(' ');
 const areaD = `${pathD} L800,280 L0,280 Z`;
 
-// Products & Categories Aggregation
-const { data: allProductsRaw } = await supabase
-  .from('products')
-  .select('id, name, stock_quantity, category_id, categories(name)');
+// Chart Data — Yearly (last 6 years)
+const yearListArr = Array(6).fill(0).map((_, i) => currentYear - 5 + i);
+const chartDataYearArr = yearListArr.map(y => yearlyRevenue[y] || 0);
+const yearLabelsArr = yearListArr.map(y => String(y));
+const chartDataRevJSON = JSON.stringify(chartDataRev);
+const monthLabelsJSON = JSON.stringify(monthLabelsArr);
+const chartDataYearJSON = JSON.stringify(chartDataYearArr);
+const yearLabelsJSON = JSON.stringify(yearLabelsArr);
 
-const productRev: Record<string, { qty: number, revenue: number, name: string }> = {};
+// Best sellers & category stats from order_items
+const { data: orderItemsRaw } = await supabase
+  .from('order_items')
+  .select('product_id, quantity, price_at_time, products(name, categories(name))')
+  .limit(2000);
+
+const productSales: Record<string, { name: string; qty: number; revenue: number }> = {};
 const categoryRev: Record<string, number> = {};
 
-for (const o of orders as any[]) {
-  if (o.status === 'cancelled') continue;
-  const items = o.items || [];
-  for (const item of items) {
-    const pId = item.product_id || item.id;
-    if (pId) {
-      if (!productRev[pId]) productRev[pId] = { qty: 0, revenue: 0, name: item.name || 'Unknown' };
-      productRev[pId].qty += item.quantity || 1;
-      productRev[pId].revenue += (item.price || 0) * (item.quantity || 1);
-    }
-  }
-}
+for (const item of (orderItemsRaw || []) as any[]) {
+  const pid = item.product_id;
+  if (!pid) continue;
+  const pName = item.products?.name || 'Unknown';
+  const catName = item.products?.categories?.name || 'Khác';
+  const qty = item.quantity || 1;
+  const rev = (item.price_at_time || 0) * qty;
 
-const allProducts = allProductsRaw || [];
-allProducts.forEach((p: any) => {
-  if (productRev[p.id]) {
-    const catName = p.categories?.name || 'Khác';
-    if (!categoryRev[catName]) categoryRev[catName] = 0;
-    categoryRev[catName] += productRev[p.id].revenue;
-  }
-});
+  if (!productSales[pid]) productSales[pid] = { name: pName, qty: 0, revenue: 0 };
+  productSales[pid].qty += qty;
+  productSales[pid].revenue += rev;
+  categoryRev[catName] = (categoryRev[catName] || 0) + rev;
+}
 
 const totalCatRev = Object.values(categoryRev).reduce((a, b) => a + (b as number), 0) || 1;
 const categoryStats = Object.keys(categoryRev).map(name => ({
   label: name,
   pct: Math.round((categoryRev[name] / totalCatRev) * 100)
-})).sort((a,b) => b.pct - a.pct).slice(0, 4);
+})).sort((a, b) => b.pct - a.pct).slice(0, 4);
 
-const topProductObj = Object.values(productRev).sort((a: any, b: any) => b.qty - a.qty)[0] as any;
-const bestSellerName = topProductObj ? topProductObj.name : 'Chưa có thông tin';
+const topProducts = Object.values(productSales).sort((a, b) => b.qty - a.qty);
+const bestSellerName = topProducts[0]?.name || 'Chưa có thông tin';
 
-// Recent Orders mappings
-const recentOrders = orders
-  .filter((o: any) => o.status === 'pending' || o.status === 'processing')
+// Recent Orders — 5 newest non-cancelled
+const recentOrders = [...orders]
+  .filter((o: any) => o.status !== 'cancelled')
   .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
   .slice(0, 5)
-  .map((o: any) => {
-    return {
-      init: o.customer_name ? o.customer_name.charAt(0).toUpperCase() : 'KH',
-      name: o.customer_name || 'Khách lẻ',
-      email: o.customer_email || o.customer_phone || 'Không có TT',
-      msg: 'Đơn hàng mới',
-      prod: o.items && o.items.length > 0 ? o.items[0].name : 'Sản phẩm khác',
-      time: new Date(o.created_at).toLocaleDateString('vi-VN', { month: '2-digit', day: '2-digit' }),
-      st: o.status === 'pending' ? 'new' : 'processing',
-      icon: 'visibility',
-      url: `/admin/orders?q=${o.order_number}`
-    };
-  });
+  .map((o: any) => ({
+    init: o.customer_name ? o.customer_name.charAt(0).toUpperCase() : 'K',
+    name: o.customer_name || 'Khách lẻ',
+    contact: o.customer_phone || o.customer_email || '—',
+    orderNumber: o.order_number || '—',
+    total: fmtCurrency(o.total_amount),
+    time: new Date(o.created_at).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+    st: o.status,
+    url: `/admin/orders?q=${encodeURIComponent(o.order_number || '')}`
+  }));
 ---
 
 <AdminLayout
@@ -200,41 +204,39 @@ const recentOrders = orders
         <div>
           <div class="section-title">Xu hướng doanh thu</div>
           <div class="chart-meta">
-            <span style="color:#64748b;font-size:13px;">Phân tích 6 tháng qua</span>
-            <span style="color:#0bda16;font-size:13px;font-weight:700;">+8.2%</span>
+            <span id="chart-period-label" style="color:#64748b;font-size:13px;">Phân tích 6 tháng qua</span>
           </div>
         </div>
         <div class="period-switcher">
-          <button class="period-btn active-period">Tháng</button>
-          <button class="period-btn">Năm</button>
+          <button id="btn-month" class="period-btn active-period" data-mode="month">Tháng</button>
+          <button id="btn-year"  class="period-btn"               data-mode="year">Năm</button>
         </div>
       </div>
 
       <div class="chart-area">
-        <svg width="100%" height="100%" viewBox="0 0 800 280" preserveAspectRatio="none">
+        <svg id="revenue-svg" width="100%" height="100%" viewBox="0 0 800 280" preserveAspectRatio="none">
           <defs>
             <linearGradient id="cg" x1="0" x2="0" y1="0" y2="1">
               <stop offset="0%"   stop-color="#f48c25" stop-opacity="0.3"/>
               <stop offset="100%" stop-color="#f48c25" stop-opacity="0"/>
             </linearGradient>
           </defs>
-          <line stroke="#4a3a2a" stroke-dasharray="4" stroke-width="0.5" x1="0" x2="800" y1="40"  y2="40"/>
-          <line stroke="#4a3a2a" stroke-dasharray="4" stroke-width="0.5" x1="0" x2="800" y1="100" y2="100"/>
-          <line stroke="#4a3a2a" stroke-dasharray="4" stroke-width="0.5" x1="0" x2="800" y1="160" y2="160"/>
-          <line stroke="#4a3a2a" stroke-dasharray="4" stroke-width="0.5" x1="0" x2="800" y1="220" y2="220"/>
-          <path d={areaD} fill="url(#cg)"/>
-          <path d={pathD} fill="none" stroke="#f48c25" stroke-linecap="round" stroke-width="3"/>
-          {points.map(p => (
-            <circle cx={p.split(',')[0]} cy={p.split(',')[1]} r="5" fill="#f48c25"/>
-          ))}
+          <line stroke="rgba(244,140,37,.1)" stroke-dasharray="4" stroke-width="0.5" x1="0" x2="800" y1="40"  y2="40"/>
+          <line stroke="rgba(244,140,37,.1)" stroke-dasharray="4" stroke-width="0.5" x1="0" x2="800" y1="100" y2="100"/>
+          <line stroke="rgba(244,140,37,.1)" stroke-dasharray="4" stroke-width="0.5" x1="0" x2="800" y1="160" y2="160"/>
+          <line stroke="rgba(244,140,37,.1)" stroke-dasharray="4" stroke-width="0.5" x1="0" x2="800" y1="220" y2="220"/>
+          <path id="chart-area" d={areaD} fill="url(#cg)"/>
+          <path id="chart-line" d={pathD} fill="none" stroke="#f48c25" stroke-linecap="round" stroke-width="3"/>
+          <g id="chart-dots">
+            {points.map(p => (
+              <circle cx={p.split(',')[0]} cy={p.split(',')[1]} r="5" fill="#f48c25"/>
+            ))}
+          </g>
         </svg>
       </div>
 
-      <div class="month-labels">
-        {Array(6).fill(0).map((_, i) => {
-          const m = currentMonth - 5 + i;
-          return <span>{m >= 0 ? `Tháng ${m+1}` : `Tháng ${12+m+1}`}</span>
-        })}
+      <div id="chart-labels" class="month-labels">
+        {monthLabelsArr.map(label => <span>{label}</span>)}
       </div>
 
       <div class="revenue-stats">
@@ -280,11 +282,11 @@ const recentOrders = orders
 
   </div>
 
-  <!-- ── CONSULTATION TABLE ── -->
+  <!-- ── RECENT ORDERS TABLE ── -->
   <div class="card table-card">
     <div class="table-header">
-      <div class="section-title">Yêu cầu tư vấn gần đây</div>
-      <a href="/admin/consultations" class="view-all-link">
+      <div class="section-title">Đơn hàng gần đây</div>
+      <a href="/admin/orders" class="view-all-link">
         Xem tất cả
         <span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle;">chevron_right</span>
       </a>
@@ -294,40 +296,36 @@ const recentOrders = orders
         <thead>
           <tr>
             <th>Khách hàng</th>
-            <th>Nội dung yêu cầu</th>
-            <th>Sản phẩm quan tâm</th>
+            <th>Mã đơn</th>
+            <th>Số liên hệ</th>
             <th>Thời gian</th>
             <th>Trạng thái</th>
-            <th style="text-align:right;">Thao tác</th>
+            <th style="text-align:right;">Tổng tiền</th>
           </tr>
         </thead>
         <tbody>
           {recentOrders.length === 0 ? (
-            <tr><td colspan="6" style="text-align:center;color:#64748b;padding:20px;">Không có yêu cầu gần đây.</td></tr>
+            <tr><td colspan="6" style="text-align:center;color:#64748b;padding:20px;">Chưa có đơn hàng nào.</td></tr>
           ) : recentOrders.map((r: any) => (
-            <tr>
+            <tr class="order-row" onclick={`window.location='${r.url}'`} style="cursor:pointer;">
               <td>
                 <div class="customer-cell">
                   <div class="avatar-circle">{r.init}</div>
                   <div>
                     <div class="cus-name">{r.name}</div>
-                    <div class="cus-email">{r.email}</div>
+                    <div class="cus-email">{r.contact}</div>
                   </div>
                 </div>
               </td>
-              <td class="msg-col">{r.msg}</td>
-              <td class="prod-col">{r.prod}</td>
+              <td style="font-family:monospace;font-size:12px;color:#94a3b8;">{r.orderNumber}</td>
+              <td class="time-col">{r.contact}</td>
               <td class="time-col">{r.time}</td>
               <td>
-                {r.st === 'new'        && <span class="badge badge-new">Mới</span>}
+                {r.st === 'pending'    && <span class="badge badge-new">Chờ xử lý</span>}
                 {r.st === 'processing' && <span class="badge badge-processing">Đang xử lý</span>}
-                {r.st === 'done'       && <span class="badge badge-done">Đã xong</span>}
+                {r.st === 'completed'  && <span class="badge badge-done">Hoàn thành</span>}
               </td>
-              <td style="text-align:right;">
-                <a class="btn-ghost" href={r.url} title="Xem chi tiết">
-                  <span class="material-symbols-outlined" style="font-size:20px;">{r.icon}</span>
-                </a>
-              </td>
+              <td style="text-align:right;font-weight:800;color:#f48c25;font-size:13px;white-space:nowrap;">{r.total}</td>
             </tr>
           ))}
         </tbody>
@@ -346,8 +344,8 @@ const recentOrders = orders
     margin-bottom: 28px;
   }
   .stat-card {
-    background: #2d2218;
-    border: 1px solid #4a3a2a;
+    background: rgba(244,140,37,.05);
+    border: 1px solid rgba(244,140,37,.1);
     border-radius: 16px;
     padding: 24px;
     transition: border-color .2s;
@@ -396,8 +394,8 @@ const recentOrders = orders
   .chart-meta { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
   .period-switcher {
     display: flex;
-    background: #221910;
-    border: 1px solid #4a3a2a;
+    background: rgba(244,140,37,.08);
+    border: 1px solid rgba(244,140,37,.1);
     border-radius: 8px;
     padding: 4px;
   }
@@ -409,7 +407,7 @@ const recentOrders = orders
     background: none; color: #94a3b8;
     transition: all .15s;
   }
-  .active-period { background: #f48c25; color: #221910; }
+  .active-period { background: #f48c25; color: white; }
   .chart-area {
     height: 280px;
     width: 100%;
@@ -427,8 +425,8 @@ const recentOrders = orders
     margin-top: 28px;
   }
   .rev-box {
-    background: #221910;
-    border: 1px solid #4a3a2a;
+    background: rgba(244,140,37,.08);
+    border: 1px solid rgba(244,140,37,.1);
     border-radius: 12px;
     padding: 16px;
   }
@@ -447,7 +445,7 @@ const recentOrders = orders
   .cat-pct   { font-size: 13px; font-weight: 800; color: #f48c25; }
   .prog-track {
     width: 100%; height: 8px;
-    background: #221910; border-radius: 999px; overflow: hidden;
+    background: rgba(244,140,37,.08); border-radius: 999px; overflow: hidden;
   }
   .prog-fill {
     height: 100%; background: #f48c25; border-radius: 999px;
@@ -455,7 +453,7 @@ const recentOrders = orders
   .best-seller-box {
     display: flex; align-items: center; gap: 14px;
     margin-top: 28px; padding-top: 24px;
-    border-top: 1px solid #4a3a2a;
+    border-top: 1px solid rgba(244,140,37,.1);
   }
   .best-icon {
     width: 48px; height: 48px; border-radius: 12px;
@@ -487,12 +485,12 @@ const recentOrders = orders
     font-size: 11px; font-weight: 700;
     text-transform: uppercase; letter-spacing: .1em;
     color: #64748b; text-align: left;
-    border-bottom: 1px solid #4a3a2a;
+    border-bottom: 1px solid rgba(244,140,37,.1);
     white-space: nowrap;
   }
   .consult-table td {
     padding: 16px 8px;
-    border-bottom: 1px solid rgba(74,58,42,.5);
+    border-bottom: 1px solid rgba(244,140,37,.2);
     vertical-align: middle;
   }
   .consult-table tr:last-child td { border-bottom: none; }
@@ -525,4 +523,60 @@ const recentOrders = orders
     .chart-card, .cat-card, .table-card { padding: 20px; }
     .revenue-stats { grid-template-columns: 1fr; gap: 12px; }
   }
+  .order-row:hover td { background: rgba(244,140,37,.05); }
 </style>
+
+<script define:vars={{ chartDataRevJSON, monthLabelsJSON, chartDataYearJSON, yearLabelsJSON }}>
+  const monthData   = JSON.parse(chartDataRevJSON);
+  const monthLabels = JSON.parse(monthLabelsJSON);
+  const yearData    = JSON.parse(chartDataYearJSON);
+  const yearLabels  = JSON.parse(yearLabelsJSON);
+
+  function buildChartPath(dataArr) {
+    const n  = dataArr.length;
+    const mx = Math.max(...dataArr) || 1;
+    const pts = dataArr.map((v, i) => {
+      const x = i * (800 / (n - 1));
+      const y = 220 - (v / mx) * 180;
+      return [x, y];
+    });
+    const line = 'M' + pts[0].join(',') + ' ' + pts.slice(1).map(p => 'L' + p.join(',')).join(' ');
+    const area = line + ' L800,280 L0,280 Z';
+    return { line, area, pts };
+  }
+
+  function drawChart(dataArr, labels) {
+    const { line, area, pts } = buildChartPath(dataArr);
+    document.getElementById('chart-area').setAttribute('d', area);
+    document.getElementById('chart-line').setAttribute('d', line);
+
+    const dotsEl = document.getElementById('chart-dots');
+    dotsEl.innerHTML = '';
+    const ns = 'http://www.w3.org/2000/svg';
+    pts.forEach(([x, y]) => {
+      const c = document.createElementNS(ns, 'circle');
+      c.setAttribute('cx', String(x));
+      c.setAttribute('cy', String(y));
+      c.setAttribute('r', '5');
+      c.setAttribute('fill', '#f48c25');
+      dotsEl.appendChild(c);
+    });
+
+    const labelsEl = document.getElementById('chart-labels');
+    labelsEl.innerHTML = labels.map(l => `<span>${l}</span>`).join('');
+  }
+
+  document.getElementById('btn-month').addEventListener('click', function () {
+    document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active-period'));
+    this.classList.add('active-period');
+    document.getElementById('chart-period-label').textContent = 'Phân tích 6 tháng qua';
+    drawChart(monthData, monthLabels);
+  });
+
+  document.getElementById('btn-year').addEventListener('click', function () {
+    document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active-period'));
+    this.classList.add('active-period');
+    document.getElementById('chart-period-label').textContent = 'Doanh thu theo năm';
+    drawChart(yearData, yearLabels);
+  });
+</script>

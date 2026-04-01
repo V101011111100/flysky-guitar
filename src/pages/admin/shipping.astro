@@ -162,7 +162,16 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
     returned: 'Hoàn hàng',
   };
 
-  const providerFieldSchemas: Record<string, Array<{ key: string; label: string; type?: string; placeholder?: string }>> = {
+  type ProviderFieldSchema = {
+    key: string;
+    label: string;
+    type?: string;
+    placeholder?: string;
+    action?: 'generate-secret';
+    helpText?: string;
+  };
+
+  const providerFieldSchemas: Record<string, ProviderFieldSchema[]> = {
     ghtk: [
       { key: 'api_url', label: 'API URL' },
       { key: 'shop_id', label: 'Shop ID' },
@@ -179,6 +188,20 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
       { key: 'password', label: 'Password', type: 'password', placeholder: 'Để trống để giữ password cũ' },
       { key: 'sender_phone', label: 'SĐT người gửi' },
       { key: 'sender_address', label: 'Địa chỉ lấy hàng' },
+      { key: 'webhook_url', label: 'Webhook URL', placeholder: 'https://your-domain.com/api/webhooks/viettel-post' },
+      {
+        key: 'webhook_secret',
+        label: 'Webhook Secret',
+        type: 'password',
+        placeholder: 'Để trống để giữ secret cũ',
+        action: 'generate-secret',
+        helpText: 'Secret này cần trùng với ô Secret parameters trong Viettel Partner.',
+      },
+      { key: 'update_order_type', label: 'UpdateOrder TYPE mặc định', placeholder: '1' },
+      { key: 'update_order_note', label: 'Ghi chú UpdateOrder mặc định' },
+      { key: 'register_hook_message', label: 'Lý do re-sync hành trình (registerOrderHook)' },
+      { key: 'print_type', label: 'Print TYPE mặc định', placeholder: '1' },
+      { key: 'print_token', label: 'Print Token (tùy chọn)', type: 'password', placeholder: 'Để trống nếu chưa được Viettel cấp' },
     ],
     ghn: [
       { key: 'api_url', label: 'API URL' },
@@ -262,6 +285,23 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
       node.style.opacity = '0';
       setTimeout(() => node.remove(), 260);
     }, 2400);
+  }
+
+  function generateSecretHex(bytes = 24): string {
+    const byteLength = Math.max(16, Math.min(64, Number(bytes) || 24));
+    const arr = new Uint8Array(byteLength);
+
+    if (window.crypto?.getRandomValues) {
+      window.crypto.getRandomValues(arr);
+    } else {
+      for (let i = 0; i < arr.length; i++) {
+        arr[i] = Math.floor(Math.random() * 256);
+      }
+    }
+
+    return Array.from(arr)
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
   }
 
   async function loadDashboard() {
@@ -543,26 +583,53 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
       { key: 'api_key', label: 'API Key', type: 'password', placeholder: 'Để trống để giữ key cũ' },
     ];
 
+    const computedWebhookUrl = `${window.location.origin}/api/webhooks/viettel-post`;
+
     providerForm.innerHTML = schema
       .map((field) => {
         const value = getByPath(provider.config || {}, field.key);
         const inputType = field.type || 'text';
-        const displayValue = inputType === 'password' ? '' : (value ?? '');
+        const displayValue = inputType === 'password'
+          ? ''
+          : (value ?? (providerCode === 'viettel_post' && field.key === 'webhook_url' ? computedWebhookUrl : ''));
+        const actionHtml = field.action === 'generate-secret'
+          ? `<button type="button" class="sp-btn-outline sp-inline-btn" data-generate-secret="${field.key}">Gen</button>`
+          : '';
+        const helpTextHtml = field.helpText ? `<small class="sp-input-help">${field.helpText}</small>` : '';
 
         return `
           <label class="sp-form-group">
             <span>${field.label}</span>
-            <input
-              type="${inputType}"
-              data-config-key="${field.key}"
-              value="${String(displayValue)}"
-              placeholder="${field.placeholder || ''}"
-              autocomplete="off"
-            >
+            <div class="sp-input-row">
+              <input
+                type="${inputType}"
+                data-config-key="${field.key}"
+                value="${String(displayValue)}"
+                placeholder="${field.placeholder || ''}"
+                autocomplete="off"
+              >
+              ${actionHtml}
+            </div>
+            ${helpTextHtml}
           </label>
         `;
       })
       .join('');
+
+    providerForm.querySelectorAll<HTMLButtonElement>('button[data-generate-secret]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const key = button.dataset.generateSecret || '';
+        if (!key) return;
+
+        const input = providerForm.querySelector<HTMLInputElement>(`input[data-config-key="${key}"]`);
+        if (!input) return;
+
+        input.value = generateSecretHex(24);
+        input.focus();
+        input.select();
+        toast('Đã tạo webhook secret mới, nhớ bấm Lưu cấu hình');
+      });
+    });
 
     providerModal.classList.add('open');
     providerModal.setAttribute('aria-hidden', 'false');
@@ -720,6 +787,31 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
     padding: 8px 13px;
     cursor: pointer;
     transition: all .16s;
+  }
+
+  .sp-inline-btn {
+    min-height: 40px;
+    padding-inline: 12px;
+    white-space: nowrap;
+    font-size: 11px;
+  }
+
+  .sp-input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .sp-input-row input {
+    width: 100%;
+  }
+
+  .sp-input-help {
+    display: block;
+    margin-top: 6px;
+    color: #8f9cb0;
+    font-size: 11px;
+    line-height: 1.35;
   }
 
   .sp-btn-outline:hover {
@@ -1150,17 +1242,115 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
     .sp-provider-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-  }
 
-  @media (max-width: 680px) {
-    .sp-head h2 {
-      font-size: 34px;
+    .sp-table {
+      min-width: 100%;
     }
 
-    .sp-stats,
-    .sp-provider-grid,
+    .sp-table th:nth-child(n+5),
+    .sp-table td:nth-child(n+5) {
+      display: none;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .sp-head {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .sp-head h2 {
+      font-size: 28px;
+    }
+
+    .sp-stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .sp-provider-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .sp-provider-card {
+      flex-direction: row;
+      text-align: left;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .sp-provider-logo {
+      flex-shrink: 0;
+    }
+
+    .sp-provider-main {
+      flex: 1;
+    }
+
+    .sp-provider-actions {
+      width: 100%;
+      margin-top: 8px;
+      flex-direction: column;
+    }
+
+    .sp-table {
+      min-width: 100%;
+      font-size: 11px;
+    }
+
+    .sp-table th,
+    .sp-table td {
+      padding: 8px 6px;
+    }
+
+    .sp-table th:nth-child(n+7),
+    .sp-table td:nth-child(n+7) {
+      display: none;
+    }
+
+    .sp-table input,
+    .sp-table select {
+      min-height: 32px;
+      font-size: 11px;
+      padding: 6px 6px;
+    }
+
+    .sp-method-cell {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+    }
+
+    .sp-method-code {
+      width: 20px;
+      height: 20px;
+      font-size: 9px;
+    }
+
+    .sp-method-title {
+      font-size: 11px;
+    }
+
+    .sp-method-sub {
+      font-size: 9px;
+    }
+
+    .sp-log-item {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .sp-log-time {
+      width: 100%;
+      text-align: left;
+    }
+
     .sp-form-grid {
       grid-template-columns: 1fr;
+    }
+
+    .sp-modal-content {
+      width: min(95%, 600px);
+      padding: 12px;
     }
 
     .sp-modal-actions {
@@ -1170,6 +1360,138 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
     .sp-btn-outline,
     .sp-btn-primary {
       width: 100%;
+    }
+
+    .sp-icon-ghost {
+      width: 24px;
+      height: 24px;
+      font-size: 11px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .sp-head h2 {
+      font-size: 20px;
+    }
+
+    .sp-card-head {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .sp-stats {
+      grid-template-columns: 1fr;
+    }
+
+    .sp-stat-label {
+      font-size: 9px;
+    }
+
+    .sp-stat-value {
+      font-size: 24px;
+    }
+
+    .sp-provider-card {
+      padding: 10px;
+    }
+
+    .sp-provider-logo {
+      width: 40px;
+      height: 40px;
+      font-size: 14px;
+    }
+
+    .sp-provider-main h4 {
+      font-size: 13px;
+    }
+
+    .sp-pill {
+      font-size: 8px;
+      padding: 2px 6px;
+    }
+
+    .sp-table {
+      font-size: 10px;
+    }
+
+    .sp-table th,
+    .sp-table td {
+      padding: 6px 4px;
+    }
+
+    .sp-table th:nth-child(n+4),
+    .sp-table td:nth-child(n+4) {
+      display: none;
+    }
+
+    .sp-table input,
+    .sp-table select {
+      min-height: 30px;
+      font-size: 10px;
+      padding: 5px 4px;
+    }
+
+    .sp-method-code {
+      width: 18px;
+      height: 18px;
+      font-size: 8px;
+    }
+
+    .sp-method-title {
+      font-size: 10px;
+    }
+
+    .sp-method-sub {
+      font-size: 8px;
+    }
+
+    .sp-card {
+      padding: 12px;
+    }
+
+    .sp-card-head h3 {
+      font-size: 14px;
+    }
+
+    .sp-card-note {
+      font-size: 10px;
+    }
+
+    .sp-modal-content {
+      width: 95%;
+      max-height: 90vh;
+      padding: 10px;
+    }
+
+    .sp-modal-head h3 {
+      font-size: 14px;
+    }
+
+    .sp-form-group span {
+      font-size: 11px;
+    }
+
+    .sp-btn-outline,
+    .sp-btn-primary {
+      font-size: 11px;
+      min-height: 32px;
+      padding: 6px 10px;
+    }
+
+    .sp-log-title {
+      font-size: 11px;
+    }
+
+    .sp-log-sub {
+      font-size: 10px;
+    }
+
+    .sp-log-time {
+      font-size: 10px;
+    }
+
+    .sp-table-wrap {
+      border-radius: 8px;
     }
   }
 </style>

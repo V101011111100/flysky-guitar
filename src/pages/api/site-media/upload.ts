@@ -1,7 +1,6 @@
 import type { APIRoute } from 'astro';
 import { uploadToSupabaseStorage } from '../../../lib/storage';
-import { supabase } from '../../../lib/supabase';
-import { ensureSameOrigin } from '../../../lib/security';
+import { ensureSameOrigin, getAdminMfaState } from '../../../lib/security';
 
 const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml', 'image/webp', 'image/gif'];
 const MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -20,14 +19,16 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
     }
 
-    const { data: authData, error: authError } = await supabase.auth.setSession({
-      access_token: accessToken.value,
-      refresh_token: refreshToken.value,
-    });
-
-    if (authError || !authData.user) {
+    const authState = await getAdminMfaState(accessToken.value, refreshToken.value);
+    if (!authState.authenticated || !authState.user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401, headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!authState.isAdmin || authState.requiresMfa) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), {
+        status: 403, headers: { 'Content-Type': 'application/json' },
       });
     }
 

@@ -787,4 +787,480 @@ textarea.field-input { resize: vertical; }
 .btn-publish-post{ background: var(--primary, #e07b39); color: #fff; }
 .btn-cancel:hover, .btn-save-draft:hover, .btn-publish-post:hover { opacity: .85; }
 .btn-save-draft .material-symbols-outlined, .btn-publish-post .material-symbols-outlined { font-size: 18px; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 1100px) {
+  .blog-stats {
+    gap: 8px;
+  }
+  .btn-new-post {
+    margin-left: 0;
+    margin-top: 8px;
+    width: 100%;
+    justify-content: center;
+  }
+  .table-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .search-box {
+    flex: 1;
+    min-width: auto;
+  }
+  .filter-tabs {
+    justify-content: center;
+  }
+  .blog-table {
+    font-size: 12px;
+  }
+  .blog-table th,
+  .blog-table td {
+    padding: 10px 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  /* ── Blog header ── */
+  .blog-stats {
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .stat-pill {
+    padding: 7px 12px;
+    font-size: 12px;
+    flex: 1;
+    min-width: 140px;
+  }
+
+  .btn-new-post {
+    width: 100%;
+    font-size: 13px;
+    padding: 9px 16px;
+  }
+
+  /* ── Table ── */
+  .table-toolbar {
+    flex-direction: column;
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .search-box {
+    width: 100%;
+    font-size: 13px;
+  }
+
+  .filter-tabs {
+    width: 100%;
+    justify-content: space-around;
+    gap: 3px;
+  }
+
+  .ftab {
+    flex: 1;
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+
+  .blog-table {
+    font-size: 11px;
+    min-width: 100%;
+  }
+
+  .blog-table th {
+    padding: 10px 8px;
+    font-size: 9px;
+  }
+
+  .blog-table td {
+    padding: 10px 8px;
+    font-size: 11px;
+  }
+
+  .post-title-cell {
+    gap: 1px;
+  }
+
+  .post-title {
+    font-size: 12px;
+  }
+
+  .post-slug {
+    font-size: 10px;
+  }
+
+  .cat-badge,
+  .status-badge {
+    padding: 2px 8px;
+    font-size: 10px;
+  }
+
+  .action-btns {
+    gap: 4px;
+  }
+
+  .action-btns button,
+  .action-btns a {
+    width: 28px;
+    height: 28px;
+  }
+
+  .action-btns .material-symbols-outlined {
+    font-size: 15px;
+  }
+
+  /* ── Modal ── */
+  .editor-modal {
+    max-width: 95%;
+    border-radius: 16px;
+  }
+
+  .modal-header {
+    padding: 16px;
+  }
+
+  .modal-header h2 {
+    font-size: 16px;
+  }
+
+  .modal-close {
+    width: 32px;
+    height: 32px;
+  }
+
+  .modal-body {
+    padding: 16px;
+    gap: 14px;
+  }
+
+  .field-row {
+    gap: 12px;
+  }
+
+  .field-group {
+    min-width: 100%;
+    flex: 1;
+  }
+
+  .field-label {
+    font-size: 11px;
+  }
+
+  .field-input {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  select.field-input {
+    font-size: 13px;
+  }
+
+  textarea.field-input {
+    font-size: 13px;
+  }
+
+  .cover-row {
+    gap: 10px;
+  }
+
+  .cover-preview {
+    width: 70px;
+    height: 46px;
+  }
+
+  .cover-preview .material-symbols-outlined {
+    font-size: 18px;
+  }
+
+  .editor-toolbar {
+    padding: 6px 8px;
+    gap: 2px;
+  }
+
+  .tb-btn {
+    min-width: 28px;
+    height: 26px;
+    padding: 0 6px;
+    font-size: 12px;
+  }
+
+  .content-editor {
+    min-height: 240px;
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  .content-editor h2 {
+    font-size: 18px;
+  }
+
+  .content-editor h3 {
+    font-size: 15px;
+  }
+
+  .seo-section {
+    padding: 10px 12px;
+  }
+
+  .seo-section summary {
+    font-size: 12px;
+  }
+
+  .modal-footer {
+    flex-direction: column;
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .save-msg {
+    margin-right: 0;
+    margin-bottom: 4px;
+    font-size: 12px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .btn-cancel,
+  .btn-save-draft,
+  .btn-publish-post {
+    width: 100%;
+    justify-content: center;
+    padding: 9px 16px;
+    font-size: 13px;
+  }
+
+  .btn-save-draft .material-symbols-outlined,
+  .btn-publish-post .material-symbols-outlined {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* ── Header ── */
+  .blog-stats {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .stat-pill {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 11px;
+  }
+
+  .btn-new-post {
+    width: 100%;
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+
+  /* ── Table ── */
+  .table-toolbar {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .search-box {
+    width: 100%;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .search-box input {
+    font-size: 12px;
+  }
+
+  .filter-tabs {
+    width: 100%;
+    gap: 2px;
+  }
+
+  .ftab {
+    padding: 5px 6px;
+    font-size: 10px;
+    flex: 1;
+    min-width: 60px;
+  }
+
+  .blog-table {
+    font-size: 10px;
+  }
+
+  .blog-table th {
+    padding: 8px 6px;
+    font-size: 8px;
+  }
+
+  .blog-table td {
+    padding: 8px 6px;
+  }
+
+  .post-title {
+    font-size: 11px;
+  }
+
+  .post-slug {
+    font-size: 9px;
+  }
+
+  .cat-badge,
+  .status-badge {
+    padding: 2px 6px;
+    font-size: 9px;
+  }
+
+  .action-btns {
+    gap: 3px;
+  }
+
+  .action-btns button,
+  .action-btns a {
+    width: 26px;
+    height: 26px;
+  }
+
+  .action-btns .material-symbols-outlined {
+    font-size: 14px;
+  }
+
+  /* ── Modal ── */
+  .modal-backdrop {
+    padding: 12px 12px;
+  }
+
+  .editor-modal {
+    max-width: 100%;
+    border-radius: 12px;
+  }
+
+  .modal-header {
+    padding: 12px;
+  }
+
+  .modal-header h2 {
+    font-size: 14px;
+  }
+
+  .modal-close {
+    width: 28px;
+    height: 28px;
+  }
+
+  .modal-body {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .field-row {
+    gap: 10px;
+    flex-direction: column;
+  }
+
+  .field-group {
+    width: 100%;
+  }
+
+  .field-label {
+    font-size: 10px;
+  }
+
+  .field-input {
+    padding: 7px 9px;
+    font-size: 12px;
+    border-radius: 7px;
+  }
+
+  .slug-wrap {
+    border-radius: 7px;
+  }
+
+  .slug-prefix {
+    padding: 7px 8px;
+    font-size: 11px;
+  }
+
+  .cover-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .cover-preview {
+    width: 60px;
+    height: 40px;
+    border-radius: 6px;
+  }
+
+  .editor-toolbar {
+    padding: 5px 6px;
+    gap: 1px;
+    border-radius: 6px 6px 0 0;
+  }
+
+  .tb-btn {
+    min-width: 26px;
+    height: 24px;
+    padding: 0 4px;
+    font-size: 11px;
+  }
+
+  .tb-sep {
+    margin: 1px 2px;
+  }
+
+  .content-editor {
+    min-height: 180px;
+    padding: 10px;
+    font-size: 13px;
+    border-radius: 0 0 6px 6px;
+  }
+
+  .content-editor h2 {
+    font-size: 16px;
+    margin: 12px 0 6px;
+  }
+
+  .content-editor h3 {
+    font-size: 14px;
+    margin: 8px 0 4px;
+  }
+
+  .content-editor p {
+    margin: 0 0 8px;
+  }
+
+  .seo-section {
+    padding: 8px 10px;
+    border-radius: 7px;
+    margin-top: 12px;
+  }
+
+  .seo-section summary {
+    font-size: 11px;
+  }
+
+  .modal-footer {
+    padding: 10px;
+    gap: 6px;
+  }
+
+  .save-msg {
+    font-size: 11px;
+  }
+
+  .btn-cancel,
+  .btn-save-draft,
+  .btn-publish-post {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .btn-save-draft .material-symbols-outlined,
+  .btn-publish-post .material-symbols-outlined {
+    font-size: 14px;
+  }
+}
 </style>
