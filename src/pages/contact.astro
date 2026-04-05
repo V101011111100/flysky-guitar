@@ -103,9 +103,23 @@ const emailHref = `mailto:${emailAddress.trim() || 'hello@flyskyguitar.com'}`;
               <span class={isAdmin ? 'quick-editable' : ''} data-setting-key={isAdmin ? 'flysky_contact_store_desc' : undefined}>{storeDesc}</span><br/><br/>
               <span class={`text-white/90 ${isAdmin ? 'quick-editable' : ''}`} data-setting-key={isAdmin ? 'flysky_contact_store_address' : undefined}>{storeAddress}</span>
             </p>
-            <a href={storeMapUrl} target="_blank" class="text-primary font-bold text-sm flex items-center gap-1 hover:underline">
+            <a id="contact-store-map-link" href={storeMapUrl} target="_blank" class="text-primary font-bold text-sm flex items-center gap-1 hover:underline">
               <span class={isAdmin ? 'quick-editable' : ''} data-setting-key={isAdmin ? 'flysky_contact_store_cta' : undefined}>{storeCta}</span> <span class="material-symbols-outlined text-sm">open_in_new</span>
             </a>
+            {isAdmin && (
+              <div class="contact-map-url-editor">
+                <label for="contact-store-map-url-input" class="contact-map-url-label">Link chỉ đường</label>
+                <input
+                  id="contact-store-map-url-input"
+                  type="url"
+                  class="contact-map-url-input"
+                  value={storeMapUrl}
+                  placeholder="https://maps.app.goo.gl/..."
+                  autocomplete="off"
+                  spellcheck="false"
+                />
+              </div>
+            )}
           </div>
 
           <div class="bg-card-dark border border-border-dark rounded-2xl p-6 group hover:border-primary/50 transition-colors">
@@ -243,22 +257,61 @@ const emailHref = `mailto:${emailAddress.trim() || 'hello@flyskyguitar.com'}`;
       <div id="contact-quick-edit-toolbar" class="public-quick-toolbar">
         <button id="toggle-contact-edit" type="button" class="public-quick-btn">
           <span class="material-symbols-outlined">edit_square</span>
-          <span id="contact-edit-label">Chỉnh sửa nhanh trang liên hệ</span>
+          <span id="contact-edit-label">Chỉnh sửa</span>
+        </button>
+        <button id="save-contact-edit" type="button" class="public-quick-btn hidden">
+          <span class="material-symbols-outlined">save</span>
+          <span>Lưu</span>
+        </button>
+        <button id="exit-contact-edit" type="button" class="public-quick-btn hidden">
+          <span class="material-symbols-outlined">close</span>
+          <span>Thoát</span>
         </button>
         <span id="contact-edit-status" class="public-quick-status hidden">Đã lưu</span>
       </div>
 
       <script is:inline>
         const contactToggleBtn = document.getElementById('toggle-contact-edit');
+        const contactSaveBtn = document.getElementById('save-contact-edit');
+        const contactExitBtn = document.getElementById('exit-contact-edit');
         const contactEditLabel = document.getElementById('contact-edit-label');
         const contactEditStatus = document.getElementById('contact-edit-status');
+        const contactMapLink = document.getElementById('contact-store-map-link');
+        const contactMapUrlInput = document.getElementById('contact-store-map-url-input');
         let contactEditMode = false;
+        let contactHasPendingChanges = false;
+        let contactStatusTimer;
+        let mapUrlDirty = false;
+        const dirtyContactFields = new Set();
+
+        function syncContactEditActions() {
+          contactToggleBtn?.classList.toggle('hidden', contactEditMode);
+          contactSaveBtn?.classList.toggle('hidden', !contactEditMode || !contactHasPendingChanges);
+          contactExitBtn?.classList.toggle('hidden', !contactEditMode);
+          if (contactEditLabel) {
+            contactEditLabel.textContent = contactEditMode ? 'Đang chỉnh sửa' : 'Chỉnh sửa';
+          }
+        }
+
+        function updateContactPendingChanges() {
+          contactHasPendingChanges = dirtyContactFields.size > 0 || mapUrlDirty;
+          syncContactEditActions();
+        }
 
         function flashContactSaved(message = 'Đã lưu') {
           if (!contactEditStatus) return;
+          if (contactStatusTimer) {
+            clearTimeout(contactStatusTimer);
+          }
           contactEditStatus.textContent = message;
           contactEditStatus.classList.remove('hidden');
-          setTimeout(() => contactEditStatus.classList.add('hidden'), 1800);
+          contactEditStatus.classList.remove('is-flashing');
+          void contactEditStatus.offsetWidth;
+          contactEditStatus.classList.add('is-flashing');
+          contactStatusTimer = setTimeout(() => {
+            contactEditStatus.classList.add('hidden');
+            contactEditStatus.classList.remove('is-flashing');
+          }, 1700);
         }
 
         async function saveContactSetting(key, value) {
@@ -314,24 +367,44 @@ const emailHref = `mailto:${emailAddress.trim() || 'hello@flyskyguitar.com'}`;
           }
         }
 
-        async function handleContactTextSave(event) {
-          const el = event.target;
-          const key = el.dataset.settingKey;
+        function handleContactTextInput(event) {
+          const el = event.currentTarget || event.target;
           const nextValue = (el.textContent || '').trim();
           const prevValue = el.dataset.originalValue || '';
-          if (!key || !nextValue || nextValue === prevValue) return;
-
-          el.classList.add('quick-saving');
-          try {
-            await saveContactSetting(key, nextValue);
-            el.dataset.originalValue = nextValue;
-            flashContactSaved();
-          } catch (error) {
-            el.textContent = prevValue;
-            alert(error.message || 'Không thể lưu thay đổi');
-          } finally {
-            el.classList.remove('quick-saving');
+          if (nextValue !== prevValue) {
+            dirtyContactFields.add(el);
+          } else {
+            dirtyContactFields.delete(el);
           }
+          updateContactPendingChanges();
+        }
+
+        function normalizeMapUrl(value) {
+          const raw = (value || '').trim();
+          if (!raw) return '';
+          if (/^https?:\/\//i.test(raw)) return raw;
+          return `https://${raw}`;
+        }
+
+        function handleContactMapUrlInput() {
+          if (!contactMapUrlInput) return;
+          const nextValue = normalizeMapUrl(contactMapUrlInput.value);
+          const prevValue = contactMapUrlInput.dataset.originalValue || '';
+          mapUrlDirty = nextValue !== prevValue;
+          updateContactPendingChanges();
+        }
+
+        function bindContactMapUrlEditor() {
+          if (!contactMapUrlInput) return;
+          const initialValue = normalizeMapUrl(contactMapUrlInput.value);
+          contactMapUrlInput.value = initialValue;
+          contactMapUrlInput.dataset.originalValue = initialValue;
+
+          if (contactMapLink && initialValue) {
+            contactMapLink.setAttribute('href', initialValue);
+          }
+
+          contactMapUrlInput.addEventListener('input', handleContactMapUrlInput);
         }
 
         function enableContactTextEditing() {
@@ -340,7 +413,7 @@ const emailHref = `mailto:${emailAddress.trim() || 'hello@flyskyguitar.com'}`;
             el.contentEditable = 'true';
             el.dataset.originalValue = el.textContent || '';
             el.classList.add('quick-edit-active');
-            el.addEventListener('blur', handleContactTextSave);
+            el.addEventListener('input', handleContactTextInput);
           });
         }
 
@@ -349,8 +422,69 @@ const emailHref = `mailto:${emailAddress.trim() || 'hello@flyskyguitar.com'}`;
             const el = node;
             el.contentEditable = 'false';
             el.classList.remove('quick-edit-active');
-            el.removeEventListener('blur', handleContactTextSave);
+            el.removeEventListener('input', handleContactTextInput);
           });
+          dirtyContactFields.clear();
+          mapUrlDirty = false;
+          updateContactPendingChanges();
+        }
+
+        function revertContactChanges() {
+          dirtyContactFields.forEach((node) => {
+            node.textContent = node.dataset.originalValue || '';
+          });
+
+          if (contactMapUrlInput) {
+            const originalValue = contactMapUrlInput.dataset.originalValue || '';
+            contactMapUrlInput.value = originalValue;
+            if (contactMapLink && originalValue) {
+              contactMapLink.setAttribute('href', originalValue);
+            }
+          }
+
+          dirtyContactFields.clear();
+          mapUrlDirty = false;
+          updateContactPendingChanges();
+        }
+
+        async function saveContactChanges() {
+          const changedFields = Array.from(document.querySelectorAll('[data-setting-key]')).filter((node) => {
+            return (node.textContent || '').trim() !== (node.dataset.originalValue || '');
+          });
+
+          for (const node of changedFields) {
+            const key = node.dataset.settingKey;
+            const nextValue = (node.textContent || '').trim();
+            if (!key) continue;
+
+            node.classList.add('quick-saving');
+            try {
+              await saveContactSetting(key, nextValue);
+              node.dataset.originalValue = nextValue;
+            } finally {
+              node.classList.remove('quick-saving');
+            }
+          }
+
+          if (contactMapUrlInput && mapUrlDirty) {
+            const nextValue = normalizeMapUrl(contactMapUrlInput.value);
+            contactMapUrlInput.classList.add('quick-saving');
+            try {
+              await saveContactSetting('flysky_contact_store_map_url', nextValue);
+              contactMapUrlInput.dataset.originalValue = nextValue;
+              contactMapUrlInput.value = nextValue;
+              if (contactMapLink) {
+                contactMapLink.setAttribute('href', nextValue);
+              }
+            } finally {
+              contactMapUrlInput.classList.remove('quick-saving');
+            }
+          }
+
+          dirtyContactFields.clear();
+          mapUrlDirty = false;
+          updateContactPendingChanges();
+          flashContactSaved('Đã lưu thay đổi');
         }
 
         function bindContactImageEditors() {
@@ -394,55 +528,145 @@ const emailHref = `mailto:${emailAddress.trim() || 'hello@flyskyguitar.com'}`;
         }
 
         contactToggleBtn?.addEventListener('click', () => {
-          contactEditMode = !contactEditMode;
-          document.body.classList.toggle('public-edit-mode', contactEditMode);
-          if (contactEditLabel) {
-            contactEditLabel.textContent = contactEditMode ? 'Thoát chỉnh sửa nhanh' : 'Chỉnh sửa nhanh trang liên hệ';
-          }
-          if (contactEditMode) {
-            enableContactTextEditing();
-          } else {
-            disableContactTextEditing();
+          contactEditMode = true;
+          document.body.classList.add('public-edit-mode');
+          enableContactTextEditing();
+          syncContactEditActions();
+        });
+
+        contactSaveBtn?.addEventListener('click', async () => {
+          if (!contactHasPendingChanges) return;
+          contactSaveBtn.setAttribute('disabled', 'true');
+          try {
+            await saveContactChanges();
+          } catch (error) {
+            alert(error.message || 'Không thể lưu thay đổi');
+          } finally {
+            contactSaveBtn.removeAttribute('disabled');
+            syncContactEditActions();
           }
         });
 
+        contactExitBtn?.addEventListener('click', () => {
+          if (contactHasPendingChanges && !confirm('Bạn có thay đổi chưa lưu. Thoát và bỏ thay đổi?')) {
+            return;
+          }
+          if (contactHasPendingChanges) {
+            revertContactChanges();
+          }
+          contactEditMode = false;
+          document.body.classList.remove('public-edit-mode');
+          disableContactTextEditing();
+          syncContactEditActions();
+        });
+
         bindContactImageEditors();
+        bindContactMapUrlEditor();
+        syncContactEditActions();
       </script>
 
       <style>
         .public-quick-toolbar {
           position: fixed;
-          right: 73px;
+          left: 50%;
+          transform: translateX(-50%);
           bottom: 20px;
           z-index: 120;
           display: flex;
           align-items: center;
+          justify-content: center;
           gap: 10px;
+          flex-wrap: wrap;
+          width: min(420px, calc(100vw - 24px));
+          padding: 10px;
+          border: 1px solid rgba(244, 140, 37, 0.18);
+          border-radius: 18px;
+          background: rgba(36, 24, 14, 0.72);
+          backdrop-filter: blur(12px);
+          box-shadow: 0 14px 32px rgba(0, 0, 0, 0.35);
         }
         .public-quick-btn {
           display: inline-flex;
           align-items: center;
+          justify-content: center;
+          flex: 1 1 160px;
           gap: 8px;
+          min-width: 0;
           border: 1px solid rgba(244, 140, 37, 0.35);
-          background: rgba(16, 13, 8, 0.92);
+          background: rgba(12, 10, 7, 0.96);
           color: #fff;
           border-radius: 999px;
           padding: 12px 16px;
           font: inherit;
           font-weight: 700;
           cursor: pointer;
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+          white-space: nowrap;
+        }
+        .public-quick-btn:disabled {
+          opacity: 0.65;
+          cursor: not-allowed;
+        }
+        .public-quick-btn.hidden {
+          display: none !important;
         }
         .public-quick-status {
+          position: absolute;
+          left: 50%;
+          bottom: calc(100% - 8px);
+          transform: translateX(-50%) scale(0.94);
           border-radius: 999px;
-          padding: 10px 12px;
+          padding: 8px 12px;
           background: rgba(22, 101, 52, 0.92);
           color: #86efac;
           font-size: 12px;
           font-weight: 700;
+          border: 1px solid rgba(134, 239, 172, 0.35);
+          box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+          white-space: nowrap;
+          pointer-events: none;
+          opacity: 0;
+        }
+        .public-quick-status.is-flashing {
+          animation: quick-save-flash 1.4s ease-out both;
         }
         .public-quick-status.hidden {
           display: none;
+        }
+        @keyframes quick-save-flash {
+          0% {
+            opacity: 0;
+            transform: translateX(-50%) translateY(6px) scale(0.9);
+          }
+          22% {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0) scale(1);
+          }
+          68% {
+            opacity: 1;
+            transform: translateX(-50%) translateY(-2px) scale(1);
+          }
+          100% {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-8px) scale(0.95);
+          }
+        }
+        @media (max-width: 640px) {
+          .public-quick-toolbar {
+            left: 12px;
+            right: 12px;
+            transform: none;
+            width: auto;
+            bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+            gap: 8px;
+            justify-content: space-between;
+          }
+          .public-quick-btn {
+            flex: 1;
+            min-width: 0;
+            padding: 11px 12px;
+            font-size: 13px;
+          }
         }
         .quick-edit-active {
           outline: 2px dashed rgba(244, 140, 37, 0.95);
@@ -467,6 +691,39 @@ const emailHref = `mailto:${emailAddress.trim() || 'hello@flyskyguitar.com'}`;
           font-size: 12px;
           font-weight: 700;
           z-index: 3;
+        }
+        .contact-map-url-editor {
+          display: none;
+          margin-top: 10px;
+          padding-top: 10px;
+          border-top: 1px dashed rgba(244, 140, 37, 0.25);
+        }
+        .public-edit-mode .contact-map-url-editor {
+          display: block;
+        }
+        .contact-map-url-label {
+          display: block;
+          margin-bottom: 6px;
+          font-size: 11px;
+          font-weight: 700;
+          color: rgba(148, 163, 184, 0.95);
+          letter-spacing: 0.02em;
+        }
+        .contact-map-url-input {
+          width: 100%;
+          border: 1px solid rgba(244, 140, 37, 0.28);
+          background: rgba(15, 11, 7, 0.9);
+          color: #f8fafc;
+          border-radius: 10px;
+          padding: 9px 10px;
+          font-size: 12px;
+          line-height: 1.35;
+          outline: none;
+          transition: border-color 0.16s ease, box-shadow 0.16s ease;
+        }
+        .contact-map-url-input:focus {
+          border-color: rgba(244, 140, 37, 0.9);
+          box-shadow: 0 0 0 3px rgba(244, 140, 37, 0.2);
         }
         .public-edit-mode .quick-image-editable {
           outline: 2px dashed rgba(244, 140, 37, 0.95);

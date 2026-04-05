@@ -15,7 +15,9 @@ const getSetting = (key: string, _default: string) => {
 // Social media links
 const zaloUrl = getSetting('flysky_zaloUrl', 'https://zalo.me/0987654321');
 const facebookUrl = getSetting('flysky_facebookUrl', 'https://facebook.com/flyskyguitar');
-const whatsappUrl = getSetting('flysky_whatsappUrl', 'https://wa.me/84987654321');
+const instagramUrl = getSetting('flysky_instagramUrl', 'https://instagram.com/flyskyguitar');
+const youtubeUrl = getSetting('flysky_youtubeUrl', 'https://youtube.com/@flyskyguitar');
+const tiktokUrl = getSetting('flysky_tiktokUrl', 'https://tiktok.com/@flyskyguitar');
 ---
 
 <!-- ============================
@@ -154,18 +156,32 @@ const whatsappUrl = getSetting('flysky_whatsappUrl', 'https://wa.me/84987654321'
         iconSrc: '/images/icons8-zalo.svg'
       },
       {
-        label: 'Messenger',
+        label: 'Facebook',
         href: facebookUrl,
         color: 'hover:bg-[#1877F2]',
         iconType: 'lottie',
         lottieSrc: '/images/icons8-facebook-messenger.json'
       },
       {
-        label: 'WhatsApp',
-        href: whatsappUrl,
-        color: 'hover:bg-[#25D366]',
-        iconType: 'lottie',
-        lottieSrc: '/images/icons8-whatsapp.json'
+        label: 'Instagram',
+        href: instagramUrl,
+        color: 'hover:bg-[#E4405F]',
+        iconType: 'text',
+        text: 'IG'
+      },
+      {
+        label: 'YouTube',
+        href: youtubeUrl,
+        color: 'hover:bg-[#FF0000]',
+        iconType: 'text',
+        text: 'YT'
+      },
+      {
+        label: 'TikTok',
+        href: tiktokUrl,
+        color: 'hover:bg-[#111111]',
+        iconType: 'text',
+        text: 'TT'
       },
     ].map((s, i) => (
       <a
@@ -183,6 +199,9 @@ const whatsappUrl = getSetting('flysky_whatsappUrl', 'https://wa.me/84987654321'
         )}
         {s.iconType === 'image' && (
           <img src={s.iconSrc} alt={s.label} class="social-img-icon" loading="lazy" />
+        )}
+        {s.iconType === 'text' && (
+          <span class="social-text-icon" aria-hidden="true">{s.text}</span>
         )}
       </a>
     ))}
@@ -215,6 +234,13 @@ const whatsappUrl = getSetting('flysky_whatsappUrl', 'https://wa.me/84987654321'
     width: 34px;
     height: 34px;
     object-fit: contain;
+    pointer-events: none;
+  }
+  .social-text-icon {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    line-height: 1;
     pointer-events: none;
   }
 

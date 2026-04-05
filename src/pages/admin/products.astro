@@ -93,7 +93,7 @@ const { data: categoriesArray } = await supabase
           
           <div id="uploadZone" onclick="document.getElementById('img-upload-input').click()" class="relative w-full border-2 border-dashed border-primary/30 rounded-xl bg-background-dark/30 hover:bg-background-dark/50 hover:border-primary transition-all cursor-pointer group p-8 flex flex-col items-center justify-center gap-3 text-center overflow-hidden">
             <input type="file" id="img-upload-input" accept="image/*" multiple style="display:none;" />
-            <input type="hidden" id="prod-image" value={isEdit ? product?.main_image_url : ''} />
+            <input type="hidden" id="prod-image" value={isEdit ? (product?.gallery_images?.[0] || '') : ''} />
             <input type="hidden" id="gallery-images-json" value={isEdit && product?.gallery_images ? JSON.stringify(product.gallery_images) : '[]'} />
             
             <div class="flex items-center gap-4 relative z-10">
@@ -110,6 +110,13 @@ const { data: categoriesArray } = await supabase
               <span class="material-symbols-outlined animate-spin text-primary text-3xl">sync</span>
               <span id="upload-progress-text" class="text-xs font-bold text-slate-100 uppercase tracking-widest">Đang xử lý ảnh...</span>
             </div>
+          </div>
+
+          <div class="flex items-center justify-end gap-3 -mt-2">
+            <button id="btn-open-r2-picker" type="button" class="inline-flex items-center gap-2 rounded-lg border border-primary/30 bg-background-dark/60 px-3 py-2 text-xs font-bold uppercase tracking-wide text-primary hover:bg-primary/10 transition-colors">
+              <span class="material-symbols-outlined text-base">cloud</span>
+              Chọn ảnh từ R2
+            </button>
           </div>
           
           <!-- Image Thumbnails Grid -->
@@ -215,6 +222,14 @@ const { data: categoriesArray } = await supabase
                 <option value="active" selected={isEdit ? product?.status === 'active' : true}>Đang bán</option>
                 <option value="draft" selected={isEdit && product?.status === 'draft'}>Bản nháp</option>
                 <option value="out_of_stock" selected={isEdit && product?.status === 'out_of_stock'}>Hết hàng</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs font-bold uppercase tracking-widest text-primary/70 mb-2 block">Tình trạng đàn</label>
+              <select id="prod-condition" class="w-full bg-background-dark border border-primary/20 rounded-lg py-3 px-4 focus:ring-1 focus:ring-primary outline-none text-sm text-slate-200 cursor-pointer transition-colors">
+                <option value="new" selected={isEdit ? (product?.product_condition || 'new') === 'new' : true}>Mới 100%</option>
+                <option value="used" selected={isEdit && product?.product_condition === 'used'}>Đàn cũ (đã qua sử dụng)</option>
+                <option value="like_new" selected={isEdit && product?.product_condition === 'like_new'}>Like new</option>
               </select>
             </div>
             <div>
@@ -347,6 +362,44 @@ const { data: categoriesArray } = await supabase
     </div>
   </div>
 
+  <!-- R2 Media Picker Modal -->
+  <div id="r2-picker-modal" class="fixed inset-0 z-[10000] hidden items-center justify-center bg-black/80 p-4" onclick="if(event.target===this) this.classList.add('hidden')">
+    <div class="w-full max-w-6xl max-h-[90vh] rounded-2xl border border-primary/20 bg-background-dark shadow-2xl overflow-hidden flex flex-col" onclick="event.stopPropagation()">
+      <div class="px-5 py-4 border-b border-primary/10 bg-primary/5 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2 text-white">
+          <span class="material-symbols-outlined text-primary">perm_media</span>
+          <h3 class="text-lg font-bold">Chọn ảnh từ thư viện R2</h3>
+        </div>
+        <button id="btn-close-r2-picker" type="button" class="h-9 w-9 rounded-lg border border-primary/20 text-slate-300 hover:text-white hover:bg-white/5 transition-colors">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="px-5 py-4 border-b border-primary/10 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+        <div class="relative w-full sm:max-w-md">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-[18px]">search</span>
+          <input id="r2-picker-search" type="text" placeholder="Tìm theo tên file..." class="w-full rounded-lg border border-primary/20 bg-background-dark py-2.5 pl-10 pr-3 text-sm text-slate-200 placeholder-slate-500 focus:border-primary outline-none" />
+        </div>
+        <span id="r2-picker-count" class="text-xs font-semibold text-slate-400">0 ảnh đã chọn</span>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-5">
+        <div id="r2-picker-loading" class="h-48 flex items-center justify-center gap-3 text-slate-400">
+          <span class="material-symbols-outlined animate-spin">progress_activity</span>
+          Đang tải thư viện R2...
+        </div>
+        <div id="r2-picker-grid" class="hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4"></div>
+      </div>
+
+      <div class="px-5 py-4 border-t border-primary/10 flex items-center justify-end gap-3 bg-background-dark/70">
+        <button id="btn-cancel-r2-picker" type="button" class="px-4 py-2 rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800 transition-colors">Hủy</button>
+        <button id="btn-apply-r2-picker" type="button" class="px-4 py-2 rounded-lg bg-primary text-background-dark font-bold hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed" disabled>
+          Thêm ảnh đã chọn
+        </button>
+      </div>
+    </div>
+  </div>
+
 </AdminLayout>
 
 <style>
@@ -393,7 +446,6 @@ const { data: categoriesArray } = await supabase
           'prod-name': (document.getElementById('prod-name') as HTMLInputElement)?.value || '',
           'prod-slug': (document.getElementById('prod-slug') as HTMLInputElement)?.value || '',
           'prod-price': (document.getElementById('prod-price') as HTMLInputElement)?.value || '',
-          'prod-image': (document.getElementById('prod-image') as HTMLInputElement)?.value || '',
           'prod-desc': (document.getElementById('prod-desc') as HTMLTextAreaElement)?.value || '',
           'prod-body': (document.getElementById('prod-body') as HTMLSelectElement)?.value || '',
           'prod-top': (document.getElementById('prod-top') as HTMLSelectElement)?.value || '',
@@ -401,7 +453,11 @@ const { data: categoriesArray } = await supabase
           'prod-category': (document.getElementById('prod-category') as HTMLSelectElement)?.value || '',
           'prod-stock': (document.getElementById('prod-stock') as HTMLInputElement)?.value || '0',
           'prod-status': (document.getElementById('prod-status') as HTMLSelectElement)?.value || 'active',
-          'prod-gallery': (document.getElementById('gallery-images-json') as HTMLInputElement)?.value || '[]',
+          'prod-condition': (document.getElementById('prod-condition') as HTMLSelectElement)?.value || 'new',
+          'prod-gallery': (() => {
+            const ordered = getOrderedUiImages();
+            return JSON.stringify(ordered.map((img) => img.url));
+          })(),
           'prod-video': (document.getElementById('prod-video') as HTMLInputElement)?.value || ''
         };
 
@@ -535,6 +591,15 @@ const { data: categoriesArray } = await supabase
     // === UNIFIED DATA MODEL ===
     // Ensure all images are tracked in a single array to preserve visual order
     let uiImages: { url: string, isMain: boolean }[] = [];
+    let r2PickerFiles: Array<{ key: string; url: string; lastModified?: string }> = [];
+    const r2PickerSelected = new Set<string>();
+
+    function getOrderedUiImages() {
+      if (uiImages.length === 0) return [];
+      const main = uiImages.find(img => img.isMain);
+      const rest = uiImages.filter(img => !img.isMain);
+      return main ? [main, ...rest] : [...uiImages];
+    }
 
     // Initialize data from hidden inputs
     function initGalleryData() {
@@ -542,21 +607,28 @@ const { data: categoriesArray } = await supabase
         const galleryInput = document.getElementById('gallery-images-json') as HTMLInputElement;
         
         uiImages = []; // reset
-        
-        if (prodImageInput && prodImageInput.value) {
-            uiImages.push({ url: prodImageInput.value, isMain: true });
-        }
-        
+
+      let galleryUrls: string[] = [];
         if (galleryInput && galleryInput.value) {
             try {
                 const arr = JSON.parse(galleryInput.value);
                 if (Array.isArray(arr)) {
-                    arr.forEach(url => {
-                        uiImages.push({ url, isMain: false });
-                    });
+            galleryUrls = arr.filter((url) => typeof url === 'string' && url.trim()).map((url) => url.trim());
                 }
             } catch {}
         }
+
+      if (galleryUrls.length > 0) {
+        const dedup = Array.from(new Set(galleryUrls));
+        dedup.forEach((url, index) => {
+          uiImages.push({ url, isMain: index === 0 });
+        });
+        return;
+      }
+
+      if (prodImageInput && prodImageInput.value) {
+        uiImages.push({ url: prodImageInput.value, isMain: true });
+      }
     }
 
     // Sync state back to hidden inputs
@@ -564,8 +636,9 @@ const { data: categoriesArray } = await supabase
         const prodImageInput = document.getElementById('prod-image') as HTMLInputElement;
         const galleryInput = document.getElementById('gallery-images-json') as HTMLInputElement;
         
-        const mainImg = uiImages.find(img => img.isMain);
-        const galleryImgs = uiImages.filter(img => !img.isMain).map(img => img.url);
+        const ordered = getOrderedUiImages();
+        const mainImg = ordered[0] || null;
+        const galleryImgs = ordered.map((img) => img.url);
 
         if (prodImageInput) {
             prodImageInput.value = mainImg ? mainImg.url : '';
@@ -580,6 +653,7 @@ const { data: categoriesArray } = await supabase
     function updateThumbGrid() {
       const grid = document.getElementById('thumb-grid');
       if (!grid) return;
+      const addNewBtn = grid.querySelector('div[onclick*="img-upload-input"]');
 
       // Hide the hardcoded main-thumb-preview initially
       const staticMainPreview = document.getElementById('main-thumb-preview');
@@ -620,7 +694,11 @@ const { data: categoriesArray } = await supabase
               </div>
             `;
         }
-        grid.appendChild(div);
+        if (addNewBtn) {
+          grid.insertBefore(div, addNewBtn);
+        } else {
+          grid.appendChild(div);
+        }
       });
     }
 
@@ -670,6 +748,145 @@ const { data: categoriesArray } = await supabase
     // === INITIALIZE GALLERY ===
     initGalleryData();
     updateThumbGrid();
+
+    // === R2 PICKER ===
+    const r2PickerModal = document.getElementById('r2-picker-modal');
+    const r2PickerLoading = document.getElementById('r2-picker-loading');
+    const r2PickerGrid = document.getElementById('r2-picker-grid');
+    const r2PickerSearch = document.getElementById('r2-picker-search') as HTMLInputElement | null;
+    const r2PickerCount = document.getElementById('r2-picker-count');
+    const btnOpenR2Picker = document.getElementById('btn-open-r2-picker');
+    const btnCloseR2Picker = document.getElementById('btn-close-r2-picker');
+    const btnCancelR2Picker = document.getElementById('btn-cancel-r2-picker');
+    const btnApplyR2Picker = document.getElementById('btn-apply-r2-picker') as HTMLButtonElement | null;
+
+    function isImageUrl(url: string) {
+      return /\.(png|jpe?g|webp|gif|avif|svg)$/i.test(url);
+    }
+
+    function updateR2PickerSelectionUi() {
+      if (r2PickerCount) {
+        r2PickerCount.textContent = `${r2PickerSelected.size} ảnh đã chọn`;
+      }
+      if (btnApplyR2Picker) {
+        btnApplyR2Picker.disabled = r2PickerSelected.size === 0;
+      }
+    }
+
+    function getFilteredR2Files() {
+      const q = (r2PickerSearch?.value || '').trim().toLowerCase();
+      const imageFiles = r2PickerFiles.filter((file) => isImageUrl(file.url));
+      if (!q) return imageFiles;
+      return imageFiles.filter((file) => {
+        const fileName = file.key.split('/').pop()?.toLowerCase() || '';
+        return fileName.includes(q) || file.url.toLowerCase().includes(q);
+      });
+    }
+
+    function renderR2PickerGrid() {
+      if (!r2PickerGrid) return;
+      const files = getFilteredR2Files();
+      r2PickerGrid.innerHTML = '';
+
+      if (files.length === 0) {
+        r2PickerGrid.innerHTML = '<div class="col-span-full py-16 text-center text-slate-500">Không tìm thấy ảnh phù hợp trong R2.</div>';
+        updateR2PickerSelectionUi();
+        return;
+      }
+
+      files.forEach((file) => {
+        const selected = r2PickerSelected.has(file.url);
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = `relative rounded-xl border p-2 text-left transition-all ${selected ? 'border-primary bg-primary/10' : 'border-primary/20 bg-background-dark hover:border-primary/60'}`;
+        card.innerHTML = `
+          <div class="aspect-square rounded-lg bg-background-dark border border-primary/15 overflow-hidden">
+            <img src="${file.url}" alt="${file.key}" class="w-full h-full object-cover" loading="lazy" />
+          </div>
+          <p class="mt-2 text-[11px] text-slate-300 truncate" title="${file.key}">${file.key.split('/').pop() || file.key}</p>
+          ${selected ? '<div class="absolute top-3 right-3 h-5 w-5 rounded-full bg-primary text-background-dark flex items-center justify-center"><span class="material-symbols-outlined text-[14px]">check</span></div>' : ''}
+        `;
+        card.addEventListener('click', () => {
+          if (r2PickerSelected.has(file.url)) r2PickerSelected.delete(file.url);
+          else r2PickerSelected.add(file.url);
+          renderR2PickerGrid();
+        });
+        r2PickerGrid.appendChild(card);
+      });
+
+      updateR2PickerSelectionUi();
+    }
+
+    async function ensureR2FilesLoaded() {
+      if (r2PickerFiles.length > 0) return;
+      if (r2PickerLoading) r2PickerLoading.style.display = 'flex';
+      if (r2PickerGrid) r2PickerGrid.classList.add('hidden');
+
+      const res = await fetch('/api/media/list');
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Không thể tải thư viện R2');
+      }
+
+      r2PickerFiles = Array.isArray(data.files) ? data.files : [];
+      if (r2PickerLoading) r2PickerLoading.style.display = 'none';
+      if (r2PickerGrid) r2PickerGrid.classList.remove('hidden');
+      renderR2PickerGrid();
+    }
+
+    function openR2Picker() {
+      if (!r2PickerModal) return;
+      r2PickerModal.classList.remove('hidden');
+      r2PickerModal.classList.add('flex');
+      ensureR2FilesLoaded().catch((error) => {
+        alert(error.message || 'Không thể tải thư viện R2');
+        closeR2Picker();
+      });
+    }
+
+    function closeR2Picker() {
+      if (!r2PickerModal) return;
+      r2PickerModal.classList.add('hidden');
+      r2PickerModal.classList.remove('flex');
+    }
+
+    function appendSelectedR2Images() {
+      const selectedUrls = getFilteredR2Files()
+        .map((file) => file.url)
+        .filter((url) => r2PickerSelected.has(url));
+      if (selectedUrls.length === 0) return;
+
+      let insertAfterMain = 0;
+      const mainIndex = uiImages.findIndex((img) => img.isMain);
+      if (mainIndex < 0) {
+        const first = selectedUrls[0];
+        const exists = uiImages.some((img) => img.url === first);
+        if (!exists) {
+          uiImages.unshift({ url: first, isMain: true });
+        }
+        insertAfterMain = 1;
+      } else {
+        insertAfterMain = mainIndex + 1;
+      }
+
+      selectedUrls.forEach((url) => {
+        if (uiImages.some((img) => img.url === url)) return;
+        uiImages.splice(insertAfterMain, 0, { url, isMain: false });
+        insertAfterMain += 1;
+      });
+
+      syncToInputs();
+      updateThumbGrid();
+      closeR2Picker();
+      r2PickerSelected.clear();
+      updateR2PickerSelectionUi();
+    }
+
+    btnOpenR2Picker?.addEventListener('click', openR2Picker);
+    btnCloseR2Picker?.addEventListener('click', closeR2Picker);
+    btnCancelR2Picker?.addEventListener('click', closeR2Picker);
+    btnApplyR2Picker?.addEventListener('click', appendSelectedR2Images);
+    r2PickerSearch?.addEventListener('input', renderR2PickerGrid);
 
     // === MULTI-IMAGE UPLOAD HANDLER ===
     const fileInput = document.getElementById('img-upload-input') as HTMLInputElement;
@@ -811,35 +1028,26 @@ const { data: categoriesArray } = await supabase
 
             if (uploadData.success && uploadData.url) {
               const url = uploadData.url;
-              const urlInput = document.getElementById('prod-image') as HTMLInputElement;
-              const mainThumbImg = document.getElementById('main-thumb-img') as HTMLImageElement;
-              const previewContainer = document.getElementById('main-thumb-preview');
-              const optBadge = document.getElementById('thumb-opt-badge');
-              const galleryInput = document.getElementById('gallery-images-json') as HTMLInputElement;
               const thumbGrid = document.getElementById('thumb-grid');
 
               // Check if this image was marked as intended main
               const previewEl = thumbGrid?.querySelector(`[data-object-index="${fi}"]`);
-              const isMarkedAsMain = previewEl?.hasAttribute('data-intended-main') || !urlInput?.value;
+              const hasMain = uiImages.some(img => img.isMain);
+              const isMarkedAsMain = previewEl?.hasAttribute('data-intended-main') || !hasMain;
 
               if (isMarkedAsMain) {
-                // Set as main image
-                if (urlInput) urlInput.value = url;
-                if (mainThumbImg) mainThumbImg.src = url;
-                if (previewContainer) previewContainer.style.display = 'block';
-                if (optBadge) { optBadge.style.display = 'block'; optBadge.textContent = 'Ảnh chính'; }
+                // Promote uploaded image to main and keep old main as gallery image.
+                uiImages.forEach(img => (img.isMain = false));
+                uiImages.unshift({ url, isMain: true });
               } else {
-                // Additional images go into gallery
-                let gallery: string[] = [];
-                try { gallery = JSON.parse(galleryInput?.value || '[]'); } catch {}
-                gallery.push(url);
-                if (galleryInput) galleryInput.value = JSON.stringify(gallery);
+                const mainIndex = uiImages.findIndex(img => img.isMain);
+                const insertAt = mainIndex >= 0 ? mainIndex + 1 : 0;
+                // Insert right after main so newest uploads are shown first row/top.
+                uiImages.splice(insertAt, 0, { url, isMain: false });
               }
-              
-              // Refresh the gallery to show uploaded images
-              let currentGallery: string[] = [];
-              try { currentGallery = JSON.parse(galleryInput?.value || '[]'); } catch {}
-              renderGalleryThumbnails(currentGallery);
+
+              syncToInputs();
+              updateThumbGrid();
             } else {
               throw new Error(uploadData.error || 'Upload thất bại');
             }

@@ -38,6 +38,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const specNeck = payload['prod-neck'] || null;
     const stockQuantity = parseInt(payload['prod-stock'] || '0') || 0;
     const status = payload['prod-status'] || 'active';
+    const productCondition = payload['prod-condition'] || 'new';
     const videoUrl = payload['prod-video'] || null;
     
     // Parse gallery images (array of additional image URLs) - for backward compatibility
@@ -46,6 +47,13 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       const galleryRaw = payload['prod-gallery'];
       if (galleryRaw) galleryImages = JSON.parse(galleryRaw);
     } catch { }
+    const sanitizedGallery = Array.isArray(galleryImages)
+      ? galleryImages
+          .filter((url): url is string => typeof url === 'string')
+          .map((url) => url.trim())
+          .filter(Boolean)
+      : [];
+    const dedupGallery = Array.from(new Set(sanitizedGallery));
 
     // Note: Image handling removed - using video_url only
 
@@ -58,6 +66,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     try { await supabase.rpc('exec_sql', { sql_string: 'ALTER TABLE IF EXISTS public.products ADD COLUMN IF NOT EXISTS spec_top text;' }); } catch (err) { }
     try { await supabase.rpc('exec_sql', { sql_string: 'ALTER TABLE IF EXISTS public.products ADD COLUMN IF NOT EXISTS spec_neck text;' }); } catch (err) { }
     try { await supabase.rpc('exec_sql', { sql_string: 'ALTER TABLE IF EXISTS public.products ADD COLUMN IF NOT EXISTS stock_quantity integer not null default 0;' }); } catch (err) { }
+    try { await supabase.rpc('exec_sql', { sql_string: "ALTER TABLE IF EXISTS public.products ADD COLUMN IF NOT EXISTS product_condition text not null default 'new';" }); } catch (err) { }
     try { await supabase.rpc('exec_sql', { sql_string: "ALTER TABLE IF EXISTS public.products ADD COLUMN IF NOT EXISTS gallery_images text[];" }); } catch (err) { }
     try { await supabase.rpc('exec_sql', { sql_string: "ALTER TABLE IF EXISTS public.products ADD COLUMN IF NOT EXISTS video_url text;" }); } catch (err) { }
 
@@ -72,7 +81,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       spec_neck: specNeck,
       stock_quantity: stockQuantity,
       status: status,
-      gallery_images: galleryImages.length > 0 ? galleryImages : null,
+      product_condition: productCondition,
+      gallery_images: dedupGallery.length > 0 ? dedupGallery : null,
       video_url: videoUrl
     };
 

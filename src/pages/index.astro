@@ -31,22 +31,58 @@ if (accessToken && refreshToken) {
       <div id="public-quick-edit-toolbar" class="public-quick-toolbar">
         <button id="toggle-public-edit" type="button" class="public-quick-btn">
           <span class="material-symbols-outlined">edit_square</span>
-          <span id="public-edit-label">Chỉnh sửa nhanh trang chủ</span>
+          <span id="public-edit-label">Chỉnh sửa</span>
+        </button>
+        <button id="save-public-edit" type="button" class="public-quick-btn hidden">
+          <span class="material-symbols-outlined">save</span>
+          <span>Lưu</span>
+        </button>
+        <button id="exit-public-edit" type="button" class="public-quick-btn hidden">
+          <span class="material-symbols-outlined">close</span>
+          <span>Thoát</span>
         </button>
         <span id="public-edit-status" class="public-quick-status hidden">Đã lưu</span>
       </div>
 
       <script is:inline>
         const toggleBtn = document.getElementById('toggle-public-edit');
+        const saveBtn = document.getElementById('save-public-edit');
+        const exitBtn = document.getElementById('exit-public-edit');
         const editLabel = document.getElementById('public-edit-label');
         const editStatus = document.getElementById('public-edit-status');
         let editMode = false;
+        let hasPendingChanges = false;
+        let saveStatusTimer;
+        const dirtyTextEls = new Set();
+
+        function syncQuickEditActions() {
+          toggleBtn?.classList.toggle('hidden', editMode);
+          saveBtn?.classList.toggle('hidden', !editMode || !hasPendingChanges);
+          exitBtn?.classList.toggle('hidden', !editMode);
+          if (editLabel) {
+            editLabel.textContent = editMode ? 'Đang chỉnh sửa' : 'Chỉnh sửa';
+          }
+        }
+
+        function updatePendingChanges() {
+          hasPendingChanges = dirtyTextEls.size > 0;
+          syncQuickEditActions();
+        }
 
         function flashSaved(message = 'Đã lưu') {
           if (!editStatus) return;
+          if (saveStatusTimer) {
+            clearTimeout(saveStatusTimer);
+          }
           editStatus.textContent = message;
           editStatus.classList.remove('hidden');
-          setTimeout(() => editStatus.classList.add('hidden'), 1800);
+          editStatus.classList.remove('is-flashing');
+          void editStatus.offsetWidth;
+          editStatus.classList.add('is-flashing');
+          saveStatusTimer = setTimeout(() => {
+            editStatus.classList.add('hidden');
+            editStatus.classList.remove('is-flashing');
+          }, 1700);
         }
 
         async function saveSetting(key, value) {
@@ -56,7 +92,6 @@ if (accessToken && refreshToken) {
             body: JSON.stringify({ key, value }),
           });
 
-          // Fallback for environments still running an older build without the quick-update route.
           if (res.status === 404) {
             res = await fetch('/api/settings/update', {
               method: 'POST',
@@ -108,13 +143,25 @@ if (accessToken && refreshToken) {
           }
         }
 
+        function handleTextInput(event) {
+          const el = event.currentTarget || event.target;
+          const nextValue = (el.textContent || '').trim();
+          const prevValue = el.dataset.originalValue || '';
+          if (nextValue !== prevValue) {
+            dirtyTextEls.add(el);
+          } else {
+            dirtyTextEls.delete(el);
+          }
+          updatePendingChanges();
+        }
+
         function enableTextEditing() {
           document.querySelectorAll('[data-setting-key]').forEach((node) => {
             const el = node;
             el.contentEditable = 'true';
             el.dataset.originalValue = el.textContent || '';
             el.classList.add('quick-edit-active');
-            el.addEventListener('blur', handleTextSave);
+            el.addEventListener('input', handleTextInput);
           });
         }
 
@@ -123,27 +170,43 @@ if (accessToken && refreshToken) {
             const el = node;
             el.contentEditable = 'false';
             el.classList.remove('quick-edit-active');
-            el.removeEventListener('blur', handleTextSave);
+            el.removeEventListener('input', handleTextInput);
           });
+          dirtyTextEls.clear();
+          updatePendingChanges();
         }
 
-        async function handleTextSave(event) {
-          const el = event.target;
-          const key = el.dataset.settingKey;
-          const nextValue = (el.textContent || '').trim();
-          const prevValue = el.dataset.originalValue || '';
-          if (!key || !nextValue || nextValue === prevValue) return;
+        function revertPendingTextChanges() {
+          dirtyTextEls.forEach((node) => {
+            node.textContent = node.dataset.originalValue || '';
+          });
+          dirtyTextEls.clear();
+          updatePendingChanges();
+        }
 
-          el.classList.add('quick-saving');
-          try {
-            await saveSetting(key, nextValue);
-            el.dataset.originalValue = nextValue;
-            flashSaved();
-          } catch (error) {
-            el.textContent = prevValue;
-            alert(error.message || 'Không thể lưu thay đổi');
-          } finally {
-            el.classList.remove('quick-saving');
+        async function savePendingTextChanges() {
+          const changedNodes = Array.from(document.querySelectorAll('[data-setting-key]')).filter((node) => {
+            return (node.textContent || '').trim() !== (node.dataset.originalValue || '');
+          });
+
+          for (const node of changedNodes) {
+            const key = node.dataset.settingKey;
+            const nextValue = (node.textContent || '').trim();
+            if (!key) continue;
+
+            node.classList.add('quick-saving');
+            try {
+              await saveSetting(key, nextValue);
+              node.dataset.originalValue = nextValue;
+            } finally {
+              node.classList.remove('quick-saving');
+            }
+          }
+
+          dirtyTextEls.clear();
+          updatePendingChanges();
+          if (changedNodes.length > 0) {
+            flashSaved('Đã lưu thay đổi');
           }
         }
 
@@ -188,60 +251,139 @@ if (accessToken && refreshToken) {
         }
 
         toggleBtn?.addEventListener('click', () => {
-          editMode = !editMode;
-          document.body.classList.toggle('public-edit-mode', editMode);
-          if (editLabel) {
-            editLabel.textContent = editMode ? 'Thoát chỉnh sửa nhanh' : 'Chỉnh sửa nhanh trang chủ';
-          }
-          if (editMode) {
-            enableTextEditing();
-          } else {
-            disableTextEditing();
+          editMode = true;
+          document.body.classList.add('public-edit-mode');
+          enableTextEditing();
+          syncQuickEditActions();
+        });
+
+        saveBtn?.addEventListener('click', async () => {
+          if (!hasPendingChanges) return;
+          saveBtn.setAttribute('disabled', 'true');
+          try {
+            await savePendingTextChanges();
+          } catch (error) {
+            alert(error.message || 'Không thể lưu thay đổi');
+          } finally {
+            saveBtn.removeAttribute('disabled');
+            syncQuickEditActions();
           }
         });
 
+        exitBtn?.addEventListener('click', () => {
+          if (hasPendingChanges && !confirm('Bạn có thay đổi chưa lưu. Thoát và bỏ thay đổi?')) {
+            return;
+          }
+          if (hasPendingChanges) {
+            revertPendingTextChanges();
+          }
+          editMode = false;
+          document.body.classList.remove('public-edit-mode');
+          disableTextEditing();
+          syncQuickEditActions();
+        });
+
         bindImageEditors();
+        syncQuickEditActions();
       </script>
 
       <style>
         .public-quick-toolbar {
           position: fixed;
-          right: 73px;
+          left: 50%;
+          transform: translateX(-50%);
           bottom: 20px;
           z-index: 120;
           display: flex;
           align-items: center;
+          justify-content: center;
           gap: 10px;
-        }
-        @media (min-width: 768px) {
-          .public-quick-toolbar {
-            right: 73px;
-          }
+          flex-wrap: wrap;
+          width: min(420px, calc(100vw - 24px));
+          padding: 10px;
+          border: 1px solid rgba(244, 140, 37, 0.18);
+          border-radius: 18px;
+          background: rgba(36, 24, 14, 0.72);
+          backdrop-filter: blur(12px);
+          box-shadow: 0 14px 32px rgba(0, 0, 0, 0.35);
         }
         .public-quick-btn {
           display: inline-flex;
           align-items: center;
+          justify-content: center;
+          flex: 1 1 160px;
           gap: 8px;
+          min-width: 0;
           border: 1px solid rgba(244, 140, 37, 0.35);
-          background: rgba(16, 13, 8, 0.92);
+          background: rgba(12, 10, 7, 0.96);
           color: #fff;
           border-radius: 999px;
           padding: 12px 16px;
           font: inherit;
           font-weight: 700;
           cursor: pointer;
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+          white-space: nowrap;
+        }
+        .public-quick-btn:disabled {
+          opacity: 0.65;
+          cursor: not-allowed;
+        }
+        #public-edit-label {
+          white-space: nowrap;
+        }
+        .public-quick-btn.hidden {
+          display: none !important;
         }
         .public-quick-status {
+          position: absolute;
+          left: 50%;
+          bottom: calc(100% - 8px);
+          transform: translateX(-50%) scale(0.94);
           border-radius: 999px;
-          padding: 10px 12px;
+          padding: 8px 12px;
           background: rgba(22, 101, 52, 0.92);
           color: #86efac;
           font-size: 12px;
           font-weight: 700;
+          border: 1px solid rgba(134, 239, 172, 0.35);
+          box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+          white-space: nowrap;
+          pointer-events: none;
+          opacity: 0;
+        }
+        .public-quick-status.is-flashing {
+          animation: quick-save-flash 1.4s ease-out both;
         }
         .public-quick-status.hidden {
           display: none;
+        }
+        @keyframes quick-save-flash {
+          0% {
+            opacity: 0;
+            transform: translateX(-50%) translateY(6px) scale(0.9);
+          }
+          22% {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0) scale(1);
+          }
+          68% {
+            opacity: 1;
+            transform: translateX(-50%) translateY(-2px) scale(1);
+          }
+          100% {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-8px) scale(0.95);
+          }
+        }
+        @media (max-width: 640px) {
+          .public-quick-toolbar {
+            bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+          }
+          .public-quick-btn {
+            padding: 11px 14px;
+            font-size: 14px;
+          }
         }
         .quick-edit-active {
           outline: 2px dashed rgba(244, 140, 37, 0.95);

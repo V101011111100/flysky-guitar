@@ -183,23 +183,62 @@ if (timelineItemsRaw) {
       <div id="about-quick-edit-toolbar" class="public-quick-toolbar">
         <button id="toggle-about-edit" type="button" class="public-quick-btn">
           <span class="material-symbols-outlined">edit_square</span>
-          <span id="about-edit-label">Chỉnh sửa nhanh trang About</span>
+          <span id="about-edit-label">Chỉnh sửa</span>
+        </button>
+        <button id="save-about-edit" type="button" class="public-quick-btn hidden">
+          <span class="material-symbols-outlined">save</span>
+          <span>Lưu</span>
+        </button>
+        <button id="exit-about-edit" type="button" class="public-quick-btn hidden">
+          <span class="material-symbols-outlined">close</span>
+          <span>Thoát</span>
         </button>
         <span id="about-edit-status" class="public-quick-status hidden">Đã lưu</span>
       </div>
 
       <script is:inline>
         const aboutToggleBtn = document.getElementById('toggle-about-edit');
+        const aboutSaveBtn = document.getElementById('save-about-edit');
+        const aboutExitBtn = document.getElementById('exit-about-edit');
         const aboutEditLabel = document.getElementById('about-edit-label');
         const aboutEditStatus = document.getElementById('about-edit-status');
         const addMilestoneBtn = document.getElementById('add-about-milestone');
+        const timelineList = document.getElementById('about-timeline-list');
         let aboutEditMode = false;
+        let aboutHasPendingChanges = false;
+        let aboutStatusTimer;
+        let timelineDirty = false;
+        let timelineOriginalMarkup = timelineList?.innerHTML || '';
+        const dirtyAboutFields = new Set();
+
+        function syncAboutEditActions() {
+          aboutToggleBtn?.classList.toggle('hidden', aboutEditMode);
+          aboutSaveBtn?.classList.toggle('hidden', !aboutEditMode || !aboutHasPendingChanges);
+          aboutExitBtn?.classList.toggle('hidden', !aboutEditMode);
+          if (aboutEditLabel) {
+            aboutEditLabel.textContent = aboutEditMode ? 'Đang chỉnh sửa' : 'Chỉnh sửa';
+          }
+        }
+
+        function updateAboutPendingChanges() {
+          aboutHasPendingChanges = dirtyAboutFields.size > 0 || timelineDirty;
+          syncAboutEditActions();
+        }
 
         function flashAboutSaved(message = 'Đã lưu') {
           if (!aboutEditStatus) return;
+          if (aboutStatusTimer) {
+            clearTimeout(aboutStatusTimer);
+          }
           aboutEditStatus.textContent = message;
           aboutEditStatus.classList.remove('hidden');
-          setTimeout(() => aboutEditStatus.classList.add('hidden'), 1800);
+          aboutEditStatus.classList.remove('is-flashing');
+          void aboutEditStatus.offsetWidth;
+          aboutEditStatus.classList.add('is-flashing');
+          aboutStatusTimer = setTimeout(() => {
+            aboutEditStatus.classList.add('hidden');
+            aboutEditStatus.classList.remove('is-flashing');
+          }, 1700);
         }
 
         async function saveAboutSetting(key, value) {
@@ -209,7 +248,6 @@ if (timelineItemsRaw) {
             body: JSON.stringify({ key, value }),
           });
 
-          // Fallback for environments still running an older build without the quick-update route.
           if (res.status === 404) {
             res = await fetch('/api/settings/update', {
               method: 'POST',
@@ -238,23 +276,16 @@ if (timelineItemsRaw) {
           flashAboutSaved('Đã cập nhật ảnh');
         }
 
-        async function handleAboutTextSave(event) {
-          const el = event.target;
-          const key = el.dataset.settingKey;
+        function handleAboutTextInput(event) {
+          const el = event.currentTarget || event.target;
           const nextValue = (el.textContent || '').trim();
           const prevValue = el.dataset.originalValue || '';
-          if (!key || !nextValue || nextValue === prevValue) return;
-          el.classList.add('quick-saving');
-          try {
-            await saveAboutSetting(key, nextValue);
-            el.dataset.originalValue = nextValue;
-            flashAboutSaved();
-          } catch (error) {
-            el.textContent = prevValue;
-            alert(error.message || 'Không thể lưu thay đổi');
-          } finally {
-            el.classList.remove('quick-saving');
+          if (nextValue !== prevValue) {
+            dirtyAboutFields.add(el);
+          } else {
+            dirtyAboutFields.delete(el);
           }
+          updateAboutPendingChanges();
         }
 
         function collectTimelineItems() {
@@ -275,35 +306,30 @@ if (timelineItemsRaw) {
         async function saveTimelineItems() {
           const payload = JSON.stringify(collectTimelineItems());
           await saveAboutSetting('flysky_about_timeline_items', payload);
-          flashAboutSaved('Đã lưu mốc thời gian');
         }
 
-        async function handleTimelineFieldSave(event) {
-          const el = event.target;
+        function handleTimelineFieldInput(event) {
+          const el = event.currentTarget || event.target;
           const nextValue = (el.textContent || '').trim();
           const prevValue = el.dataset.originalValue || '';
-          if (!nextValue || nextValue === prevValue) return;
-          el.classList.add('quick-saving');
-          try {
-            el.dataset.originalValue = nextValue;
-            await saveTimelineItems();
-          } catch (error) {
-            el.textContent = prevValue;
-            alert(error.message || 'Không thể lưu mốc thời gian');
-          } finally {
-            el.classList.remove('quick-saving');
+          timelineDirty = timelineDirty || nextValue !== prevValue;
+          if (!timelineDirty) {
+            timelineDirty = Array.from(document.querySelectorAll('[data-timeline-field]')).some((node) => {
+              return (node.textContent || '').trim() !== (node.dataset.originalValue || '');
+            });
           }
+          updateAboutPendingChanges();
         }
 
         function wireTimelineField(el) {
           el.contentEditable = aboutEditMode ? 'true' : 'false';
-          el.dataset.originalValue = el.textContent || '';
+          el.dataset.originalValue = el.dataset.originalValue || el.textContent || '';
           if (aboutEditMode) {
             el.classList.add('quick-edit-active');
-            el.addEventListener('blur', handleTimelineFieldSave);
+            el.addEventListener('input', handleTimelineFieldInput);
           } else {
             el.classList.remove('quick-edit-active');
-            el.removeEventListener('blur', handleTimelineFieldSave);
+            el.removeEventListener('input', handleTimelineFieldInput);
           }
         }
 
@@ -313,10 +339,11 @@ if (timelineItemsRaw) {
             el.contentEditable = 'true';
             el.dataset.originalValue = el.textContent || '';
             el.classList.add('quick-edit-active');
-            el.addEventListener('blur', handleAboutTextSave);
+            el.addEventListener('input', handleAboutTextInput);
           });
 
           document.querySelectorAll('[data-timeline-field]').forEach((node) => {
+            node.dataset.originalValue = node.textContent || '';
             wireTimelineField(node);
           });
         }
@@ -326,12 +353,68 @@ if (timelineItemsRaw) {
             const el = node;
             el.contentEditable = 'false';
             el.classList.remove('quick-edit-active');
-            el.removeEventListener('blur', handleAboutTextSave);
+            el.removeEventListener('input', handleAboutTextInput);
           });
 
           document.querySelectorAll('[data-timeline-field]').forEach((node) => {
             wireTimelineField(node);
           });
+
+          dirtyAboutFields.clear();
+          timelineDirty = false;
+          updateAboutPendingChanges();
+        }
+
+        function revertAboutChanges() {
+          dirtyAboutFields.forEach((node) => {
+            node.textContent = node.dataset.originalValue || '';
+          });
+
+          if (timelineDirty && timelineList) {
+            timelineList.innerHTML = timelineOriginalMarkup;
+          }
+
+          dirtyAboutFields.clear();
+          timelineDirty = false;
+          updateAboutPendingChanges();
+        }
+
+        async function saveAboutChanges() {
+          const changedFields = Array.from(document.querySelectorAll('[data-setting-key]')).filter((node) => {
+            return (node.textContent || '').trim() !== (node.dataset.originalValue || '');
+          });
+
+          for (const node of changedFields) {
+            const key = node.dataset.settingKey;
+            const nextValue = (node.textContent || '').trim();
+            if (!key) continue;
+
+            node.classList.add('quick-saving');
+            try {
+              await saveAboutSetting(key, nextValue);
+              node.dataset.originalValue = nextValue;
+            } finally {
+              node.classList.remove('quick-saving');
+            }
+          }
+
+          if (timelineDirty) {
+            await saveTimelineItems();
+            document.querySelectorAll('[data-timeline-field]').forEach((node) => {
+              node.dataset.originalValue = node.textContent || '';
+            });
+            timelineOriginalMarkup = timelineList?.innerHTML || '';
+          }
+
+          dirtyAboutFields.clear();
+          timelineDirty = false;
+          updateAboutPendingChanges();
+
+          if (changedFields.length > 0 || timelineDirty) {
+            flashAboutSaved('Đã lưu thay đổi');
+          } else {
+            flashAboutSaved('Đã lưu thay đổi');
+          }
         }
 
         function bindAboutImageEditors() {
@@ -384,25 +467,45 @@ if (timelineItemsRaw) {
         }
 
         aboutToggleBtn?.addEventListener('click', () => {
-          aboutEditMode = !aboutEditMode;
-          document.body.classList.toggle('public-edit-mode', aboutEditMode);
-          if (aboutEditLabel) {
-            aboutEditLabel.textContent = aboutEditMode ? 'Thoát chỉnh sửa nhanh' : 'Chỉnh sửa nhanh trang About';
-          }
-          if (aboutEditMode) {
-            enableAboutTextEditing();
-          } else {
-            disableAboutTextEditing();
+          aboutEditMode = true;
+          timelineOriginalMarkup = timelineList?.innerHTML || '';
+          document.body.classList.add('public-edit-mode');
+          enableAboutTextEditing();
+          syncAboutEditActions();
+        });
+
+        aboutSaveBtn?.addEventListener('click', async () => {
+          if (!aboutHasPendingChanges) return;
+          aboutSaveBtn.setAttribute('disabled', 'true');
+          try {
+            await saveAboutChanges();
+          } catch (error) {
+            alert(error.message || 'Không thể lưu thay đổi');
+          } finally {
+            aboutSaveBtn.removeAttribute('disabled');
+            syncAboutEditActions();
           }
         });
 
-        addMilestoneBtn?.addEventListener('click', async () => {
+        aboutExitBtn?.addEventListener('click', () => {
+          if (aboutHasPendingChanges && !confirm('Bạn có thay đổi chưa lưu. Thoát và bỏ thay đổi?')) {
+            return;
+          }
+          if (aboutHasPendingChanges) {
+            revertAboutChanges();
+          }
+          aboutEditMode = false;
+          document.body.classList.remove('public-edit-mode');
+          disableAboutTextEditing();
+          syncAboutEditActions();
+        });
+
+        addMilestoneBtn?.addEventListener('click', () => {
           if (!aboutEditMode) {
             alert('Hãy bật chỉnh sửa nhanh trước khi thêm mốc thời gian.');
             return;
           }
 
-          const timelineList = document.getElementById('about-timeline-list');
           if (!timelineList) return;
 
           const item = document.createElement('div');
@@ -417,59 +520,131 @@ if (timelineItemsRaw) {
 
           timelineList.appendChild(item);
           item.querySelectorAll('[data-timeline-field]').forEach((node) => {
+            node.dataset.originalValue = node.textContent || '';
             wireTimelineField(node);
           });
-
-          try {
-            await saveTimelineItems();
-          } catch (error) {
-            item.remove();
-            alert(error.message || 'Không thể thêm mốc thời gian');
-          }
+          timelineDirty = true;
+          updateAboutPendingChanges();
         });
 
         bindAboutImageEditors();
+        syncAboutEditActions();
       </script>
 
       <style>
         .public-quick-toolbar {
           position: fixed;
-          right: 73px;
+          left: 50%;
+          transform: translateX(-50%);
           bottom: 20px;
           z-index: 120;
           display: flex;
           align-items: center;
+          justify-content: center;
           gap: 10px;
-        }
-        @media (min-width: 768px) {
-          .public-quick-toolbar {
-            right: 73px;
-          }
+          flex-wrap: wrap;
+          width: min(420px, calc(100vw - 24px));
+          padding: 10px;
+          border: 1px solid rgba(244, 140, 37, 0.18);
+          border-radius: 18px;
+          background: rgba(36, 24, 14, 0.72);
+          backdrop-filter: blur(12px);
+          box-shadow: 0 14px 32px rgba(0, 0, 0, 0.35);
         }
         .public-quick-btn {
           display: inline-flex;
           align-items: center;
+          justify-content: center;
+          flex: 1 1 160px;
           gap: 8px;
+          min-width: 0;
           border: 1px solid rgba(244, 140, 37, 0.35);
-          background: rgba(16, 13, 8, 0.92);
+          background: rgba(12, 10, 7, 0.96);
           color: #fff;
           border-radius: 999px;
           padding: 12px 16px;
           font: inherit;
           font-weight: 700;
           cursor: pointer;
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+          white-space: nowrap;
+        }
+        .public-quick-btn:disabled {
+          opacity: 0.65;
+          cursor: not-allowed;
+        }
+        #about-edit-label {
+          white-space: nowrap;
+        }
+        .public-quick-btn.hidden {
+          display: none !important;
         }
         .public-quick-status {
+          position: absolute;
+          left: 50%;
+          bottom: calc(100% - 8px);
+          transform: translateX(-50%) scale(0.94);
           border-radius: 999px;
-          padding: 10px 12px;
+          padding: 8px 12px;
           background: rgba(22, 101, 52, 0.92);
           color: #86efac;
           font-size: 12px;
           font-weight: 700;
+          border: 1px solid rgba(134, 239, 172, 0.35);
+          box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+          white-space: nowrap;
+          pointer-events: none;
+          opacity: 0;
+        }
+        .public-quick-status.is-flashing {
+          animation: quick-save-flash 1.4s ease-out both;
         }
         .public-quick-status.hidden {
           display: none;
+        }
+        @keyframes quick-save-flash {
+          0% {
+            opacity: 0;
+            transform: translateX(-50%) translateY(6px) scale(0.9);
+          }
+          22% {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0) scale(1);
+          }
+          68% {
+            opacity: 1;
+            transform: translateX(-50%) translateY(-2px) scale(1);
+          }
+          100% {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-8px) scale(0.95);
+          }
+        }
+        @media (max-width: 640px) {
+          .public-quick-toolbar {
+            left: 12px;
+            right: 12px;
+            transform: none;
+            width: auto;
+            bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+            gap: 8px;
+            justify-content: space-between;
+          }
+          .public-quick-btn {
+            flex: 1;
+            min-width: 0;
+            justify-content: center;
+            padding: 11px 12px;
+            font-size: 13px;
+          }
+          #about-edit-label {
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+          .public-quick-status {
+            padding: 8px 10px;
+            font-size: 11px;
+          }
         }
         .about-add-milestone-btn {
           display: inline-flex;

@@ -15,6 +15,7 @@ const EDITABLE_SETTING_KEYS = new Set([
   'flysky_brand_feat2_title',
   'flysky_brand_feat2_desc',
   'flysky_brand_image',
+  'flysky_brand_images',
   'flysky_featured_section_tag',
   'flysky_featured_title',
   'flysky_featured_electric_vibe',

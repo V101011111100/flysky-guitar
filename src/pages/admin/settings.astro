@@ -32,8 +32,9 @@ const socialUrl = getSetting('flysky_socialUrl', 'https://facebook.com/flyskygui
 // Social Media Links
 const zaloUrl = getSetting('flysky_zaloUrl', 'https://zalo.me/0987654321');
 const facebookUrl = getSetting('flysky_facebookUrl', 'https://facebook.com/flyskyguitar');
-const whatsappUrl = getSetting('flysky_whatsappUrl', 'https://wa.me/84987654321');
 const instagramUrl = getSetting('flysky_instagramUrl', 'https://instagram.com/flyskyguitar');
+const youtubeUrl = getSetting('flysky_youtubeUrl', 'https://youtube.com/@flyskyguitar');
+const tiktokUrl = getSetting('flysky_tiktokUrl', 'https://tiktok.com/@flyskyguitar');
 const supportWarrantyUrl = getSetting('flysky_supportWarrantyUrl', '/blog');
 const supportShippingReturnUrl = getSetting('flysky_supportShippingReturnUrl', '/payment');
 const supportCareGuideUrl = getSetting('flysky_supportCareGuideUrl', '/blog');
@@ -66,6 +67,15 @@ const smtpPass = getSetting('flysky_smtpPass', '');
 const smtpFromName = getSetting('flysky_smtpFromName', 'FlySky Guitar');
 const logoUrl = getSetting('flysky_logoUrl', '/logo.svg');
 const heroImageUrl = getSetting('flysky_heroImageUrl', '/images/hero-guitar.jpg');
+const brandImageUrl = getSetting('flysky_brand_image', '/images/brand-story.jpg');
+const brandImages = getSetting('flysky_brand_images', '');
+const contactStoreImageUrl = getSetting('flysky_contact_store_image', 'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?auto=format&fit=crop&w=1200&q=80');
+const featuredElectricImage = getSetting('flysky_featured_electric_image', '/images/cat-electric.jpg');
+const featuredAcousticImage = getSetting('flysky_featured_acoustic_image', '/images/cat-acoustic.jpg');
+const featuredClassicImage = getSetting('flysky_featured_classic_image', '/images/cat-acoustic.jpg');
+const featuredBassImage = getSetting('flysky_featured_bass_image', '/images/cat-bass.jpg');
+const featuredPianoImage = getSetting('flysky_featured_piano_image', '/images/hero-guitar.jpg');
+const featuredUkuleleImage = getSetting('flysky_featured_ukulele_image', '/images/brand-story.jpg');
 
 // Maintenance mode
 const maintenanceMode = getSetting('flysky_maintenanceMode', 'false') === 'true';
@@ -205,6 +215,141 @@ const settingsSubtitle = canManageSystemSettings
 
       <section class="stg-section stg-two-col">
         <div class="stg-two-col-left">
+          <h3 class="section-title">Ảnh câu chuyện thương hiệu</h3>
+          <p class="section-desc">Dùng cho section Câu chuyện trên trang chủ. Có thể upload 1 ảnh hoặc nhiều ảnh slideshow. Ảnh lưu trên Supabase Storage.</p>
+        </div>
+        <div class="stg-two-col-right">
+          <div class="logo-area">
+            <input type="file" id="brand-upload-input" accept="image/png,image/jpeg,image/jpg,image/webp" style="display: none;" />
+            <input type="file" id="brand-upload-multi-input" accept="image/png,image/jpeg,image/jpg,image/webp" multiple style="display: none;" />
+            <div class="logo-preview" id="brand-preview-box" onclick="document.getElementById('brand-upload-input').click()" style="aspect-ratio:4/3;max-height:180px;">
+              <img src={brandImageUrl} alt="Brand story preview" id="brand-preview-img" style="width:100%;height:100%;object-fit:cover;border-radius:8px;" />
+              <div class="logo-hover-overlay">
+                <span class="material-symbols-outlined">upload</span>
+              </div>
+            </div>
+            <div class="logo-info">
+              <p class="form-label" style="margin-bottom:8px;">Ảnh câu chuyện thương hiệu</p>
+              <p class="section-desc" style="margin-bottom:16px;">Bạn có thể dùng nhiều ảnh để chạy slideshow như Hero.</p>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn-upload" id="brand-upload-btn" onclick="document.getElementById('brand-upload-input').click()">Tải lên ảnh mới</button>
+                <button class="btn-upload" id="brand-upload-multi-btn" onclick="document.getElementById('brand-upload-multi-input').click()" style="background:transparent;border:1px solid rgba(244,140,37,.55);color:#f48c25;">Tải nhiều ảnh</button>
+              </div>
+            </div>
+          </div>
+          <div class="form-group form-full" style="margin-top:12px;">
+            <label class="form-label">Danh sách ảnh Brand Story (nhiều ảnh)</label>
+            <textarea
+              id="stg-brand-images"
+              class="form-input"
+              rows="3"
+              placeholder="Mỗi dòng là 1 URL ảnh"
+              style="resize:vertical;min-height:88px;"
+            >{brandImages}</textarea>
+          </div>
+        </div>
+      </section>
+
+      <hr class="stg-divider" />
+
+      <section class="stg-section stg-two-col">
+        <div class="stg-two-col-left">
+          <h3 class="section-title">Ảnh liên hệ trang chính</h3>
+          <p class="section-desc">Ảnh thẻ cửa hàng ở trang Liên hệ. Ảnh lưu trên Supabase Storage.</p>
+        </div>
+        <div class="stg-two-col-right">
+          <div class="logo-area">
+            <input type="file" id="contact-store-upload-input" accept="image/png,image/jpeg,image/jpg,image/webp" style="display: none;" />
+            <div class="logo-preview" onclick="document.getElementById('contact-store-upload-input').click()" style="aspect-ratio:16/9;max-height:180px;">
+              <img src={contactStoreImageUrl} alt="Contact store preview" id="contact-store-preview-img" style="width:100%;height:100%;object-fit:cover;border-radius:8px;" />
+              <div class="logo-hover-overlay">
+                <span class="material-symbols-outlined">upload</span>
+              </div>
+            </div>
+            <div class="logo-info">
+              <p class="form-label" style="margin-bottom:8px;">Ảnh cửa hàng trang liên hệ</p>
+              <button class="btn-upload" id="contact-store-upload-btn" onclick="document.getElementById('contact-store-upload-input').click()">Tải lên ảnh mới</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <hr class="stg-divider" />
+
+      <section class="stg-section">
+        <div class="section-head">
+          <div>
+            <h3 class="section-title">Ảnh Bộ sưu tập nổi bật</h3>
+            <p class="section-desc">Ảnh dùng trong các thẻ bộ sưu tập ở trang chủ. Mỗi mục có thể upload riêng và lưu URL vào setting.</p>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Guitar Điện</label>
+            <div class="icon-input-wrap">
+              <span class="material-symbols-outlined inp-icon">bolt</span>
+              <input type="text" id="stg-featured-electric-image" class="form-input inp-with-icon" value={featuredElectricImage} />
+            </div>
+            <input type="file" id="featured-electric-upload-input" accept="image/png,image/jpeg,image/jpg,image/webp" style="display:none;" />
+            <button class="btn-upload" id="featured-electric-upload-btn" onclick="document.getElementById('featured-electric-upload-input').click()" style="margin-top:10px;">Upload ảnh Điện</button>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Guitar Acoustic</label>
+            <div class="icon-input-wrap">
+              <span class="material-symbols-outlined inp-icon">graphic_eq</span>
+              <input type="text" id="stg-featured-acoustic-image" class="form-input inp-with-icon" value={featuredAcousticImage} />
+            </div>
+            <input type="file" id="featured-acoustic-upload-input" accept="image/png,image/jpeg,image/jpg,image/webp" style="display:none;" />
+            <button class="btn-upload" id="featured-acoustic-upload-btn" onclick="document.getElementById('featured-acoustic-upload-input').click()" style="margin-top:10px;">Upload ảnh Acoustic</button>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Guitar Classic</label>
+            <div class="icon-input-wrap">
+              <span class="material-symbols-outlined inp-icon">library_music</span>
+              <input type="text" id="stg-featured-classic-image" class="form-input inp-with-icon" value={featuredClassicImage} />
+            </div>
+            <input type="file" id="featured-classic-upload-input" accept="image/png,image/jpeg,image/jpg,image/webp" style="display:none;" />
+            <button class="btn-upload" id="featured-classic-upload-btn" onclick="document.getElementById('featured-classic-upload-input').click()" style="margin-top:10px;">Upload ảnh Classic</button>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Guitar Bass</label>
+            <div class="icon-input-wrap">
+              <span class="material-symbols-outlined inp-icon">music_note</span>
+              <input type="text" id="stg-featured-bass-image" class="form-input inp-with-icon" value={featuredBassImage} />
+            </div>
+            <input type="file" id="featured-bass-upload-input" accept="image/png,image/jpeg,image/jpg,image/webp" style="display:none;" />
+            <button class="btn-upload" id="featured-bass-upload-btn" onclick="document.getElementById('featured-bass-upload-input').click()" style="margin-top:10px;">Upload ảnh Bass</button>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Piano &amp; Keyboard</label>
+            <div class="icon-input-wrap">
+              <span class="material-symbols-outlined inp-icon">piano</span>
+              <input type="text" id="stg-featured-piano-image" class="form-input inp-with-icon" value={featuredPianoImage} />
+            </div>
+            <input type="file" id="featured-piano-upload-input" accept="image/png,image/jpeg,image/jpg,image/webp" style="display:none;" />
+            <button class="btn-upload" id="featured-piano-upload-btn" onclick="document.getElementById('featured-piano-upload-input').click()" style="margin-top:10px;">Upload ảnh Piano</button>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Ukulele</label>
+            <div class="icon-input-wrap">
+              <span class="material-symbols-outlined inp-icon">podium</span>
+              <input type="text" id="stg-featured-ukulele-image" class="form-input inp-with-icon" value={featuredUkuleleImage} />
+            </div>
+            <input type="file" id="featured-ukulele-upload-input" accept="image/png,image/jpeg,image/jpg,image/webp" style="display:none;" />
+            <button class="btn-upload" id="featured-ukulele-upload-btn" onclick="document.getElementById('featured-ukulele-upload-input').click()" style="margin-top:10px;">Upload ảnh Ukulele</button>
+          </div>
+        </div>
+      </section>
+
+      <hr class="stg-divider" />
+
+      <section class="stg-section stg-two-col">
+        <div class="stg-two-col-left">
           <h3 class="section-title">Liên hệ &amp; Mạng xã hội</h3>
           <p class="section-desc">Liên kết với các nền tảng mạng xã hội của studio.</p>
         </div>
@@ -222,12 +367,16 @@ const settingsSubtitle = canManageSystemSettings
             <input type="text" id="stg-facebook-url" class="form-input inp-with-icon" placeholder="https://facebook.com/..." value={facebookUrl} />
           </div>
           <div class="icon-input-wrap" style="margin-top:12px;">
-            <span class="material-symbols-outlined inp-icon">send</span>
-            <input type="text" id="stg-whatsapp-url" class="form-input inp-with-icon" placeholder="https://wa.me/..." value={whatsappUrl} />
-          </div>
-          <div class="icon-input-wrap" style="margin-top:12px;">
             <span class="material-symbols-outlined inp-icon">photo_camera</span>
             <input type="text" id="stg-instagram-url" class="form-input inp-with-icon" placeholder="https://instagram.com/..." value={instagramUrl} />
+          </div>
+          <div class="icon-input-wrap" style="margin-top:12px;">
+            <span class="material-symbols-outlined inp-icon">smart_display</span>
+            <input type="text" id="stg-youtube-url" class="form-input inp-with-icon" placeholder="https://youtube.com/@..." value={youtubeUrl} />
+          </div>
+          <div class="icon-input-wrap" style="margin-top:12px;">
+            <span class="material-symbols-outlined inp-icon">music_note</span>
+            <input type="text" id="stg-tiktok-url" class="form-input inp-with-icon" placeholder="https://tiktok.com/@..." value={tiktokUrl} />
           </div>
           <div class="icon-input-wrap" style="margin-top:12px;">
             <span class="material-symbols-outlined inp-icon">article</span>
@@ -1099,8 +1248,9 @@ const settingsSubtitle = canManageSystemSettings
       { id: 'stg-contact-phone', key: 'flysky_contactPhone' },
       { id: 'stg-zalo-url', key: 'flysky_zaloUrl' },
       { id: 'stg-facebook-url', key: 'flysky_facebookUrl' },
-      { id: 'stg-whatsapp-url', key: 'flysky_whatsappUrl' },
       { id: 'stg-instagram-url', key: 'flysky_instagramUrl' },
+      { id: 'stg-youtube-url', key: 'flysky_youtubeUrl' },
+      { id: 'stg-tiktok-url', key: 'flysky_tiktokUrl' },
       { id: 'stg-support-warranty-url', key: 'flysky_supportWarrantyUrl' },
       { id: 'stg-support-shipping-return-url', key: 'flysky_supportShippingReturnUrl' },
       { id: 'stg-support-care-guide-url', key: 'flysky_supportCareGuideUrl' },
@@ -1110,6 +1260,13 @@ const settingsSubtitle = canManageSystemSettings
       { id: 'stg-hero-images', key: 'flysky_heroImages' },
       { id: 'stg-hero-effect', key: 'flysky_heroEffect' },
       { id: 'stg-hero-interval', key: 'flysky_heroIntervalSec' },
+      { id: 'stg-brand-images', key: 'flysky_brand_images' },
+      { id: 'stg-featured-electric-image', key: 'flysky_featured_electric_image' },
+      { id: 'stg-featured-acoustic-image', key: 'flysky_featured_acoustic_image' },
+      { id: 'stg-featured-classic-image', key: 'flysky_featured_classic_image' },
+      { id: 'stg-featured-bass-image', key: 'flysky_featured_bass_image' },
+      { id: 'stg-featured-piano-image', key: 'flysky_featured_piano_image' },
+      { id: 'stg-featured-ukulele-image', key: 'flysky_featured_ukulele_image' },
       { id: 'stg-smtp-host', key: 'flysky_smtpHost' },
       { id: 'stg-smtp-port', key: 'flysky_smtpPort' },
       { id: 'stg-smtp-user', key: 'flysky_smtpUser' },
@@ -1968,6 +2125,127 @@ const settingsSubtitle = canManageSystemSettings
         heroMultiBtn.disabled = false;
         heroBtn.disabled = false;
         heroMultiInput.value = '';
+      }
+    });
+  }
+
+  const saveSettingPairs = async (pairs: Array<{ key: string; value: string }>) => {
+    await fetch('/api/settings/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ settings: pairs }),
+    });
+  };
+
+  const bindSingleImageUpload = (
+    inputId: string,
+    buttonId: string,
+    settingKey: string,
+    previewImgId?: string,
+    targetInputId?: string,
+    buttonLabel = 'Tải lên ảnh mới'
+  ) => {
+    const input = document.getElementById(inputId) as HTMLInputElement | null;
+    const button = document.getElementById(buttonId) as HTMLButtonElement | null;
+    const preview = previewImgId ? (document.getElementById(previewImgId) as HTMLImageElement | null) : null;
+    const targetInput = targetInputId ? (document.getElementById(targetInputId) as HTMLInputElement | null) : null;
+    if (!input || !button) return;
+
+    input.addEventListener('change', async (e: Event) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      button.textContent = 'Đang tải lên...';
+      button.disabled = true;
+      try {
+        const url = await uploadSiteMedia(file);
+        if (preview) preview.src = url;
+        if (targetInput) targetInput.value = url;
+        await saveSettingPairs([{ key: settingKey, value: url }]);
+        alert('Upload ảnh thành công!');
+      } catch (err: any) {
+        alert('Lỗi upload ảnh: ' + err.message);
+      } finally {
+        button.textContent = buttonLabel;
+        button.disabled = false;
+        input.value = '';
+      }
+    });
+  };
+
+  bindSingleImageUpload('contact-store-upload-input', 'contact-store-upload-btn', 'flysky_contact_store_image', 'contact-store-preview-img', undefined, 'Tải lên ảnh mới');
+  bindSingleImageUpload('featured-electric-upload-input', 'featured-electric-upload-btn', 'flysky_featured_electric_image', undefined, 'stg-featured-electric-image', 'Upload ảnh Điện');
+  bindSingleImageUpload('featured-acoustic-upload-input', 'featured-acoustic-upload-btn', 'flysky_featured_acoustic_image', undefined, 'stg-featured-acoustic-image', 'Upload ảnh Acoustic');
+  bindSingleImageUpload('featured-classic-upload-input', 'featured-classic-upload-btn', 'flysky_featured_classic_image', undefined, 'stg-featured-classic-image', 'Upload ảnh Classic');
+  bindSingleImageUpload('featured-bass-upload-input', 'featured-bass-upload-btn', 'flysky_featured_bass_image', undefined, 'stg-featured-bass-image', 'Upload ảnh Bass');
+  bindSingleImageUpload('featured-piano-upload-input', 'featured-piano-upload-btn', 'flysky_featured_piano_image', undefined, 'stg-featured-piano-image', 'Upload ảnh Piano');
+  bindSingleImageUpload('featured-ukulele-upload-input', 'featured-ukulele-upload-btn', 'flysky_featured_ukulele_image', undefined, 'stg-featured-ukulele-image', 'Upload ảnh Ukulele');
+
+  const brandMultiInput = document.getElementById('brand-upload-multi-input') as HTMLInputElement | null;
+  const brandMultiBtn = document.getElementById('brand-upload-multi-btn') as HTMLButtonElement | null;
+  const brandInput = document.getElementById('brand-upload-input') as HTMLInputElement | null;
+  const brandBtn = document.getElementById('brand-upload-btn') as HTMLButtonElement | null;
+  const brandImagesTextarea = document.getElementById('stg-brand-images') as HTMLTextAreaElement | null;
+  const brandPreview = document.getElementById('brand-preview-img') as HTMLImageElement | null;
+
+  if (brandInput && brandBtn && brandImagesTextarea) {
+    brandInput.addEventListener('change', async (e: Event) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      brandBtn.textContent = 'Đang tải lên...';
+      brandBtn.disabled = true;
+      try {
+        const url = await uploadSiteMedia(file);
+        if (brandPreview) brandPreview.src = url;
+        brandImagesTextarea.value = '';
+        await saveSettingPairs([
+          { key: 'flysky_brand_image', value: url },
+          { key: 'flysky_brand_images', value: '' },
+        ]);
+        alert('Upload ảnh thương hiệu thành công!');
+      } catch (err: any) {
+        alert('Lỗi upload ảnh thương hiệu: ' + err.message);
+      } finally {
+        brandBtn.textContent = 'Tải lên ảnh mới';
+        brandBtn.disabled = false;
+        brandInput.value = '';
+      }
+    });
+  }
+
+  if (brandMultiInput && brandMultiBtn && brandImagesTextarea) {
+    brandMultiInput.addEventListener('change', async (e: Event) => {
+      const files = Array.from((e.target as HTMLInputElement).files || []);
+      if (!files.length) return;
+
+      brandMultiBtn.textContent = `Đang tải ${files.length} ảnh...`;
+      brandMultiBtn.disabled = true;
+
+      try {
+        const uploadedUrls: string[] = [];
+        for (const file of files) {
+          uploadedUrls.push(await uploadSiteMedia(file));
+        }
+
+        const currentUrls = brandImagesTextarea.value
+          .split(/\r?\n/)
+          .map((x) => x.trim())
+          .filter(Boolean);
+        const merged = [...new Set([...currentUrls, ...uploadedUrls])];
+        brandImagesTextarea.value = merged.join('\n');
+        if (brandPreview) brandPreview.src = uploadedUrls[0];
+
+        await saveSettingPairs([
+          { key: 'flysky_brand_image', value: uploadedUrls[0] },
+          { key: 'flysky_brand_images', value: merged.join('\n') },
+        ]);
+
+        alert(`Đã upload ${uploadedUrls.length} ảnh cho câu chuyện thương hiệu.`);
+      } catch (err: any) {
+        alert('Lỗi upload nhiều ảnh brand: ' + err.message);
+      } finally {
+        brandMultiBtn.textContent = 'Tải nhiều ảnh';
+        brandMultiBtn.disabled = false;
+        brandMultiInput.value = '';
       }
     });
   }

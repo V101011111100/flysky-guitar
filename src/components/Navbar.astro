@@ -1,7 +1,17 @@
 ---
 import { supabase } from '../lib/supabase';
+import { getAdminMfaState } from '../lib/security';
 
 type CategoryRow = { name: string; slug: string };
+
+let showAdminMenu = false;
+const accessToken = Astro.cookies.get('sb-access-token');
+const refreshToken = Astro.cookies.get('sb-refresh-token');
+
+if (accessToken?.value && refreshToken?.value) {
+  const authState = await getAdminMfaState(accessToken.value, refreshToken.value);
+  showAdminMenu = authState.authenticated && authState.isAdmin && !authState.requiresMfa;
+}
 
 const { data: categoryRows } = await supabase
   .from('categories')
@@ -163,11 +173,13 @@ const shopMenuItems = [
           <span class="material-symbols-outlined">shopping_cart</span>
           <span id="nav-cart-badge" class="absolute top-1.5 right-1.5 min-w-4 h-4 bg-primary text-background-dark text-[10px] font-bold flex items-center justify-center rounded-full px-0.5 hidden">0</span>
         </a>
-        <a class="flex items-center justify-center rounded-lg size-10 text-white hover:bg-border-dark transition-colors group relative" href="/admin/login" title="Quản trị">
-          <span class="material-symbols-outlined">admin_panel_settings</span>
-          <span class="sr-only">Quản trị</span>
-          <span class="absolute -bottom-10 right-0 hidden group-hover:block bg-card-dark border border-border-dark text-[10px] text-white px-2 py-1 rounded whitespace-nowrap">Quản trị</span>
-        </a>
+        {showAdminMenu && (
+          <a class="flex items-center justify-center rounded-lg size-10 text-white hover:bg-border-dark transition-colors group relative" href="/admin" title="Quản trị">
+            <span class="material-symbols-outlined">admin_panel_settings</span>
+            <span class="sr-only">Quản trị</span>
+            <span class="absolute -bottom-10 right-0 hidden group-hover:block bg-card-dark border border-border-dark text-[10px] text-white px-2 py-1 rounded whitespace-nowrap">Quản trị</span>
+          </a>
+        )}
         <button class="lg:hidden flex items-center justify-center rounded-lg size-10 text-white hover:bg-border-dark transition-colors" id="mobile-menu-btn">
           <span class="material-symbols-outlined">menu</span>
         </button>
@@ -213,10 +225,12 @@ const shopMenuItems = [
           <span class="material-symbols-outlined">shopping_cart</span>
           Giỏ hàng
         </a>
-        <a href="/admin/login" class="block py-3 px-4 text-text-muted hover:bg-border-dark/50 hover:text-white rounded-lg transition-colors font-semibold flex items-center gap-2">
-          <span class="material-symbols-outlined">admin_panel_settings</span>
-          Quản trị
-        </a>
+        {showAdminMenu && (
+          <a href="/admin" class="block py-3 px-4 text-text-muted hover:bg-border-dark/50 hover:text-white rounded-lg transition-colors font-semibold flex items-center gap-2">
+            <span class="material-symbols-outlined">admin_panel_settings</span>
+            Quản trị
+          </a>
+        )}
       </div>
     </nav>
   </div>
